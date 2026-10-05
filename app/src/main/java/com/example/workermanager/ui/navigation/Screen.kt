@@ -1,0 +1,29 @@
+package com.example.workermanager.ui.navigation
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.ui.graphics.vector.ImageVector
+
+sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
+    data object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
+    data object Sites : Screen("sites", "Sites", Icons.Default.LocationOn)
+    data object Workers : Screen("workers", "Workers", Icons.Default.Groups)
+    data object Attendance : Screen("attendance", "Attendance", Icons.Default.History)
+    data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
+    data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
+    
+    data object SiteDetails : Screen("site_details/{siteId}", "Site Details") {
+        fun createRoute(siteId: Long) = "site_details/$siteId"
+    }
+    
+    data object WorkerDetails : Screen("worker_details/{workerId}", "Worker Details") {
+        fun createRoute(workerId: Long) = "worker_details/$workerId"
+    }
+
+    data object Settings : Screen("settings", "Settings")
+}

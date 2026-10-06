@@ -13,3 +13,9 @@ val Pink40 = Color(0xFF7D5260)
 val BusinessBlue = Color(0xFF1A73E8)
 val BusinessBlueDark = Color(0xFF174EA6)
 val BusinessBlueLight = Color(0xFFE8F0FE)
+
+// Improved Text Colors
+val PrimaryText = Color(0xFF1A1A1A)
+val SecondaryText = Color(0xFF4A4A4A)
+val HintText = Color(0xFF666666)
+val OnBusinessBlue = Color.White

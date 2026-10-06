@@ -18,7 +18,6 @@ import com.example.workermanager.data.entity.PaymentType;
 import java.lang.Class;
 import java.lang.Double;
 import java.lang.Exception;
-import java.lang.IllegalArgumentException;
 import java.lang.IllegalStateException;
 import java.lang.Object;
 import java.lang.Override;
@@ -71,7 +70,8 @@ public final class PaymentDao_Impl implements PaymentDao {
         }
         final String _tmp_1 = __converters.fromPaymentMethod(entity.getMethod());
         statement.bindString(6, _tmp_1);
-        statement.bindString(7, __PaymentType_enumToString(entity.getPaymentType()));
+        final String _tmp_2 = __converters.fromPaymentType(entity.getPaymentType());
+        statement.bindString(7, _tmp_2);
         statement.bindString(8, entity.getNote());
         statement.bindLong(9, entity.getCreatedAt());
       }
@@ -111,7 +111,8 @@ public final class PaymentDao_Impl implements PaymentDao {
         }
         final String _tmp_1 = __converters.fromPaymentMethod(entity.getMethod());
         statement.bindString(6, _tmp_1);
-        statement.bindString(7, __PaymentType_enumToString(entity.getPaymentType()));
+        final String _tmp_2 = __converters.fromPaymentType(entity.getPaymentType());
+        statement.bindString(7, _tmp_2);
         statement.bindString(8, entity.getNote());
         statement.bindLong(9, entity.getCreatedAt());
         statement.bindLong(10, entity.getId());
@@ -224,7 +225,9 @@ public final class PaymentDao_Impl implements PaymentDao {
             _tmp_2 = _cursor.getString(_cursorIndexOfMethod);
             _tmpMethod = __converters.toPaymentMethod(_tmp_2);
             final PaymentType _tmpPaymentType;
-            _tmpPaymentType = __PaymentType_stringToEnum(_cursor.getString(_cursorIndexOfPaymentType));
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfPaymentType);
+            _tmpPaymentType = __converters.toPaymentType(_tmp_3);
             final String _tmpNote;
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
@@ -295,7 +298,9 @@ public final class PaymentDao_Impl implements PaymentDao {
             _tmp_2 = _cursor.getString(_cursorIndexOfMethod);
             _tmpMethod = __converters.toPaymentMethod(_tmp_2);
             final PaymentType _tmpPaymentType;
-            _tmpPaymentType = __PaymentType_stringToEnum(_cursor.getString(_cursorIndexOfPaymentType));
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfPaymentType);
+            _tmpPaymentType = __converters.toPaymentType(_tmp_3);
             final String _tmpNote;
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
@@ -366,7 +371,9 @@ public final class PaymentDao_Impl implements PaymentDao {
             _tmp_2 = _cursor.getString(_cursorIndexOfMethod);
             _tmpMethod = __converters.toPaymentMethod(_tmp_2);
             final PaymentType _tmpPaymentType;
-            _tmpPaymentType = __PaymentType_stringToEnum(_cursor.getString(_cursorIndexOfPaymentType));
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfPaymentType);
+            _tmpPaymentType = __converters.toPaymentType(_tmp_3);
             final String _tmpNote;
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
@@ -450,7 +457,9 @@ public final class PaymentDao_Impl implements PaymentDao {
             _tmp_4 = _cursor.getString(_cursorIndexOfMethod);
             _tmpMethod = __converters.toPaymentMethod(_tmp_4);
             final PaymentType _tmpPaymentType;
-            _tmpPaymentType = __PaymentType_stringToEnum(_cursor.getString(_cursorIndexOfPaymentType));
+            final String _tmp_5;
+            _tmp_5 = _cursor.getString(_cursorIndexOfPaymentType);
+            _tmpPaymentType = __converters.toPaymentType(_tmp_5);
             final String _tmpNote;
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
@@ -583,27 +592,5 @@ public final class PaymentDao_Impl implements PaymentDao {
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();
-  }
-
-  private String __PaymentType_enumToString(@NonNull final PaymentType _value) {
-    switch (_value) {
-      case SALARY: return "SALARY";
-      case ADVANCE: return "ADVANCE";
-      case PAYMENT: return "PAYMENT";
-      case BONUS: return "BONUS";
-      case OTHER: return "OTHER";
-      default: throw new IllegalArgumentException("Can't convert enum to string, unknown enum value: " + _value);
-    }
-  }
-
-  private PaymentType __PaymentType_stringToEnum(@NonNull final String _value) {
-    switch (_value) {
-      case "SALARY": return PaymentType.SALARY;
-      case "ADVANCE": return PaymentType.ADVANCE;
-      case "PAYMENT": return PaymentType.PAYMENT;
-      case "BONUS": return PaymentType.BONUS;
-      case "OTHER": return PaymentType.OTHER;
-      default: throw new IllegalArgumentException("Can't convert value to enum, unknown value: " + _value);
-    }
   }
 }

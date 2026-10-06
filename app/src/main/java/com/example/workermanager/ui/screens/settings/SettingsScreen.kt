@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -17,7 +18,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workermanager.WorkerApplication
 import com.example.workermanager.util.ExcelExporter
@@ -66,55 +69,85 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("Settings", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp)
         ) {
-            Text("General", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "General", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(8.dp))
             
             ListItem(
-                headlineContent = { Text("App Version") },
-                supportingContent = { Text("1.0.0") },
-                leadingContent = { Icon(Icons.Default.Info, contentDescription = null) }
+                headlineContent = { 
+                    Text("App Version", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("1.0.0", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
             
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-            Text("Reports & Export", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "Reports & Export", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             ListItem(
-                headlineContent = { Text("Export to Excel") },
-                supportingContent = { Text("Generate a spreadsheet with all data") },
+                headlineContent = { 
+                    Text("Export to Excel", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("Generate a spreadsheet with all data", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
                 leadingContent = { 
                     if (isExporting) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Default.Description, contentDescription = null)
+                        Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isExporting) {
                     createDocumentLauncher.launch(ExcelExporter.generateFileName())
-                }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
 
             if (exportedUri != null) {
                 ListItem(
-                    headlineContent = { Text("Share Last Export") },
-                    supportingContent = { Text("Share the generated Excel file") },
-                    leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },
+                    headlineContent = { 
+                        Text("Share Last Export", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                    },
+                    supportingContent = { 
+                        Text("Share the generated Excel file", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                    },
+                    leadingContent = { Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     modifier = Modifier.clickable {
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -122,28 +155,45 @@ fun SettingsScreen(
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         context.startActivity(Intent.createChooser(intent, "Share Excel Report"))
-                    }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }
             
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             
-            Text("Data Management", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+            Text(
+                "Data Management", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = Color(0xFFC62828), // Darker Red
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(8.dp))
             
             ListItem(
-                headlineContent = { Text("Clear All Data") },
-                supportingContent = { Text("Delete all workers, attendance and payments") },
-                leadingContent = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                modifier = Modifier.clickable { showDeleteDialog = true }
+                headlineContent = { 
+                    Text("Clear All Data", fontWeight = FontWeight.Bold, color = Color(0xFFC62828)) 
+                },
+                supportingContent = { 
+                    Text("Delete all workers, attendance and payments", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFC62828)) },
+                modifier = Modifier.clickable { showDeleteDialog = true },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
         }
 
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                title = { Text("Delete Everything?") },
-                text = { Text("This will permanently delete ALL workers, attendance records, and payment history. This action cannot be undone.") },
+                title = { Text("Delete Everything?", fontWeight = FontWeight.Bold) },
+                text = { 
+                    Text(
+                        "This will permanently delete ALL workers, attendance records, and payment history. This action cannot be undone.",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -154,12 +204,12 @@ fun SettingsScreen(
                             }
                         }
                     ) {
-                        Text("Delete Everything", color = MaterialTheme.colorScheme.error)
+                        Text("Delete Everything", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Cancel")
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
             )

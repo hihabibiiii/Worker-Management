@@ -50,12 +50,17 @@ fun AttendanceScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Daily Attendance") },
+                title = { Text("Daily Attendance", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { datePickerDialog.show() }) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Select Date")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
             )
         }
     ) { padding ->
@@ -63,7 +68,7 @@ fun AttendanceScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF5F7FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Date and Site Selector Section
             Column(modifier = Modifier.padding(16.dp)) {
@@ -99,8 +104,9 @@ fun AttendanceScreen(
             if (workersWithAttendance.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        if (selectedSiteId == null) "No active workers found." 
-                        else "No workers assigned to this site on this date."
+                        text = if (selectedSiteId == null) "No active workers found." 
+                        else "No workers assigned to this site on this date.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
@@ -128,7 +134,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {
@@ -138,9 +144,9 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         ) {
             Text(
                 text = name,
-                color = if (isSelected) Color.White else Color.Black,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -157,7 +163,7 @@ fun AttendanceWorkerCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -167,8 +173,18 @@ fun AttendanceWorkerCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(item.worker.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(item.worker.workerType.name, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(
+                        item.worker.name, 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        item.worker.workerType.name, 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
                 
                 if (item.attendance != null) {
@@ -209,6 +225,7 @@ fun AttendanceWorkerCard(
                     "OT: ${item.attendance.overtimeHours} hrs | ₹${item.attendance.overtimeAmount}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -237,24 +254,24 @@ fun StatusButton(
 ) {
     val isSelected = status == selectedStatus
     val color = when (status) {
-        AttendanceStatus.PRESENT -> Color(0xFF4CAF50)
-        AttendanceStatus.HALF_DAY -> Color(0xFFFF9800)
-        AttendanceStatus.ABSENT -> Color(0xFFF44336)
-        AttendanceStatus.OVERTIME -> Color(0xFF2196F3)
-        AttendanceStatus.OFF -> Color.Gray
+        AttendanceStatus.PRESENT -> Color(0xFF2E7D32)
+        AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
+        AttendanceStatus.ABSENT -> Color(0xFFC62828)
+        AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
+        AttendanceStatus.OFF -> Color(0xFF424242)
     }
 
     Surface(
         onClick = onClick,
         modifier = modifier.height(36.dp),
         shape = MaterialTheme.shapes.small,
-        color = if (isSelected) color else Color(0xFFF0F0F0),
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+        color = if (isSelected) color else Color(0xFFEEEEEE),
+        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBDBDBD))
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = label,
-                color = if (isSelected) Color.White else Color.Black,
+                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )
@@ -273,7 +290,7 @@ fun OvertimeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Overtime for $workerName") },
+        title = { Text("Overtime for $workerName", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -296,11 +313,11 @@ fun OvertimeDialog(
                 val h = hours.toDoubleOrNull() ?: 0.0
                 onConfirm(h, note)
             }) {
-                Text("Confirm")
+                Text("Confirm", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
 }

@@ -47,7 +47,8 @@ fun DashboardScreen(
                         Text(
                             "Kaam ka hisaab, har site ke saath",
                             style = MaterialTheme.typography.bodySmall,
-                            fontSize = 10.sp
+                            fontSize = 10.sp,
+                            color = Color.White
                         )
                     }
                 },
@@ -69,7 +70,7 @@ fun DashboardScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .background(Color(0xFFF5F7FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Site Selector Section
             Column(modifier = Modifier.padding(16.dp)) {
@@ -77,6 +78,7 @@ fun DashboardScreen(
                     "All Sites",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 LazyRow(
@@ -106,21 +108,21 @@ fun DashboardScreen(
                     StatBox(
                         label = "Present",
                         value = stats.presentWorkers.toString(),
-                        color = Color(0xFF4CAF50),
+                        color = Color(0xFF2E7D32), // Darker Green
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBox(
                         label = "Half Day",
                         value = stats.halfDayWorkers.toString(),
-                        color = Color(0xFFFF9800),
+                        color = Color(0xFFEF6C00), // Darker Orange
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBox(
                         label = "Absent",
                         value = stats.absentWorkers.toString(),
-                        color = Color(0xFFF44336),
+                        color = Color(0xFFC62828), // Darker Red
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -129,14 +131,14 @@ fun DashboardScreen(
                     StatBox(
                         label = "Overtime",
                         value = stats.overtimeWorkers.toString(),
-                        color = Color(0xFF2196F3),
+                        color = Color(0xFF1565C0), // Darker Blue
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBox(
                         label = "Advance",
                         value = Utils.formatCurrency(stats.totalAdvance),
-                        color = Color(0xFF9C27B0),
+                        color = Color(0xFF6A1B9A), // Darker Purple
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -149,14 +151,15 @@ fun DashboardScreen(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         "Financial Summary",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     SummaryRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
@@ -166,7 +169,7 @@ fun DashboardScreen(
                         label = "Pending Balance",
                         value = Utils.formatCurrency(stats.totalPending),
                         isBold = true,
-                        valueColor = if (stats.totalPending > 0) Color.Red else Color(0xFF4CAF50)
+                        valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
                     )
                 }
             }
@@ -178,6 +181,7 @@ fun DashboardScreen(
                 "Quick Actions",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             Row(
@@ -201,7 +205,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
         modifier = Modifier.height(40.dp)
     ) {
@@ -211,7 +215,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         ) {
             Text(
                 text = name,
-                color = if (isSelected) Color.White else Color.Black,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -222,14 +226,14 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
 fun StatBox(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 value,
                 style = MaterialTheme.typography.titleMedium,
@@ -241,17 +245,21 @@ fun StatBox(label: String, value: String, color: Color, modifier: Modifier = Mod
 }
 
 @Composable
-fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor: Color = Color.Black) {
+fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            label, 
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Text(
             value,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
-            color = valueColor
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -260,7 +268,7 @@ fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor
 fun ActionCard(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -269,7 +277,12 @@ fun ActionCard(label: String, icon: ImageVector, onClick: () -> Unit, modifier: 
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            Text(
+                label, 
+                fontSize = 10.sp, 
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

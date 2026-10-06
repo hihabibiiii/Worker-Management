@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.workers
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,7 +42,7 @@ fun WorkerDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(worker?.name ?: "Worker Details") },
+                title = { Text(worker?.name ?: "Worker Details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -51,13 +52,19 @@ fun WorkerDetailsScreen(
                     Button(
                         onClick = { showTransferDialog = true },
                         modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
                         Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Transfer", fontSize = 12.sp)
+                        Text("Transfer", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         }
     ) { padding ->
@@ -69,7 +76,8 @@ fun WorkerDetailsScreen(
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -82,7 +90,12 @@ fun WorkerDetailsScreen(
                 }
 
                 item {
-                    Text("Site History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Site History", 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
 
                 items(siteHistory) { history ->
@@ -92,7 +105,12 @@ fun WorkerDetailsScreen(
 
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Attendance History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Attendance History", 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
                 
                 items(attendanceHistory) { attendance ->
@@ -102,7 +120,12 @@ fun WorkerDetailsScreen(
                 
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Payment History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Payment History", 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
                 
                 items(paymentHistory) { payment ->
@@ -130,14 +153,24 @@ fun WorkerDetailsScreen(
 fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(worker.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(worker.workerType.name, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Text(
+                        worker.name, 
+                        style = MaterialTheme.typography.headlineSmall, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        worker.workerType.name, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
                 StatusChip(isActive = worker.isActive)
             }
@@ -154,14 +187,16 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
 
 @Composable
 fun StatusChip(isActive: Boolean) {
+    val color = if (isActive) Color(0xFF2E7D32) else Color(0xFFC62828)
     Surface(
-        color = (if (isActive) Color(0xFF4CAF50) else Color.Red).copy(alpha = 0.1f),
+        color = color.copy(alpha = 0.1f),
         shape = MaterialTheme.shapes.small
     ) {
         Text(
             text = if (isActive) "Active" else "Inactive",
-            color = if (isActive) Color(0xFF4CAF50) else Color.Red,
+            color = color,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }
@@ -182,12 +217,15 @@ fun WorkerStatsSection(stats: WorkerStats) {
             Column(modifier = Modifier.padding(16.dp)) {
                 SummaryStatRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
                 SummaryStatRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                )
                 SummaryStatRow(
                     label = "Pending Balance",
                     value = Utils.formatCurrency(stats.pendingBalance),
                     isBold = true,
-                    valueColor = if (stats.pendingBalance > 0) Color.Red else Color(0xFF4CAF50)
+                    valueColor = if (stats.pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
                 )
             }
         }
@@ -198,28 +236,43 @@ fun WorkerStatsSection(stats: WorkerStats) {
 fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                label, 
+                style = MaterialTheme.typography.bodySmall, 
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                value, 
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
 
 @Composable
-fun SummaryStatRow(label: String, value: String, isBold: Boolean = false, valueColor: Color = Color.Black) {
+fun SummaryStatRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            label, 
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
+        )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
-            color = valueColor
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Medium,
+            color = valueColor ?: MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -228,17 +281,26 @@ fun SummaryStatRow(label: String, value: String, isBold: Boolean = false, valueC
 fun SiteHistoryItem(history: WorkerSiteHistoryEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(siteName, fontWeight = FontWeight.Bold)
+            Text(
+                siteName, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             val period = if (history.endDate == null) {
                 "${Utils.formatDate(history.startDate)} → Present"
             } else {
                 "${Utils.formatDate(history.startDate)} → ${Utils.formatDate(history.endDate)}"
             }
-            Text(period, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(
+                period, 
+                style = MaterialTheme.typography.bodySmall, 
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -247,7 +309,8 @@ fun SiteHistoryItem(history: WorkerSiteHistoryEntity, siteName: String) {
 fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
@@ -255,12 +318,31 @@ fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(Utils.formatDate(attendance.date), fontWeight = FontWeight.Medium)
-                Text(siteName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    Utils.formatDate(attendance.date), 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    siteName, 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(attendance.status.name, color = getStatusColor(attendance.status), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                Text(Utils.formatCurrency(attendance.amount), fontSize = 14.sp)
+                Text(
+                    attendance.status.name, 
+                    color = getStatusColor(attendance.status), 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 12.sp
+                )
+                Text(
+                    Utils.formatCurrency(attendance.amount), 
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -270,7 +352,8 @@ fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
 fun PaymentHistoryItem(payment: PaymentEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
@@ -278,29 +361,52 @@ fun PaymentHistoryItem(payment: PaymentEntity, siteName: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(Utils.formatDate(payment.date), fontWeight = FontWeight.Medium)
-                Text("${payment.paymentType.name} - $siteName", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    Utils.formatDate(payment.date), 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "${payment.paymentType.name} - $siteName", 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            Text(Utils.formatCurrency(payment.amount), fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+            Text(
+                Utils.formatCurrency(payment.amount), 
+                fontWeight = FontWeight.ExtraBold, 
+                color = Color(0xFF2E7D32)
+            )
         }
     }
 }
 
 fun getStatusColor(status: AttendanceStatus): Color {
     return when (status) {
-        AttendanceStatus.PRESENT -> Color(0xFF4CAF50)
-        AttendanceStatus.HALF_DAY -> Color(0xFFFF9800)
-        AttendanceStatus.ABSENT -> Color(0xFFF44336)
-        AttendanceStatus.OVERTIME -> Color(0xFF2196F3)
-        AttendanceStatus.OFF -> Color.Gray
+        AttendanceStatus.PRESENT -> Color(0xFF2E7D32)
+        AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
+        AttendanceStatus.ABSENT -> Color(0xFFC62828)
+        AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
+        AttendanceStatus.OFF -> Color(0xFF424242)
     }
 }
 
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(
+            label, 
+            style = MaterialTheme.typography.bodyMedium, 
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            value, 
+            style = MaterialTheme.typography.bodyMedium, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -318,10 +424,10 @@ fun TransferWorkerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Transfer Worker") },
+        title = { Text("Transfer Worker", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Worker: ${worker.name}")
+                Text("Worker: ${worker.name}", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                 
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -341,7 +447,7 @@ fun TransferWorkerDialog(
                     ) {
                         sites.filter { it.id != worker.currentSiteId }.forEach { site ->
                             DropdownMenuItem(
-                                text = { Text(site.name) },
+                                text = { Text(site.name, fontWeight = FontWeight.Medium) },
                                 onClick = {
                                     selectedSiteId = site.id
                                     expanded = false
@@ -352,9 +458,14 @@ fun TransferWorkerDialog(
                 }
                 
                 // Simplified date selection for prompt fulfillment
-                Text("Date: ${Utils.formatDate(transferDate)}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "Date: ${Utils.formatDate(transferDate)}", 
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Button(onClick = { /* In a real app, show DatePickerDialog */ }) {
-                    Text("Select Transfer Date")
+                    Text("Select Transfer Date", fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -363,11 +474,11 @@ fun TransferWorkerDialog(
                 onClick = { selectedSiteId?.let { onConfirm(it, transferDate) } },
                 enabled = selectedSiteId != null
             ) {
-                Text("Transfer")
+                Text("Transfer", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
 }

@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.sites
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,12 +46,17 @@ fun SiteDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(site?.name ?: "Site Details") },
+                title = { Text(site?.name ?: "Site Details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         }
     ) { padding ->
@@ -58,7 +64,8 @@ fun SiteDetailsScreen(
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -71,7 +78,12 @@ fun SiteDetailsScreen(
                 }
 
                 item {
-                    Text("Workers at this Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Workers at this Site", 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
 
                 items(workers) { worker ->
@@ -80,7 +92,11 @@ fun SiteDetailsScreen(
                 
                 if (workers.isEmpty()) {
                     item {
-                        Text("No workers currently assigned to this site.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                        Text(
+                            "No workers currently assigned to this site.", 
+                            style = MaterialTheme.typography.bodyMedium, 
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -96,11 +112,16 @@ fun SiteDetailsScreen(
 fun SiteInfoSection(site: SiteEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Details", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "Details", 
+                style = MaterialTheme.typography.titleSmall, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(8.dp))
             DetailRow("Address", site.address)
             DetailRow("Manager", site.manager)
@@ -126,7 +147,7 @@ fun SiteStatsSection(workers: List<WorkerEntity>, attendance: List<com.example.w
 fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -134,8 +155,14 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(
+                value, 
+                style = MaterialTheme.typography.bodyMedium, 
+                fontWeight = FontWeight.Bold, 
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -143,8 +170,8 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -152,15 +179,24 @@ fun DetailRow(label: String, value: String) {
 fun WorkerListItem(worker: WorkerEntity, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(worker.name, fontWeight = FontWeight.Bold)
-                Text(worker.workerType.name, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(worker.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    worker.workerType.name, 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            Text(Utils.formatCurrency(worker.dailyRate), fontWeight = FontWeight.Medium)
+            Text(
+                Utils.formatCurrency(worker.dailyRate), 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

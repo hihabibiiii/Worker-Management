@@ -1,10 +1,7 @@
 package com.example.workermanager.data.database
 
 import androidx.room.TypeConverter
-import com.example.workermanager.data.entity.AttendanceStatus
-import com.example.workermanager.data.entity.PaymentMethod
-import com.example.workermanager.data.entity.SiteStatus
-import com.example.workermanager.data.entity.WorkerType
+import com.example.workermanager.data.entity.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -39,6 +36,16 @@ class Converters {
     @TypeConverter
     fun toPaymentMethod(value: String): PaymentMethod {
         return PaymentMethod.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromPaymentType(value: PaymentType): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toPaymentType(value: String): PaymentType {
+        return PaymentType.valueOf(value)
     }
 
     @TypeConverter

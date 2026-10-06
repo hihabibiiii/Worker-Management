@@ -38,14 +38,21 @@ fun ReportsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Performance Reports") })
+            TopAppBar(
+                title = { Text("Performance Reports", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF5F7FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Selectors Section
             Column(modifier = Modifier.padding(16.dp)) {
@@ -80,6 +87,7 @@ fun ReportsScreen(
                 "Worker Performance",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             
@@ -95,7 +103,7 @@ fun ReportsScreen(
                 if (reports.isEmpty()) {
                     item {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("No data available for this selection.", color = Color.Gray)
+                            Text("No data available for this selection.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -109,7 +117,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {
@@ -119,9 +127,9 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         ) {
             Text(
                 text = name,
-                color = if (isSelected) Color.White else Color.Black,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -134,7 +142,7 @@ fun MonthSelector(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -143,15 +151,24 @@ fun MonthSelector(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { onMonthChange(selectedMonth.minusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Prev")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft, 
+                    contentDescription = "Prev",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
             Text(
                 text = "${selectedMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${selectedMonth.year}",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
             IconButton(onClick = { onMonthChange(selectedMonth.plusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight, 
+                    contentDescription = "Next",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -168,21 +185,43 @@ fun SummarySection(reports: List<WorkerMonthlyReport>) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Monthly Summary", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Monthly Summary", 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
             Spacer(modifier = Modifier.height(8.dp))
             ReportStatRow("Total Earnings", Utils.formatCurrency(totalEarned))
             ReportStatRow("Total Payments", Utils.formatCurrency(totalPaid))
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White.copy(alpha = 0.5f))
-            ReportStatRow("Net Due", Utils.formatCurrency(totalPending), isBold = true)
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp), 
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+            )
+            ReportStatRow(
+                label = "Net Due", 
+                value = Utils.formatCurrency(totalPending), 
+                isBold = true,
+                valueColor = if (totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+            )
         }
     }
 }
 
 @Composable
-fun ReportStatRow(label: String, value: String, isBold: Boolean = false) {
+fun ReportStatRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal)
+        Text(
+            label, 
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            value, 
+            style = MaterialTheme.typography.bodyMedium, 
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            color = valueColor ?: MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
 
@@ -190,28 +229,44 @@ fun ReportStatRow(label: String, value: String, isBold: Boolean = false) {
 fun ReportItem(report: WorkerMonthlyReport) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(report.workerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                report.workerName, 
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     "P: ${report.presentDays} | H: ${report.halfDays} | A: ${report.absentDays} | OT: ${report.overtimeHours}h",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Earned: ${Utils.formatCurrency(report.totalEarned)}", fontSize = 12.sp)
-                Text("Paid: ${Utils.formatCurrency(report.totalPaid)}", fontSize = 12.sp)
+                Text(
+                    "Earned: ${Utils.formatCurrency(report.totalEarned)}", 
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Paid: ${Utils.formatCurrency(report.totalPaid)}", 
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
                 Text(
                     "Due: ${Utils.formatCurrency(report.pendingBalance)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (report.pendingBalance > 0) Color.Red else Color(0xFF4CAF50)
+                    color = if (report.pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
                 )
             }
         }

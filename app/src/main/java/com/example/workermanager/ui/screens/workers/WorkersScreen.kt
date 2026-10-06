@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.workers
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,7 +46,14 @@ fun WorkersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Workers") })
+            TopAppBar(
+                title = { Text("Workers", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -53,7 +61,12 @@ fun WorkersScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
@@ -62,12 +75,16 @@ fun WorkersScreen(
                     .padding(16.dp),
                 placeholder = { Text("Search by name or phone") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             if (workers.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No workers added yet.")
+                    Text("No workers added yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -127,19 +144,19 @@ fun WorkersScreen(
         if (workerToDelete != null) {
             AlertDialog(
                 onDismissRequest = { workerToDelete = null },
-                title = { Text("Delete Worker") },
-                text = { Text("Delete this worker and all related attendance/payment records? This cannot be undone.") },
+                title = { Text("Delete Worker", fontWeight = FontWeight.Bold) },
+                text = { Text("Delete this worker and all related attendance/payment records? This cannot be undone.", color = MaterialTheme.colorScheme.onSurface) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteWorker(workerToDelete!!)
                         workerToDelete = null
                     }) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { workerToDelete = null }) {
-                        Text("Cancel")
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
             )
@@ -161,35 +178,60 @@ fun WorkerCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(worker.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    worker.name, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(worker.workerType.name, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(
+                        worker.workerType.name, 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("•", color = Color.Gray)
+                    Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(siteName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        siteName, 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "Balance: ${Utils.formatCurrency(pendingBalance)}",
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = if (pendingBalance > 0) Color.Red else Color(0xFF4CAF50)
+                    fontWeight = FontWeight.Bold,
+                    color = if (pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
                 )
             }
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Edit, 
+                        contentDescription = "Edit", 
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Delete, 
+                        contentDescription = "Delete", 
+                        tint = Color(0xFFC62828), 
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -219,7 +261,7 @@ fun WorkerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (worker == null) "Add Worker" else "Edit Worker") },
+        title = { Text(if (worker == null) "Add Worker" else "Edit Worker", fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -251,15 +293,30 @@ fun WorkerDialog(
                     )
                     ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
                         WorkerType.entries.forEach { t ->
-                            DropdownMenuItem(text = { Text(t.name) }, onClick = { type = t; typeExpanded = false })
+                            DropdownMenuItem(
+                                text = { Text(t.name, fontWeight = FontWeight.Medium) }, 
+                                onClick = { type = t; typeExpanded = false }
+                            )
                         }
                     }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(value = dailyRate, onValueChange = { dailyRate = it }, label = { Text("Daily Rate*") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = dailyRate, 
+                        onValueChange = { dailyRate = it }, 
+                        label = { Text("Daily Rate*") }, 
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), 
+                        modifier = Modifier.weight(1f)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedTextField(value = otRate, onValueChange = { otRate = it }, label = { Text("OT Rate/Hr") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = otRate, 
+                        onValueChange = { otRate = it }, 
+                        label = { Text("OT Rate/Hr") }, 
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), 
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
                 // Site selection (only for new workers or showing current)
@@ -274,7 +331,10 @@ fun WorkerDialog(
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
                         sites.forEach { site ->
-                            DropdownMenuItem(text = { Text(site.name) }, onClick = { siteId = site.id; siteExpanded = false })
+                            DropdownMenuItem(
+                                text = { Text(site.name, fontWeight = FontWeight.Medium) }, 
+                                onClick = { siteId = site.id; siteExpanded = false }
+                            )
                         }
                     }
                 }
@@ -283,7 +343,7 @@ fun WorkerDialog(
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = isActive, onCheckedChange = { isActive = it })
-                    Text("Active")
+                    Text("Active", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         },
@@ -296,10 +356,10 @@ fun WorkerDialog(
                         onConfirm(name, phone, type, dRate, oRate, joiningDate, siteId, notes, isActive)
                     }
                 }
-            ) { Text("Save") }
+            ) { Text("Save", fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
 }

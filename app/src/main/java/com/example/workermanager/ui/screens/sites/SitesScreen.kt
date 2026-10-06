@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.sites
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,7 +30,14 @@ fun SitesScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Project Sites") })
+            TopAppBar(
+                title = { Text("Project Sites", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -39,13 +47,14 @@ fun SitesScreen(
     ) { padding ->
         if (sites.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No sites added yet.")
+                Text("No sites added yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -74,7 +83,7 @@ fun SiteItem(site: SiteEntity, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -88,8 +97,18 @@ fun SiteItem(site: SiteEntity, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(site.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(site.address, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    site.name, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    site.address, 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 StatusChip(site.status)
             }
@@ -100,9 +119,9 @@ fun SiteItem(site: SiteEntity, onClick: () -> Unit) {
 @Composable
 fun StatusChip(status: SiteStatus) {
     val color = when (status) {
-        SiteStatus.ACTIVE -> Color(0xFF4CAF50)
-        SiteStatus.COMPLETED -> Color(0xFF2196F3)
-        SiteStatus.ON_HOLD -> Color(0xFFFF9800)
+        SiteStatus.ACTIVE -> Color(0xFF2E7D32) // Darker Green
+        SiteStatus.COMPLETED -> Color(0xFF1565C0) // Darker Blue
+        SiteStatus.ON_HOLD -> Color(0xFFEF6C00) // Darker Orange
     }
     Surface(
         color = color.copy(alpha = 0.1f),
@@ -112,6 +131,7 @@ fun StatusChip(status: SiteStatus) {
             text = status.name,
             color = color,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }
@@ -126,7 +146,7 @@ fun AddSiteDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> 
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Site") },
+        title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Site Name") })
@@ -136,11 +156,11 @@ fun AddSiteDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> 
         },
         confirmButton = {
             Button(onClick = { if (name.isNotEmpty()) onConfirm(name, address, manager) }) {
-                Text("Add")
+                Text("Add", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
 }

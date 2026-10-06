@@ -39,6 +39,7 @@ fun PaymentsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sites by siteViewModel.allSites.collectAsStateWithLifecycle()
+    val workers by viewModel.workers.collectAsStateWithLifecycle()
     val selectedSiteId by viewModel.selectedSiteId.collectAsStateWithLifecycle()
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -46,7 +47,14 @@ fun PaymentsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Payments") })
+            TopAppBar(
+                title = { Text("Payments", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -58,7 +66,7 @@ fun PaymentsScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF5F7FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Site Selector
             LazyRow(
@@ -91,7 +99,7 @@ fun PaymentsScreen(
                             text = "No payments recorded for this selection.",
                             modifier = Modifier.align(Alignment.Center),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     is PaymentsUiState.Success -> {
@@ -120,6 +128,7 @@ fun PaymentsScreen(
         if (showAddDialog) {
             AddPaymentDialog(
                 sites = sites,
+                workers = workers,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { workerId, siteId, amount, method, type, date, note ->
                     viewModel.addPayment(workerId, siteId, amount, method, type, date, note)
@@ -131,19 +140,19 @@ fun PaymentsScreen(
         if (paymentToDelete != null) {
             AlertDialog(
                 onDismissRequest = { paymentToDelete = null },
-                title = { Text("Delete Payment") },
-                text = { Text("Are you sure you want to delete this payment record?") },
+                title = { Text("Delete Payment", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to delete this payment record?", color = MaterialTheme.colorScheme.onSurface) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deletePayment(paymentToDelete!!)
                         paymentToDelete = null
                     }) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { paymentToDelete = null }) {
-                        Text("Cancel")
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
             )
@@ -156,7 +165,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {
@@ -166,9 +175,9 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         ) {
             Text(
                 text = name,
-                color = if (isSelected) Color.White else Color.Black,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -180,7 +189,7 @@ fun PaymentCard(payment: PaymentEntity, workerName: String, siteName: String, on
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -189,12 +198,37 @@ fun PaymentCard(payment: PaymentEntity, workerName: String, siteName: String, on
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(workerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Site: $siteName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                Text("Date: ${Utils.formatDate(payment.date)}", style = MaterialTheme.typography.bodyMedium)
-                Text("Type: ${payment.paymentType.name} | ${payment.method.name}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    workerName, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Site: $siteName", 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Date: ${Utils.formatDate(payment.date)}", 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Type: ${payment.paymentType.name} | ${payment.method.name}", 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
                 if (payment.note.isNotEmpty()) {
-                    Text("Note: ${payment.note}", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "Note: ${payment.note}", 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -202,10 +236,14 @@ fun PaymentCard(payment: PaymentEntity, workerName: String, siteName: String, on
                     text = Utils.formatCurrency(payment.amount),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
+                    color = Color(0xFF2E7D32) // Darker Green
                 )
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    Icon(
+                        Icons.Default.Delete, 
+                        contentDescription = "Delete", 
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -216,6 +254,7 @@ fun PaymentCard(payment: PaymentEntity, workerName: String, siteName: String, on
 @Composable
 fun AddPaymentDialog(
     sites: List<SiteEntity>,
+    workers: List<WorkerEntity>,
     onDismiss: () -> Unit,
     onConfirm: (Long, Long, Double, PaymentMethod, PaymentType, LocalDate, String) -> Unit
 ) {
@@ -228,6 +267,7 @@ fun AddPaymentDialog(
     var note by remember { mutableStateOf("") }
     
     var siteExpanded by remember { mutableStateOf(false) }
+    var workerExpanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val datePickerDialog = DatePickerDialog(
@@ -242,7 +282,7 @@ fun AddPaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Make Payment") },
+        title = { Text("Make Payment", fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -264,14 +304,70 @@ fun AddPaymentDialog(
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
                         sites.forEach { site ->
                             DropdownMenuItem(
-                                text = { Text(site.name) },
-                                onClick = { selectedSiteId = site.id; selectedWorkerId = null; siteExpanded = false }
+                                text = { Text(site.name, fontWeight = FontWeight.Medium) },
+                                onClick = { 
+                                    selectedSiteId = site.id
+                                    selectedWorkerId = null
+                                    siteExpanded = false 
+                                }
                             )
                         }
                     }
                 }
 
-                Text("Site selection required", style = MaterialTheme.typography.labelSmall)
+                // Worker Selection
+                val filteredWorkers = if (selectedSiteId != null) {
+                    workers.filter { it.currentSiteId == selectedSiteId }
+                } else {
+                    emptyList()
+                }
+
+                ExposedDropdownMenuBox(
+                    expanded = workerExpanded,
+                    onExpandedChange = { 
+                        if (selectedSiteId != null) workerExpanded = !workerExpanded 
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = filteredWorkers.find { it.id == selectedWorkerId }?.name ?: "Select Labour*",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Labour") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = workerExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        enabled = selectedSiteId != null
+                    )
+                    ExposedDropdownMenu(
+                        expanded = workerExpanded,
+                        onDismissRequest = { workerExpanded = false }
+                    ) {
+                        if (filteredWorkers.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No labour assigned to this site", color = MaterialTheme.colorScheme.error) },
+                                onClick = { workerExpanded = false }
+                            )
+                        } else {
+                            filteredWorkers.forEach { worker ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(worker.name, fontWeight = FontWeight.Medium)
+                                            Text(worker.workerType.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    },
+                                    onClick = { 
+                                        selectedWorkerId = worker.id
+                                        workerExpanded = false 
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (selectedSiteId == null) {
+                    Text("Site selection required", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                }
 
                 OutlinedTextField(
                     value = amount,
@@ -294,24 +390,24 @@ fun AddPaymentDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Payment Type", style = MaterialTheme.typography.labelSmall)
+                Text("Payment Type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     PaymentType.entries.forEach { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
-                            label = { Text(type.name, fontSize = 10.sp) }
+                            label = { Text(type.name, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
                         )
                     }
                 }
 
-                Text("Method", style = MaterialTheme.typography.labelSmall)
+                Text("Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaymentMethod.entries.forEach { method ->
                         FilterChip(
                             selected = selectedMethod == method,
                             onClick = { selectedMethod = method },
-                            label = { Text(method.name) }
+                            label = { Text(method.name, fontWeight = FontWeight.Bold) }
                         )
                     }
                 }
@@ -328,18 +424,17 @@ fun AddPaymentDialog(
             Button(
                 onClick = {
                     val amountVal = amount.toDoubleOrNull() ?: 0.0
-                    if (selectedSiteId != null && amountVal > 0) {
-                        // For simplicity, using siteId as a placeholder for workerId if logic is simplified
-                        onConfirm(0L, selectedSiteId!!, amountVal, selectedMethod, selectedType, selectedDate, note)
+                    if (selectedSiteId != null && selectedWorkerId != null && amountVal > 0) {
+                        onConfirm(selectedWorkerId!!, selectedSiteId!!, amountVal, selectedMethod, selectedType, selectedDate, note)
                     }
                 },
-                enabled = selectedSiteId != null && amount.isNotEmpty()
+                enabled = selectedSiteId != null && selectedWorkerId != null && amount.isNotEmpty()
             ) {
-                Text("Save")
+                Text("Save", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
 }

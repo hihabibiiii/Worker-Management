@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 import java.time.LocalDate
 
 enum class AttendanceStatus {
-    PRESENT, HALF_DAY, ABSENT, OVERTIME, OFF
+    PRESENT, HALF_DAY, ABSENT, OVERTIME
 }
 
 @Entity(

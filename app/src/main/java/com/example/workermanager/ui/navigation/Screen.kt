@@ -2,6 +2,7 @@ package com.example.workermanager.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
@@ -15,6 +16,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Workers : Screen("workers", "Workers", Icons.Default.Groups)
     data object Attendance : Screen("attendance", "Attendance", Icons.Default.History)
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
+    data object Contracts : Screen("contracts", "Contracts", Icons.Default.Assignment)
     data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
     
     data object SiteDetails : Screen("site_details/{siteId}", "Site Details") {
@@ -23,6 +25,10 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     
     data object WorkerDetails : Screen("worker_details/{workerId}", "Worker Details") {
         fun createRoute(workerId: Long) = "worker_details/$workerId"
+    }
+
+    data object ContractDetails : Screen("contract_details/{contractId}", "Contract Details") {
+        fun createRoute(contractId: Long) = "contract_details/$contractId"
     }
 
     data object Settings : Screen("settings", "Settings")

@@ -25,7 +25,12 @@ class Converters {
 
     @TypeConverter
     fun toAttendanceStatus(value: String): AttendanceStatus {
-        return AttendanceStatus.valueOf(value)
+        return try {
+            AttendanceStatus.valueOf(value)
+        } catch (e: IllegalArgumentException) {
+            // Fallback for legacy "OFF" status or any other unknown status
+            AttendanceStatus.ABSENT
+        }
     }
 
     @TypeConverter
@@ -66,5 +71,25 @@ class Converters {
     @TypeConverter
     fun toWorkerType(value: String): WorkerType {
         return WorkerType.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromContractStatus(value: ContractStatus): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toContractStatus(value: String): ContractStatus {
+        return ContractStatus.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromClientPaymentMethod(value: ClientPaymentMethod): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toClientPaymentMethod(value: String): ClientPaymentMethod {
+        return ClientPaymentMethod.valueOf(value)
     }
 }

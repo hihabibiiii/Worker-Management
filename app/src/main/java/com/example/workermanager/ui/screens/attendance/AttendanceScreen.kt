@@ -2,7 +2,6 @@ package com.example.workermanager.ui.screens.attendance
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -215,9 +214,6 @@ fun AttendanceWorkerCard(
                 StatusButton("OT", AttendanceStatus.OVERTIME, item.attendance?.status, Modifier.weight(1f)) {
                     showOtDialog = true
                 }
-                StatusButton("OFF", AttendanceStatus.OFF, item.attendance?.status, Modifier.weight(1f)) {
-                    onStatusChange(AttendanceStatus.OFF, 0.0, "")
-                }
             }
 
             if (item.attendance?.status == AttendanceStatus.OVERTIME) {
@@ -258,7 +254,7 @@ fun StatusButton(
         AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
         AttendanceStatus.ABSENT -> Color(0xFFC62828)
         AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
-        AttendanceStatus.OFF -> Color(0xFF424242)
+        else -> Color(0xFF424242)
     }
 
     Surface(
@@ -271,7 +267,7 @@ fun StatusButton(
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = label,
-                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                color = if (isSelected) Color.White else Color(0xFF333333),
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )

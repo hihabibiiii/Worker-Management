@@ -156,7 +156,7 @@ fun DashboardScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Financial Summary",
+                        "Financial Summary (Labour)",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -170,6 +170,37 @@ fun DashboardScreen(
                         value = Utils.formatCurrency(stats.totalPending),
                         isBold = true,
                         valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Client Payments Summary
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Client Payments Summary",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SummaryRow("Total Contracts", stats.totalContracts.toString())
+                    SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
+                    SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                    SummaryRow(
+                        label = "Total Remaining",
+                        value = Utils.formatCurrency(stats.totalContractRemaining),
+                        isBold = true,
+                        valueColor = MaterialTheme.colorScheme.error
                     )
                 }
             }

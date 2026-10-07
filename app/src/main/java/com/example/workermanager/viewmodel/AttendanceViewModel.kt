@@ -77,7 +77,6 @@ class AttendanceViewModel(
                 AttendanceStatus.HALF_DAY -> worker.dailyRate / 2.0
                 AttendanceStatus.ABSENT -> 0.0
                 AttendanceStatus.OVERTIME -> 0.0 
-                AttendanceStatus.OFF -> 0.0
             }
             
             val totalAmount = baseAmount + overtimeAmount

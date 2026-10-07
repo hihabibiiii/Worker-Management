@@ -388,7 +388,6 @@ fun getStatusColor(status: AttendanceStatus): Color {
         AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
         AttendanceStatus.ABSENT -> Color(0xFFC62828)
         AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
-        AttendanceStatus.OFF -> Color(0xFF424242)
     }
 }
 

@@ -2,10 +2,7 @@ package com.example.workermanager
 
 import android.app.Application
 import com.example.workermanager.data.database.AppDatabase
-import com.example.workermanager.data.repository.AttendanceRepository
-import com.example.workermanager.data.repository.PaymentRepository
-import com.example.workermanager.data.repository.SiteRepository
-import com.example.workermanager.data.repository.WorkerRepository
+import com.example.workermanager.data.repository.*
 
 class WorkerApplication : Application() {
     val database by lazy { AppDatabase.getDatabase(this) }
@@ -19,4 +16,8 @@ class WorkerApplication : Application() {
     val attendanceRepository by lazy { AttendanceRepository(database.attendanceDao()) }
 
     val paymentRepository by lazy { PaymentRepository(database.paymentDao()) }
+
+    val contractRepository by lazy { ContractRepository(database.contractDao()) }
+
+    val clientPaymentRepository by lazy { ClientPaymentRepository(database.clientPaymentDao()) }
 }

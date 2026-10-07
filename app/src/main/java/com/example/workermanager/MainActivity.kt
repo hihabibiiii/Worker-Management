@@ -10,8 +10,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -23,6 +25,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.workermanager.ui.navigation.Screen
 import com.example.workermanager.ui.screens.attendance.AttendanceScreen
+import com.example.workermanager.ui.screens.contracts.ContractDetailsScreen
+import com.example.workermanager.ui.screens.contracts.ContractsScreen
 import com.example.workermanager.ui.screens.dashboard.DashboardScreen
 import com.example.workermanager.ui.screens.payments.PaymentsScreen
 import com.example.workermanager.ui.screens.reports.ReportsScreen
@@ -32,20 +36,7 @@ import com.example.workermanager.ui.screens.sites.SitesScreen
 import com.example.workermanager.ui.screens.workers.WorkerDetailsScreen
 import com.example.workermanager.ui.screens.workers.WorkersScreen
 import com.example.workermanager.ui.theme.WorkerManagerTheme
-import com.example.workermanager.viewmodel.AttendanceViewModel
-import com.example.workermanager.viewmodel.AttendanceViewModelFactory
-import com.example.workermanager.viewmodel.DashboardViewModel
-import com.example.workermanager.viewmodel.DashboardViewModelFactory
-import com.example.workermanager.viewmodel.PaymentViewModel
-import com.example.workermanager.viewmodel.PaymentViewModelFactory
-import com.example.workermanager.viewmodel.ReportViewModel
-import com.example.workermanager.viewmodel.ReportViewModelFactory
-import com.example.workermanager.viewmodel.SettingsViewModel
-import com.example.workermanager.viewmodel.SettingsViewModelFactory
-import com.example.workermanager.viewmodel.SiteViewModel
-import com.example.workermanager.viewmodel.SiteViewModelFactory
-import com.example.workermanager.viewmodel.WorkerViewModel
-import com.example.workermanager.viewmodel.WorkerViewModelFactory
+import com.example.workermanager.viewmodel.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,13 +59,16 @@ class MainActivity : ComponentActivity() {
                     factory = PaymentViewModelFactory(app.paymentRepository, app.workerRepository, app.siteRepository)
                 )
                 val dashboardViewModel: DashboardViewModel = viewModel(
-                    factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository)
+                    factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
                 )
                 val reportViewModel: ReportViewModel = viewModel(
-                    factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository)
+                    factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
                 )
                 val settingsViewModel: SettingsViewModel = viewModel(
                     factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository)
+                )
+                val contractViewModel: ContractViewModel = viewModel(
+                    factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)
                 )
 
                 val navItems = listOf(
@@ -83,6 +77,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Workers,
                     Screen.Attendance,
                     Screen.Payments,
+                    Screen.Contracts,
                     Screen.Reports
                 )
 
@@ -90,14 +85,21 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
-                        
+
                         // Only show bottom bar for main screens
                         if (navItems.any { it.route == currentDestination?.route }) {
                             NavigationBar {
                                 navItems.forEach { screen ->
                                     NavigationBarItem(
                                         icon = { screen.icon?.let { Icon(it, contentDescription = null) } },
-                                        label = { Text(screen.title) },
+                                        label = { 
+                                            Text(
+                                                text = screen.title,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                fontSize = 10.sp
+                                            ) 
+                                        },
                                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                         onClick = {
                                             navController.navigate(screen.route) {
@@ -190,6 +192,27 @@ class MainActivity : ComponentActivity() {
                             PaymentsScreen(
                                 viewModel = paymentViewModel,
                                 siteViewModel = siteViewModel
+                            )
+                        }
+                        composable(Screen.Contracts.route) {
+                            val sitesList by siteViewModel.allSites.collectAsState(initial = emptyList())
+                            ContractsScreen(
+                                viewModel = contractViewModel,
+                                sites = sitesList,
+                                onContractClick = { contractId ->
+                                    navController.navigate(Screen.ContractDetails.createRoute(contractId))
+                                }
+                            )
+                        }
+                        composable(
+                            route = Screen.ContractDetails.route,
+                            arguments = listOf(navArgument("contractId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val contractId = backStackEntry.arguments?.getLong("contractId") ?: 0L
+                            ContractDetailsScreen(
+                                contractId = contractId,
+                                viewModel = contractViewModel,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable(Screen.Reports.route) {

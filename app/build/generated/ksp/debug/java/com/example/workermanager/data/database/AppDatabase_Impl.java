@@ -13,6 +13,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import com.example.workermanager.data.dao.AttendanceDao;
 import com.example.workermanager.data.dao.AttendanceDao_Impl;
+import com.example.workermanager.data.dao.ClientPaymentDao;
+import com.example.workermanager.data.dao.ClientPaymentDao_Impl;
+import com.example.workermanager.data.dao.ContractDao;
+import com.example.workermanager.data.dao.ContractDao_Impl;
 import com.example.workermanager.data.dao.PaymentDao;
 import com.example.workermanager.data.dao.PaymentDao_Impl;
 import com.example.workermanager.data.dao.SiteDao;
@@ -47,10 +51,14 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile WorkerSiteHistoryDao _workerSiteHistoryDao;
 
+  private volatile ContractDao _contractDao;
+
+  private volatile ClientPaymentDao _clientPaymentDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(2) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL)");
@@ -59,8 +67,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` TEXT NOT NULL, `method` TEXT NOT NULL, `paymentType` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `sites` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `address` TEXT NOT NULL, `manager` TEXT NOT NULL, `startDate` TEXT NOT NULL, `status` TEXT NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `worker_site_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `contracts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientName` TEXT NOT NULL, `mobile` TEXT NOT NULL, `siteId` INTEGER, `totalAmount` REAL NOT NULL, `startDate` TEXT NOT NULL, `notes` TEXT NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `client_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `contractId` INTEGER NOT NULL, `amount` REAL NOT NULL, `paymentDate` TEXT NOT NULL, `method` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`contractId`) REFERENCES `contracts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '17baa4e354f428bd01a7b08b154b5520')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dfc45e6b7e7654eba5a9dd410b726711')");
       }
 
       @Override
@@ -70,6 +80,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `payments`");
         db.execSQL("DROP TABLE IF EXISTS `sites`");
         db.execSQL("DROP TABLE IF EXISTS `worker_site_history`");
+        db.execSQL("DROP TABLE IF EXISTS `contracts`");
+        db.execSQL("DROP TABLE IF EXISTS `client_payments`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -212,9 +224,46 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoWorkerSiteHistory + "\n"
                   + " Found:\n" + _existingWorkerSiteHistory);
         }
+        final HashMap<String, TableInfo.Column> _columnsContracts = new HashMap<String, TableInfo.Column>(8);
+        _columnsContracts.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("clientName", new TableInfo.Column("clientName", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("mobile", new TableInfo.Column("mobile", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("siteId", new TableInfo.Column("siteId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("totalAmount", new TableInfo.Column("totalAmount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("startDate", new TableInfo.Column("startDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("status", new TableInfo.Column("status", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysContracts = new HashSet<TableInfo.ForeignKey>(1);
+        _foreignKeysContracts.add(new TableInfo.ForeignKey("sites", "SET NULL", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesContracts = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoContracts = new TableInfo("contracts", _columnsContracts, _foreignKeysContracts, _indicesContracts);
+        final TableInfo _existingContracts = TableInfo.read(db, "contracts");
+        if (!_infoContracts.equals(_existingContracts)) {
+          return new RoomOpenHelper.ValidationResult(false, "contracts(com.example.workermanager.data.entity.ContractEntity).\n"
+                  + " Expected:\n" + _infoContracts + "\n"
+                  + " Found:\n" + _existingContracts);
+        }
+        final HashMap<String, TableInfo.Column> _columnsClientPayments = new HashMap<String, TableInfo.Column>(7);
+        _columnsClientPayments.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("contractId", new TableInfo.Column("contractId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("amount", new TableInfo.Column("amount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("paymentDate", new TableInfo.Column("paymentDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("method", new TableInfo.Column("method", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("note", new TableInfo.Column("note", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysClientPayments = new HashSet<TableInfo.ForeignKey>(1);
+        _foreignKeysClientPayments.add(new TableInfo.ForeignKey("contracts", "CASCADE", "NO ACTION", Arrays.asList("contractId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesClientPayments = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoClientPayments = new TableInfo("client_payments", _columnsClientPayments, _foreignKeysClientPayments, _indicesClientPayments);
+        final TableInfo _existingClientPayments = TableInfo.read(db, "client_payments");
+        if (!_infoClientPayments.equals(_existingClientPayments)) {
+          return new RoomOpenHelper.ValidationResult(false, "client_payments(com.example.workermanager.data.entity.ClientPaymentEntity).\n"
+                  + " Expected:\n" + _infoClientPayments + "\n"
+                  + " Found:\n" + _existingClientPayments);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "17baa4e354f428bd01a7b08b154b5520", "51c935a04901ba2e26e09d2c6040f567");
+    }, "dfc45e6b7e7654eba5a9dd410b726711", "4b3b269b47c974e63938adc1771cf647");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -225,7 +274,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments");
   }
 
   @Override
@@ -246,6 +295,8 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `payments`");
       _db.execSQL("DELETE FROM `sites`");
       _db.execSQL("DELETE FROM `worker_site_history`");
+      _db.execSQL("DELETE FROM `contracts`");
+      _db.execSQL("DELETE FROM `client_payments`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -268,6 +319,8 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(PaymentDao.class, PaymentDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(SiteDao.class, SiteDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(WorkerSiteHistoryDao.class, WorkerSiteHistoryDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(ContractDao.class, ContractDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(ClientPaymentDao.class, ClientPaymentDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -352,6 +405,34 @@ public final class AppDatabase_Impl extends AppDatabase {
           _workerSiteHistoryDao = new WorkerSiteHistoryDao_Impl(this);
         }
         return _workerSiteHistoryDao;
+      }
+    }
+  }
+
+  @Override
+  public ContractDao contractDao() {
+    if (_contractDao != null) {
+      return _contractDao;
+    } else {
+      synchronized(this) {
+        if(_contractDao == null) {
+          _contractDao = new ContractDao_Impl(this);
+        }
+        return _contractDao;
+      }
+    }
+  }
+
+  @Override
+  public ClientPaymentDao clientPaymentDao() {
+    if (_clientPaymentDao != null) {
+      return _clientPaymentDao;
+    } else {
+      synchronized(this) {
+        if(_clientPaymentDao == null) {
+          _clientPaymentDao = new ClientPaymentDao_Impl(this);
+        }
+        return _clientPaymentDao;
       }
     }
   }

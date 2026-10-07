@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.workermanager.data.entity.AttendanceStatus
 import com.example.workermanager.data.repository.AttendanceRepository
+import com.example.workermanager.data.repository.ClientPaymentRepository
+import com.example.workermanager.data.repository.ContractRepository
 import com.example.workermanager.data.repository.PaymentRepository
 import com.example.workermanager.data.repository.WorkerRepository
 import kotlinx.coroutines.flow.*
@@ -14,7 +16,9 @@ import java.time.YearMonth
 class ReportViewModel(
     private val workerRepository: WorkerRepository,
     private val attendanceRepository: AttendanceRepository,
-    private val paymentRepository: PaymentRepository
+    private val paymentRepository: PaymentRepository,
+    private val contractRepository: ContractRepository,
+    private val clientPaymentRepository: ClientPaymentRepository
 ) : ViewModel() {
 
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
@@ -65,6 +69,30 @@ class ReportViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val contractReport = _selectedSiteId.flatMapLatest { siteId ->
+        val contractsFlow = if (siteId == null) contractRepository.allContracts
+                           else contractRepository.getContractsBySite(siteId)
+        
+        contractsFlow.flatMapLatest { contracts ->
+            if (contracts.isEmpty()) flowOf(emptyList<ContractReportModel>())
+            else {
+                val flows = contracts.map { contract ->
+                    clientPaymentRepository.getTotalReceivedByContract(contract.id).map { received ->
+                        ContractReportModel(
+                            clientName = contract.clientName,
+                            siteId = contract.siteId,
+                            contractAmount = contract.totalAmount,
+                            totalReceived = received ?: 0.0,
+                            remaining = contract.totalAmount - (received ?: 0.0)
+                        )
+                    }
+                }
+                combine(flows) { it.toList() }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     fun updateMonth(month: YearMonth) {
         _selectedMonth.value = month
     }
@@ -86,15 +114,25 @@ data class WorkerMonthlyReport(
     val pendingBalance: Double = totalEarned - totalPaid
 }
 
+data class ContractReportModel(
+    val clientName: String,
+    val siteId: Long?,
+    val contractAmount: Double,
+    val totalReceived: Double,
+    val remaining: Double
+)
+
 class ReportViewModelFactory(
     private val workerRepository: WorkerRepository,
     private val attendanceRepository: AttendanceRepository,
-    private val paymentRepository: PaymentRepository
+    private val paymentRepository: PaymentRepository,
+    private val contractRepository: ContractRepository,
+    private val clientPaymentRepository: ClientPaymentRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReportViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ReportViewModel(workerRepository, attendanceRepository, paymentRepository) as T
+            return ReportViewModel(workerRepository, attendanceRepository, paymentRepository, contractRepository, clientPaymentRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

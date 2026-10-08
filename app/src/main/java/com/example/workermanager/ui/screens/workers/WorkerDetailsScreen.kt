@@ -421,6 +421,17 @@ fun TransferWorkerDialog(
     var transferDate by remember { mutableStateOf(LocalDate.now()) }
     var expanded by remember { mutableStateOf(false) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val datePickerDialog = android.app.DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            transferDate = LocalDate.of(year, month + 1, dayOfMonth)
+        },
+        transferDate.year,
+        transferDate.monthValue - 1,
+        transferDate.dayOfMonth
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Transfer Worker", fontWeight = FontWeight.Bold) },
@@ -463,7 +474,7 @@ fun TransferWorkerDialog(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Button(onClick = { /* In a real app, show DatePickerDialog */ }) {
+                Button(onClick = { datePickerDialog.show() }) {
                     Text("Select Transfer Date", fontWeight = FontWeight.Bold)
                 }
             }

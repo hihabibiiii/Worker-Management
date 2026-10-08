@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,8 +37,11 @@ fun ContractDetailsScreen(
 ) {
     val contractModel by viewModel.getContractDetails(contractId).collectAsState(initial = null)
     val payments by viewModel.getPaymentsForContract(contractId).collectAsState(initial = emptyList())
+    val sites by viewModel.allSites.collectAsState(initial = emptyList())
     var showAddPaymentDialog by remember { mutableStateOf(false) }
     var paymentToDelete by remember { mutableStateOf<ClientPaymentEntity?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -48,18 +52,27 @@ fun ContractDetailsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    if (contractModel != null) {
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Contract")
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Contract")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { 
-                if ((contractModel?.remainingAmount ?: 0.0) > 0) {
-                    showAddPaymentDialog = true 
-                }
+                showAddPaymentDialog = true 
             }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Payment")
             }
@@ -100,6 +113,48 @@ fun ContractDetailsScreen(
                     }
                 }
             }
+        }
+
+        if (showEditDialog && contractModel != null) {
+            EditContractDialog(
+                contract = contractModel!!.contract,
+                sites = sites,
+                onDismiss = { showEditDialog = false },
+                onConfirm = { name, mobile, siteId, amount, _, notes ->
+                    viewModel.updateContract(
+                        contractModel!!.contract.copy(
+                            clientName = name,
+                            mobile = mobile,
+                            siteId = siteId,
+                            totalAmount = amount,
+                            notes = notes
+                        )
+                    )
+                    showEditDialog = false
+                }
+            )
+        }
+
+        if (showDeleteDialog && contractModel != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete Contract") },
+                text = { Text("Are you sure you want to delete this contract? All related payments will be deleted too.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteContract(contractModel!!.contract)
+                        showDeleteDialog = false
+                        onBack()
+                    }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
 
         if (showAddPaymentDialog) {
@@ -179,7 +234,7 @@ fun SummaryCard(model: com.example.workermanager.viewmodel.ContractUiModel) {
                 trackColor = Color(0xFF2E7D32).copy(alpha = 0.2f)
             )
             Text(
-                "${(progress * 100).toInt()}% Received",
+                if (model.contract.totalAmount > 0) "${(progress * 100).toInt()}% Received" else "No Payment",
                 modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
                 style = MaterialTheme.typography.labelSmall
             )
@@ -234,10 +289,7 @@ fun AddClientPaymentDialog(
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { 
-                        val input = it.toDoubleOrNull()
-                        if (input == null || input <= remainingAmount) {
-                            amount = it
-                        }
+                        amount = it
                     },
                     label = { Text("Amount*") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -297,4 +349,72 @@ fun ContractStatusBadge(status: ContractStatus) {
             fontWeight = FontWeight.Bold
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditContractDialog(
+    contract: com.example.workermanager.data.entity.ContractEntity,
+    sites: List<com.example.workermanager.data.entity.SiteEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Long?, Double, LocalDate, String) -> Unit
+) {
+    var name by remember { mutableStateOf(contract.clientName) }
+    var mobile by remember { mutableStateOf(contract.mobile) }
+    var siteId by remember { mutableStateOf(contract.siteId) }
+    var amount by remember { mutableStateOf(contract.totalAmount.toString()) }
+    var notes by remember { mutableStateOf(contract.notes) }
+    var siteExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Contract", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Client Name*") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = mobile, onValueChange = { mobile = it }, label = { Text("Mobile Number") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
+                
+                ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
+                    OutlinedTextField(
+                        value = sites.find { it.id == siteId }?.name ?: "Select Site",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Site") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = { siteId = null; siteExpanded = false }
+                        )
+                        sites.forEach { site ->
+                            DropdownMenuItem(
+                                text = { Text(site.name) },
+                                onClick = { siteId = site.id; siteExpanded = false }
+                            )
+                        }
+                    }
+                }
+                
+                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Total Contract Amount") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onConfirm(name, mobile, siteId, amount.toDoubleOrNull() ?: 0.0, contract.startDate, notes)
+                    }
+                }
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }

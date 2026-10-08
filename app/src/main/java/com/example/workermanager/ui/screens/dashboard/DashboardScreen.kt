@@ -43,9 +43,9 @@ fun DashboardScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Worker Manager", fontWeight = FontWeight.Bold)
+                        Text("WorkCraft", fontWeight = FontWeight.Bold)
                         Text(
-                            "Kaam ka hisaab, har site ke saath",
+                            "Smart Workforce Management",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 10.sp,
                             color = Color.White
@@ -93,10 +93,12 @@ fun DashboardScreen(
                         )
                     }
                     items(sites) { site ->
+                        val workDays by viewModel.getSiteWorkingDays(site.id).collectAsState(initial = 0)
                         SiteChip(
                             name = site.name,
                             isSelected = selectedSiteId == site.id,
-                            onClick = { viewModel.updateSelectedSite(site.id) }
+                            onClick = { viewModel.updateSelectedSite(site.id) },
+                            workDays = workDays
                         )
                     }
                 }
@@ -232,23 +234,37 @@ fun DashboardScreen(
 }
 
 @Composable
-fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
+fun SiteChip(
+    name: String, 
+    isSelected: Boolean, 
+    onClick: () -> Unit,
+    workDays: Int? = null
+) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
-        modifier = Modifier.height(40.dp)
+        modifier = Modifier.height(if (workDays != null) 56.dp else 40.dp)
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = if (workDays != null) 8.dp else 0.dp)
         ) {
-            Text(
-                text = name,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = name,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                if (workDays != null) {
+                    Text(
+                        text = "Work Days: $workDays Days",
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp
+                    )
+                }
+            }
         }
     }
 }

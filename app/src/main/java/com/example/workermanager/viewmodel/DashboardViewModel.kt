@@ -102,6 +102,8 @@ class DashboardViewModel(
     fun updateSelectedSite(siteId: Long?) {
         _selectedSiteId.value = siteId
     }
+
+    fun getSiteWorkingDays(siteId: Long) = attendanceRepository.getSiteWorkingDays(siteId)
 }
 
 class DashboardViewModelFactory(

@@ -19,6 +19,7 @@ import java.lang.Class;
 import java.lang.Double;
 import java.lang.Exception;
 import java.lang.IllegalStateException;
+import java.lang.Integer;
 import java.lang.Object;
 import java.lang.Override;
 import java.lang.String;
@@ -826,6 +827,39 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _result = _tmp_1;
           } else {
             _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Flow<Integer> getSiteWorkingDays(final long siteId) {
+    final String _sql = "SELECT COUNT(DISTINCT date) FROM attendance WHERE siteId = ? AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME')";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, siteId);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Integer _result;
+          if (_cursor.moveToFirst()) {
+            final int _tmp;
+            _tmp = _cursor.getInt(0);
+            _result = _tmp;
+          } else {
+            _result = 0;
           }
           return _result;
         } finally {

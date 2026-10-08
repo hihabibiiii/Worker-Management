@@ -185,8 +185,11 @@ fun ContractCard(model: ContractUiModel, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold
                 )
+                val percentage = if (model.contract.totalAmount > 0) {
+                    ((model.totalReceived / model.contract.totalAmount) * 100).toInt()
+                } else 0
                 Text(
-                    "${((model.totalReceived / model.contract.totalAmount) * 100).toInt()}% Received",
+                    if (model.contract.totalAmount > 0) "$percentage% Received" else "No Payment",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -237,7 +240,7 @@ fun AddContractDialog(
                 
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
                     OutlinedTextField(
-                        value = sites.find { it.id == siteId }?.name ?: "Select Site*",
+                        value = sites.find { it.id == siteId }?.name ?: "Select Site",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Site") },
@@ -245,6 +248,11 @@ fun AddContractDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        // Allow deselecting site
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = { siteId = null; siteExpanded = false }
+                        )
                         sites.forEach { site ->
                             DropdownMenuItem(
                                 text = { Text(site.name) },
@@ -254,14 +262,14 @@ fun AddContractDialog(
                     }
                 }
                 
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Total Contract Amount*") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Total Contract Amount") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank() && amount.isNotBlank() && siteId != null) {
+                    if (name.isNotBlank()) {
                         onConfirm(name, mobile, siteId, amount.toDoubleOrNull() ?: 0.0, LocalDate.now(), notes)
                     }
                 }

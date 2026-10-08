@@ -45,4 +45,7 @@ interface AttendanceDao {
     
     @Query("SELECT SUM(amount) FROM attendance WHERE date = :date")
     fun getTodayTotalWage(date: LocalDate): Flow<Double?>
+
+    @Query("SELECT COUNT(DISTINCT date) FROM attendance WHERE siteId = :siteId AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME')")
+    fun getSiteWorkingDays(siteId: Long): Flow<Int>
 }

@@ -39,6 +39,8 @@ class ContractViewModel(
     private val _statusFilter = MutableStateFlow<ContractStatus?>(null)
     val statusFilter: StateFlow<ContractStatus?> = _statusFilter
 
+    val allSites: Flow<List<com.example.workermanager.data.entity.SiteEntity>> = siteRepository.allSites
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<ContractUiState> = combine(
         contractRepository.allContracts,

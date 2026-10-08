@@ -13,7 +13,9 @@ class WorkerApplication : Application() {
         WorkerRepository(database.workerDao(), database.workerSiteHistoryDao()) 
     }
     
-    val attendanceRepository by lazy { AttendanceRepository(database.attendanceDao()) }
+    val attendanceRepository by lazy { 
+        AttendanceRepository(database.attendanceDao(), database.siteAttendanceDao()) 
+    }
 
     val paymentRepository by lazy { PaymentRepository(database.paymentDao()) }
 

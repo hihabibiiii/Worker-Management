@@ -16,6 +16,9 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance WHERE siteId = :siteId AND date = :date")
     fun getAttendanceBySiteAndDate(siteId: Long, date: LocalDate): Flow<List<AttendanceEntity>>
 
+    @Query("SELECT * FROM attendance WHERE siteId = :siteId AND date = :date")
+    suspend fun getAttendanceListBySiteAndDate(siteId: Long, date: LocalDate): List<AttendanceEntity>
+
     @Query("SELECT * FROM attendance WHERE workerId = :workerId ORDER BY date DESC")
     fun getAttendanceByWorker(workerId: Long): Flow<List<AttendanceEntity>>
 
@@ -30,6 +33,9 @@ interface AttendanceDao {
 
     @Update
     suspend fun updateAttendance(attendance: AttendanceEntity)
+
+    @Delete
+    suspend fun deleteAttendance(attendance: AttendanceEntity)
 
     @Query("SELECT SUM(amount) FROM attendance WHERE workerId = :workerId")
     fun getTotalEarnedByWorker(workerId: Long): Flow<Double?>

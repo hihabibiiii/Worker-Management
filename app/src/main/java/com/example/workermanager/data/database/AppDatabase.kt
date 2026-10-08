@@ -16,9 +16,10 @@ import com.example.workermanager.data.entity.*
         SiteEntity::class,
         WorkerSiteHistoryEntity::class,
         ContractEntity::class,
-        ClientPaymentEntity::class
+        ClientPaymentEntity::class,
+        SiteAttendanceEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -30,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workerSiteHistoryDao(): WorkerSiteHistoryDao
     abstract fun contractDao(): ContractDao
     abstract fun clientPaymentDao(): ClientPaymentDao
+    abstract fun siteAttendanceDao(): SiteAttendanceDao
 
     companion object {
         @Volatile

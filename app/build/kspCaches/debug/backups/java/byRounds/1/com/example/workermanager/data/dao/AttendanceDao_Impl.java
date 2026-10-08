@@ -1,6 +1,7 @@
 package com.example.workermanager.data.dao;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
@@ -41,6 +42,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   private final Converters __converters = new Converters();
 
+  private final EntityDeletionOrUpdateAdapter<AttendanceEntity> __deletionAdapterOfAttendanceEntity;
+
   private final EntityDeletionOrUpdateAdapter<AttendanceEntity> __updateAdapterOfAttendanceEntity;
 
   public AttendanceDao_Impl(@NonNull final RoomDatabase __db) {
@@ -71,6 +74,19 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         statement.bindDouble(8, entity.getAmount());
         statement.bindString(9, entity.getNote());
         statement.bindLong(10, entity.getCreatedAt());
+      }
+    };
+    this.__deletionAdapterOfAttendanceEntity = new EntityDeletionOrUpdateAdapter<AttendanceEntity>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "DELETE FROM `attendance` WHERE `id` = ?";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final AttendanceEntity entity) {
+        statement.bindLong(1, entity.getId());
       }
     };
     this.__updateAdapterOfAttendanceEntity = new EntityDeletionOrUpdateAdapter<AttendanceEntity>(__db) {
@@ -114,6 +130,25 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         __db.beginTransaction();
         try {
           __insertionAdapterOfAttendanceEntity.insert(attendance);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteAttendance(final AttendanceEntity attendance,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __deletionAdapterOfAttendanceEntity.handle(attendance);
           __db.setTransactionSuccessful();
           return Unit.INSTANCE;
         } finally {
@@ -373,6 +408,85 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getAttendanceListBySiteAndDate(final long siteId, final LocalDate date,
+      final Continuation<? super List<AttendanceEntity>> $completion) {
+    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND date = ?";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, siteId);
+    _argIndex = 2;
+    final String _tmp = __converters.fromLocalDate(date);
+    if (_tmp == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, _tmp);
+    }
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<AttendanceEntity>>() {
+      @Override
+      @NonNull
+      public List<AttendanceEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOvertimeHours = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeHours");
+          final int _cursorIndexOfOvertimeAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeAmount");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final AttendanceEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp_1;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp_1 = null;
+            } else {
+              _tmp_1 = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_2 = __converters.toLocalDate(_tmp_1);
+            if (_tmp_2 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_2;
+            }
+            final AttendanceStatus _tmpStatus;
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toAttendanceStatus(_tmp_3);
+            final double _tmpOvertimeHours;
+            _tmpOvertimeHours = _cursor.getDouble(_cursorIndexOfOvertimeHours);
+            final double _tmpOvertimeAmount;
+            _tmpOvertimeAmount = _cursor.getDouble(_cursorIndexOfOvertimeAmount);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override

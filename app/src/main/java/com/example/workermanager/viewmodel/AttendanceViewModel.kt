@@ -102,6 +102,14 @@ class AttendanceViewModel(
     fun getAttendanceBySite(siteId: Long): Flow<List<AttendanceEntity>> {
         return attendanceRepository.getAttendanceBySite(siteId)
     }
+
+    fun getSiteAttendance(siteId: Long): Flow<List<com.example.workermanager.data.entity.SiteAttendanceEntity>> {
+        return attendanceRepository.getSiteAttendance(siteId)
+    }
+
+    fun getSiteAttendanceForDate(siteId: Long, date: LocalDate): Flow<com.example.workermanager.data.entity.SiteAttendanceEntity?> {
+        return attendanceRepository.getSiteAttendanceByDate(siteId, date)
+    }
 }
 
 data class WorkerAttendance(

@@ -19,6 +19,8 @@ import com.example.workermanager.data.dao.ContractDao;
 import com.example.workermanager.data.dao.ContractDao_Impl;
 import com.example.workermanager.data.dao.PaymentDao;
 import com.example.workermanager.data.dao.PaymentDao_Impl;
+import com.example.workermanager.data.dao.SiteAttendanceDao;
+import com.example.workermanager.data.dao.SiteAttendanceDao_Impl;
 import com.example.workermanager.data.dao.SiteDao;
 import com.example.workermanager.data.dao.SiteDao_Impl;
 import com.example.workermanager.data.dao.WorkerDao;
@@ -55,10 +57,12 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile ClientPaymentDao _clientPaymentDao;
 
+  private volatile SiteAttendanceDao _siteAttendanceDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(4) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL)");
@@ -69,8 +73,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `worker_site_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `contracts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientName` TEXT NOT NULL, `mobile` TEXT NOT NULL, `siteId` INTEGER, `totalAmount` REAL NOT NULL, `startDate` TEXT NOT NULL, `notes` TEXT NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `client_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `contractId` INTEGER NOT NULL, `amount` REAL NOT NULL, `paymentDate` TEXT NOT NULL, `method` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`contractId`) REFERENCES `contracts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `site_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `isPresent` INTEGER NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_site_attendance_siteId_date` ON `site_attendance` (`siteId`, `date`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dfc45e6b7e7654eba5a9dd410b726711')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1725beb1012a7ee3b4808b1880f36322')");
       }
 
       @Override
@@ -82,6 +88,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `worker_site_history`");
         db.execSQL("DROP TABLE IF EXISTS `contracts`");
         db.execSQL("DROP TABLE IF EXISTS `client_payments`");
+        db.execSQL("DROP TABLE IF EXISTS `site_attendance`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -261,9 +268,25 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoClientPayments + "\n"
                   + " Found:\n" + _existingClientPayments);
         }
+        final HashMap<String, TableInfo.Column> _columnsSiteAttendance = new HashMap<String, TableInfo.Column>(4);
+        _columnsSiteAttendance.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteAttendance.put("siteId", new TableInfo.Column("siteId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteAttendance.put("date", new TableInfo.Column("date", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteAttendance.put("isPresent", new TableInfo.Column("isPresent", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysSiteAttendance = new HashSet<TableInfo.ForeignKey>(1);
+        _foreignKeysSiteAttendance.add(new TableInfo.ForeignKey("sites", "CASCADE", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesSiteAttendance = new HashSet<TableInfo.Index>(1);
+        _indicesSiteAttendance.add(new TableInfo.Index("index_site_attendance_siteId_date", true, Arrays.asList("siteId", "date"), Arrays.asList("ASC", "ASC")));
+        final TableInfo _infoSiteAttendance = new TableInfo("site_attendance", _columnsSiteAttendance, _foreignKeysSiteAttendance, _indicesSiteAttendance);
+        final TableInfo _existingSiteAttendance = TableInfo.read(db, "site_attendance");
+        if (!_infoSiteAttendance.equals(_existingSiteAttendance)) {
+          return new RoomOpenHelper.ValidationResult(false, "site_attendance(com.example.workermanager.data.entity.SiteAttendanceEntity).\n"
+                  + " Expected:\n" + _infoSiteAttendance + "\n"
+                  + " Found:\n" + _existingSiteAttendance);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "dfc45e6b7e7654eba5a9dd410b726711", "4b3b269b47c974e63938adc1771cf647");
+    }, "1725beb1012a7ee3b4808b1880f36322", "87f6a428478be22b5078874268f426f6");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -274,7 +297,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments","site_attendance");
   }
 
   @Override
@@ -297,6 +320,7 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `worker_site_history`");
       _db.execSQL("DELETE FROM `contracts`");
       _db.execSQL("DELETE FROM `client_payments`");
+      _db.execSQL("DELETE FROM `site_attendance`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -321,6 +345,7 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(WorkerSiteHistoryDao.class, WorkerSiteHistoryDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ContractDao.class, ContractDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ClientPaymentDao.class, ClientPaymentDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(SiteAttendanceDao.class, SiteAttendanceDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -433,6 +458,20 @@ public final class AppDatabase_Impl extends AppDatabase {
           _clientPaymentDao = new ClientPaymentDao_Impl(this);
         }
         return _clientPaymentDao;
+      }
+    }
+  }
+
+  @Override
+  public SiteAttendanceDao siteAttendanceDao() {
+    if (_siteAttendanceDao != null) {
+      return _siteAttendanceDao;
+    } else {
+      synchronized(this) {
+        if(_siteAttendanceDao == null) {
+          _siteAttendanceDao = new SiteAttendanceDao_Impl(this);
+        }
+        return _siteAttendanceDao;
       }
     }
   }

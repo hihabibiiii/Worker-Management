@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payments
@@ -42,6 +44,10 @@ fun SiteDetailsScreen(
     val workers by workerViewModel.getWorkersBySite(siteId).collectAsState(initial = emptyList())
     val attendance by attendanceViewModel.getAttendanceBySite(siteId).collectAsState(initial = emptyList())
     val payments by paymentViewModel.getPaymentsBySite(siteId).collectAsState(initial = emptyList())
+    val todaySiteAttendance by attendanceViewModel.getSiteAttendanceForDate(siteId, java.time.LocalDate.now()).collectAsState(initial = null)
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -52,10 +58,21 @@ fun SiteDetailsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    if (site != null) {
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Site")
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Site")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         }
@@ -70,7 +87,7 @@ fun SiteDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    SiteInfoSection(currentSite)
+                    SiteInfoSection(currentSite, todaySiteAttendance)
                 }
 
                 item {
@@ -100,6 +117,42 @@ fun SiteDetailsScreen(
                     }
                 }
             }
+
+            if (showEditDialog) {
+                EditSiteDialog(
+                    site = currentSite,
+                    onDismiss = { showEditDialog = false },
+                    onConfirm = { name, address, manager ->
+                        viewModel.updateSite(currentSite.copy(name = name, address = address, manager = manager))
+                        showEditDialog = false
+                    }
+                )
+            }
+
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = { Text("Delete Site") },
+                    text = { Text("Are you sure you want to delete this site? This action cannot be undone.") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.deleteSite(currentSite)
+                                showDeleteDialog = false
+                                onBack()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Delete")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
         } ?: run {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -109,7 +162,7 @@ fun SiteDetailsScreen(
 }
 
 @Composable
-fun SiteInfoSection(site: SiteEntity) {
+fun SiteInfoSection(site: SiteEntity, todaySiteAttendance: com.example.workermanager.data.entity.SiteAttendanceEntity?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -127,6 +180,8 @@ fun SiteInfoSection(site: SiteEntity) {
             DetailRow("Manager", site.manager)
             DetailRow("Started", Utils.formatDate(site.startDate))
             DetailRow("Status", site.status.name)
+            val attendanceStr = if (todaySiteAttendance?.isPresent == true) "Present" else "Absent"
+            DetailRow("Today's Attendance", attendanceStr)
         }
     }
 }
@@ -199,4 +254,32 @@ fun WorkerListItem(worker: WorkerEntity, onClick: () -> Unit) {
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditSiteDialog(site: SiteEntity, onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
+    var name by remember { mutableStateOf(site.name) }
+    var address by remember { mutableStateOf(site.address) }
+    var manager by remember { mutableStateOf(site.manager) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Site", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Site Name") })
+                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
+                OutlinedTextField(value = manager, onValueChange = { manager = it }, label = { Text("Site Manager") })
+            }
+        },
+        confirmButton = {
+            Button(onClick = { if (name.isNotEmpty()) onConfirm(name, address, manager) }) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
+        }
+    )
 }

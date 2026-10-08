@@ -9,9 +9,22 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ListItem
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +51,7 @@ import com.example.workermanager.ui.screens.workers.WorkersScreen
 import com.example.workermanager.ui.theme.WorkerManagerTheme
 import com.example.workermanager.viewmodel.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,15 +85,23 @@ class MainActivity : ComponentActivity() {
                     factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)
                 )
 
-                val navItems = listOf(
+                val primaryNavItems = listOf(
                     Screen.Dashboard,
-                    Screen.Sites,
                     Screen.Workers,
                     Screen.Attendance,
-                    Screen.Payments,
+                    Screen.Payments
+                )
+                
+                val moreNavItems = listOf(
+                    Screen.Sites,
                     Screen.Contracts,
                     Screen.Reports
                 )
+                
+                val allNavItems = primaryNavItems + moreNavItems
+
+                var showMoreSheet by remember { mutableStateOf(false) }
+                val sheetState = rememberModalBottomSheetState()
 
                 Scaffold(
                     bottomBar = {
@@ -87,9 +109,9 @@ class MainActivity : ComponentActivity() {
                         val currentDestination = navBackStackEntry?.destination
 
                         // Only show bottom bar for main screens
-                        if (navItems.any { it.route == currentDestination?.route }) {
+                        if (allNavItems.any { it.route == currentDestination?.route }) {
                             NavigationBar {
-                                navItems.forEach { screen ->
+                                primaryNavItems.forEach { screen ->
                                     NavigationBarItem(
                                         icon = { screen.icon?.let { Icon(it, contentDescription = null) } },
                                         label = { 
@@ -112,6 +134,14 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 }
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.Default.MoreHoriz, contentDescription = "More") },
+                                    label = { Text("More", maxLines = 1, softWrap = false, fontSize = 10.sp) },
+                                    selected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true },
+                                    onClick = {
+                                        showMoreSheet = true
+                                    }
+                                )
                             }
                         }
                     }
@@ -226,6 +256,34 @@ class MainActivity : ComponentActivity() {
                                 viewModel = settingsViewModel,
                                 onBack = { navController.popBackStack() }
                             )
+                        }
+                    }
+                    
+                    if (showMoreSheet) {
+                        ModalBottomSheet(
+                            onDismissRequest = { showMoreSheet = false },
+                            sheetState = sheetState
+                        ) {
+                            Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                                moreNavItems.forEach { screen ->
+                                    ListItem(
+                                        headlineContent = { Text(screen.title) },
+                                        leadingContent = { 
+                                            screen.icon?.let { Icon(it, contentDescription = null) } 
+                                        },
+                                        modifier = Modifier.clickable {
+                                            showMoreSheet = false
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

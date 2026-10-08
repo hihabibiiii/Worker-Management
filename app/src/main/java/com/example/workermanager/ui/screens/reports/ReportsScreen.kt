@@ -25,6 +25,10 @@ import com.example.workermanager.viewmodel.WorkerMonthlyReport
 import java.time.format.TextStyle
 import java.util.*
 
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.platform.LocalContext
+import com.example.workermanager.util.ShareUtils
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
@@ -227,18 +231,35 @@ fun ReportStatRow(label: String, value: String, isBold: Boolean = false, valueCo
 
 @Composable
 fun ReportItem(report: WorkerMonthlyReport) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                report.workerName, 
-                style = MaterialTheme.typography.titleMedium, 
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    report.workerName, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                IconButton(
+                    onClick = { ShareUtils.shareWorkerReportToWhatsApp(context, report) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = "Share via WhatsApp",
+                        tint = Color(0xFF25D366) // WhatsApp Green
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(

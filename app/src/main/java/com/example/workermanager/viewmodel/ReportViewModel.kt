@@ -58,6 +58,7 @@ class ReportViewModel(
                 
                 WorkerMonthlyReport(
                     workerName = worker.name,
+                    phone = worker.phone,
                     presentDays = workerAttendance.count { it.status == AttendanceStatus.PRESENT },
                     halfDays = workerAttendance.count { it.status == AttendanceStatus.HALF_DAY },
                     absentDays = workerAttendance.count { it.status == AttendanceStatus.ABSENT },
@@ -104,6 +105,7 @@ class ReportViewModel(
 
 data class WorkerMonthlyReport(
     val workerName: String,
+    val phone: String,
     val presentDays: Int,
     val halfDays: Int,
     val absentDays: Int,

@@ -1,9 +1,20 @@
 -- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:26:9-34:20
+	android:grantUriPermissions
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:30:13-47
+	android:authorities
+		INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:28:13-64
+	android:exported
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:29:13-37
+	android:name
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:27:13-62
 manifest
-ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-27:12
+ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:1-37:12
 MERGED from [androidx.navigation:navigation-common:2.7.7] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\60d30b8c46e87027471cb6d3eb8ae1dc\transformed\navigation-common-2.7.7\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-runtime:2.7.7] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\9423ffe747eb20059d0a7183a36625c0\transformed\navigation-runtime-2.7.7\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-common-ktx:2.7.7] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\402468928f63722fc39ac10032f040be\transformed\navigation-common-ktx-2.7.7\AndroidManifest.xml:2:1-7:12
@@ -71,8 +82,8 @@ MERGED from [androidx.tracing:tracing:1.0.0] C:\Users\Habibullah\.gradle\caches\
 	xmlns:android
 		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:2:11-69
 application
-ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:5:5-25:19
-INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:5:5-25:19
+ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:5:5-35:19
+INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:5:5-35:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.6.1] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\3044df08debcd10ec055650c78a3c64e\transformed\ui-test-manifest-1.6.1\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.6.1] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\3044df08debcd10ec055650c78a3c64e\transformed\ui-test-manifest-1.6.1\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.6.1] C:\Users\Habibullah\.gradle\caches\9.0-milestone-1\transforms\7cec81f15de73654ae663ba2f5554b8e\transformed\ui-tooling-release\AndroidManifest.xml:22:5-26:19
@@ -133,6 +144,12 @@ category#android.intent.category.LAUNCHER
 ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:22:17-77
 	android:name
 		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:22:27-74
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:31:13-33:58
+	android:resource
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:33:17-55
+	android:name
+		ADDED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:32:17-67
 uses-sdk
 INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml

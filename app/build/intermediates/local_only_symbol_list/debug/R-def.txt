@@ -7,3 +7,4 @@ drawable logo2
 style Theme.WorkerManager
 xml backup_rules
 xml data_extraction_rules
+xml provider_paths

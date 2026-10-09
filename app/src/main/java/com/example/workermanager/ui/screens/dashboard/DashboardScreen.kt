@@ -102,45 +102,36 @@ fun DashboardScreen(
             }
 
             // Stats Grid
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatBox(
-                        label = "Present",
-                        value = stats.presentWorkers.toString(),
-                        color = Color(0xFF2E7D32), // Darker Green
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    StatBox(
-                        label = "Half Day",
-                        value = stats.halfDayWorkers.toString(),
-                        color = Color(0xFFEF6C00), // Darker Orange
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    StatBox(
-                        label = "Absent",
-                        value = stats.absentWorkers.toString(),
-                        color = Color(0xFFC62828), // Darker Red
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatBox(
-                        label = "Overtime",
-                        value = stats.overtimeWorkers.toString(),
-                        color = Color(0xFF1565C0), // Darker Blue
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    StatBox(
-                        label = "Advance",
-                        value = Utils.formatCurrency(stats.totalAdvance),
-                        color = Color(0xFF6A1B9A), // Darker Purple
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                StatBox(
+                    label = "Present",
+                    value = stats.presentWorkers.toString(),
+                    color = Color(0xFF2E7D32), // Darker Green
+                    modifier = Modifier.weight(1f)
+                )
+                StatBox(
+                    label = "Absent",
+                    value = stats.absentWorkers.toString(),
+                    color = Color(0xFFC62828), // Darker Red
+                    modifier = Modifier.weight(1f)
+                )
+                StatBox(
+                    label = "Half Day",
+                    value = stats.halfDayWorkers.toString(),
+                    color = Color(0xFFEF6C00), // Darker Orange
+                    modifier = Modifier.weight(1f)
+                )
+                StatBox(
+                    label = "Overtime",
+                    value = stats.overtimeWorkers.toString(),
+                    color = Color(0xFF1565C0), // Darker Blue
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -274,15 +265,25 @@ fun StatBox(label: String, value: String, color: Color, modifier: Modifier = Mod
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
-                value,
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = value,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = color
+                color = color,
+                maxLines = 1
             )
         }
     }

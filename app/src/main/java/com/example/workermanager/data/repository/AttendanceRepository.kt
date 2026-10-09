@@ -37,6 +37,9 @@ class AttendanceRepository(
     fun getSiteWorkingDays(siteId: Long): Flow<Int> =
         attendanceDao.getSiteWorkingDays(siteId)
 
+    fun getTotalSiteWorkingDays(): Flow<Int> =
+        attendanceDao.getTotalSiteWorkingDays()
+
     fun getSiteAttendance(siteId: Long): Flow<List<com.example.workermanager.data.entity.SiteAttendanceEntity>> =
         siteAttendanceDao.getSiteAttendance(siteId)
 

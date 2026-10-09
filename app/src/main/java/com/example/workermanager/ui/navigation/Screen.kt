@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
@@ -18,6 +19,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
     data object Contracts : Screen("contracts", "Contracts", Icons.Default.Assignment)
     data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
+    data object WorkEnquiry : Screen("work_enquiry", "Work on WhatsApp", Icons.AutoMirrored.Filled.Chat)
     
     data object SiteDetails : Screen("site_details/{siteId}", "Site Details") {
         fun createRoute(siteId: Long) = "site_details/$siteId"

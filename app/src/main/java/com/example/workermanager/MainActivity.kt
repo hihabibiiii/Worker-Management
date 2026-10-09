@@ -95,7 +95,8 @@ class MainActivity : ComponentActivity() {
                 val moreNavItems = listOf(
                     Screen.Sites,
                     Screen.Contracts,
-                    Screen.Reports
+                    Screen.Reports,
+                    Screen.WorkEnquiry
                 )
                 
                 val allNavItems = primaryNavItems + moreNavItems
@@ -254,6 +255,11 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Settings.route) {
                             SettingsScreen(
                                 viewModel = settingsViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable(Screen.WorkEnquiry.route) {
+                            com.example.workermanager.ui.screens.workenquiry.WorkEnquiryScreen(
                                 onBack = { navController.popBackStack() }
                             )
                         }

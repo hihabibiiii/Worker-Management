@@ -37,6 +37,7 @@ fun DashboardScreen(
     val stats by viewModel.stats.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
+    val totalSiteWorkingDays by viewModel.totalSiteWorkingDays.collectAsState()
 
     Scaffold(
         topBar = {
@@ -74,13 +75,8 @@ fun DashboardScreen(
         ) {
             // Site Selector Section
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "All Sites",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+
+
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -89,7 +85,8 @@ fun DashboardScreen(
                         SiteChip(
                             name = "All Sites",
                             isSelected = selectedSiteId == null,
-                            onClick = { viewModel.updateSelectedSite(null) }
+                            onClick = { viewModel.updateSelectedSite(null) },
+                            workDays = totalSiteWorkingDays
                         )
                     }
                     items(sites) { site ->
@@ -259,7 +256,7 @@ fun SiteChip(
                 )
                 if (workDays != null) {
                     Text(
-                        text = "Work Days: $workDays Days",
+                        text = "Work : $workDays Days",
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 10.sp
                     )

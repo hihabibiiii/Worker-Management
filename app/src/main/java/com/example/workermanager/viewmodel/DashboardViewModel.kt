@@ -99,6 +99,9 @@ class DashboardViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, DashboardStats())
 
+    val totalSiteWorkingDays: StateFlow<Int> = attendanceRepository.getTotalSiteWorkingDays()
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
     fun updateSelectedSite(siteId: Long?) {
         _selectedSiteId.value = siteId
     }

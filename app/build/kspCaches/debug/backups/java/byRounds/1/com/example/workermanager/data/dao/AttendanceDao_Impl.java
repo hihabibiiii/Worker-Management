@@ -874,6 +874,37 @@ public final class AttendanceDao_Impl implements AttendanceDao {
     });
   }
 
+  @Override
+  public Flow<Integer> getTotalSiteWorkingDays() {
+    final String _sql = "SELECT COUNT(*) FROM (SELECT DISTINCT siteId, date FROM attendance WHERE status IN ('PRESENT', 'HALF_DAY', 'OVERTIME'))";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Integer _result;
+          if (_cursor.moveToFirst()) {
+            final int _tmp;
+            _tmp = _cursor.getInt(0);
+            _result = _tmp;
+          } else {
+            _result = 0;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

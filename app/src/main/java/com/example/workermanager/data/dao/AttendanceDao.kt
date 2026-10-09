@@ -48,4 +48,7 @@ interface AttendanceDao {
 
     @Query("SELECT COUNT(DISTINCT date) FROM attendance WHERE siteId = :siteId AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME')")
     fun getSiteWorkingDays(siteId: Long): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM (SELECT DISTINCT siteId, date FROM attendance WHERE status IN ('PRESENT', 'HALF_DAY', 'OVERTIME'))")
+    fun getTotalSiteWorkingDays(): Flow<Int>
 }

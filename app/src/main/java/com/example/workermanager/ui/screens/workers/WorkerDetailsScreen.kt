@@ -1,23 +1,38 @@
 package com.example.workermanager.ui.screens.workers
 
+import android.app.DatePickerDialog
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
 import com.example.workermanager.data.entity.*
+import com.example.workermanager.util.PdfReportGenerator
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.*
+import java.net.URLEncoder
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +53,8 @@ fun WorkerDetailsScreen(
     val sites by siteViewModel.allSites.collectAsState()
 
     var showTransferDialog by remember { mutableStateOf(false) }
+    var paymentDialogType by remember { mutableStateOf<PaymentType?>(null) }
+    var showShareReportDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -86,7 +103,12 @@ fun WorkerDetailsScreen(
                 }
                 
                 item {
-                    WorkerStatsSection(stats)
+                    WorkerStatsSection(
+                        stats = stats,
+                        onAdvanceClick = { paymentDialogType = PaymentType.ADVANCE },
+                        onPaymentClick = { paymentDialogType = PaymentType.PAYMENT },
+                        onWhatsAppReportClick = { showShareReportDialog = true }
+                    )
                 }
 
                 item {
@@ -146,6 +168,38 @@ fun WorkerDetailsScreen(
                 }
             )
         }
+
+        if (paymentDialogType != null && worker != null) {
+            RecordWorkerPaymentDialog(
+                worker = worker!!,
+                sites = sites,
+                initialType = paymentDialogType!!,
+                onDismiss = { paymentDialogType = null },
+                onConfirm = { siteId, amount, method, type, date, note ->
+                    paymentViewModel.addPayment(
+                        workerId = worker!!.id,
+                        siteId = siteId,
+                        amount = amount,
+                        method = method,
+                        type = type,
+                        date = date,
+                        note = note
+                    )
+                    paymentDialogType = null
+                }
+            )
+        }
+
+        if (showShareReportDialog && worker != null) {
+            ShareWorkerReportDialog(
+                worker = worker!!,
+                stats = stats,
+                attendanceHistory = attendanceHistory,
+                paymentHistory = paymentHistory,
+                sites = sites,
+                onDismiss = { showShareReportDialog = false }
+            )
+        }
     }
 }
 
@@ -203,13 +257,56 @@ fun StatusChip(isActive: Boolean) {
 }
 
 @Composable
-fun WorkerStatsSection(stats: WorkerStats) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+fun WorkerStatsSection(
+    stats: WorkerStats,
+    onAdvanceClick: () -> Unit,
+    onPaymentClick: () -> Unit,
+    onWhatsAppReportClick: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatItem("Present", stats.presentDays.toString(), Modifier.weight(1f))
             StatItem("Half Day", stats.halfDays.toString(), Modifier.weight(1f))
             StatItem("Absent", stats.absentDays.toString(), Modifier.weight(1f))
         }
+
+        // Action Buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onAdvanceClick,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+            ) {
+                Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Advance", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Button(
+                onClick = onPaymentClick,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+            ) {
+                Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Payment", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Button(
+                onClick = onWhatsAppReportClick,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+            ) {
+                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -421,8 +518,8 @@ fun TransferWorkerDialog(
     var transferDate by remember { mutableStateOf(LocalDate.now()) }
     var expanded by remember { mutableStateOf(false) }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val datePickerDialog = android.app.DatePickerDialog(
+    val context = LocalContext.current
+    val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
             transferDate = LocalDate.of(year, month + 1, dayOfMonth)
@@ -467,7 +564,6 @@ fun TransferWorkerDialog(
                     }
                 }
                 
-                // Simplified date selection for prompt fulfillment
                 Text(
                     "Date: ${Utils.formatDate(transferDate)}", 
                     style = MaterialTheme.typography.bodySmall,
@@ -491,4 +587,371 @@ fun TransferWorkerDialog(
             TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun RecordWorkerPaymentDialog(
+    worker: WorkerEntity,
+    sites: List<SiteEntity>,
+    initialType: PaymentType,
+    onDismiss: () -> Unit,
+    onConfirm: (Long, Double, PaymentMethod, PaymentType, LocalDate, String) -> Unit
+) {
+    var selectedSiteId by remember { mutableStateOf<Long>(worker.currentSiteId ?: sites.firstOrNull()?.id ?: 0L) }
+    var amount by remember { mutableStateOf("") }
+    var selectedMethod by remember { mutableStateOf(PaymentMethod.CASH) }
+    var selectedType by remember { mutableStateOf(initialType) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var note by remember { mutableStateOf("") }
+    var siteExpanded by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+        },
+        selectedDate.year,
+        selectedDate.monthValue - 1,
+        selectedDate.dayOfMonth
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (selectedType == PaymentType.ADVANCE) "Record Advance for ${worker.name}" else "Record Payment for ${worker.name}",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Type selector
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = selectedType == PaymentType.ADVANCE,
+                        onClick = { selectedType = PaymentType.ADVANCE },
+                        label = { Text("Advance", fontWeight = FontWeight.Bold) }
+                    )
+                    FilterChip(
+                        selected = selectedType == PaymentType.PAYMENT,
+                        onClick = { selectedType = PaymentType.PAYMENT },
+                        label = { Text("Payment", fontWeight = FontWeight.Bold) }
+                    )
+                }
+
+                // Site selection
+                ExposedDropdownMenuBox(
+                    expanded = siteExpanded,
+                    onExpandedChange = { siteExpanded = !siteExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = sites.find { it.id == selectedSiteId }?.name ?: "Select Site",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Site") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        sites.forEach { site ->
+                            DropdownMenuItem(
+                                text = { Text(site.name, fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    selectedSiteId = site.id
+                                    siteExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount *") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = Utils.formatDate(selectedDate),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date *") },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PaymentMethod.entries.forEach { method ->
+                        FilterChip(
+                            selected = selectedMethod == method,
+                            onClick = { selectedMethod = method },
+                            label = { Text(method.name, fontWeight = FontWeight.Bold) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note / Description (Optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amountVal = amount.toDoubleOrNull() ?: 0.0
+                    if (selectedSiteId != 0L && amountVal > 0) {
+                        onConfirm(selectedSiteId, amountVal, selectedMethod, selectedType, selectedDate, note)
+                    }
+                },
+                enabled = selectedSiteId != 0L && (amount.toDoubleOrNull() ?: 0.0) > 0
+            ) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShareWorkerReportDialog(
+    worker: WorkerEntity,
+    stats: WorkerStats,
+    attendanceHistory: List<AttendanceEntity>,
+    paymentHistory: List<PaymentEntity>,
+    sites: List<SiteEntity>,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    var phoneInput by remember { mutableStateOf(worker.phone) }
+    val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "N/A"
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Share Worker Report",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(weight = 1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Worker: ${worker.name}",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    OutlinedTextField(
+                        value = phoneInput,
+                        onValueChange = { phoneInput = it },
+                        label = { Text("Recipient Phone Number (WhatsApp)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text("Report Summary Preview:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            Text("• Site: $currentSiteName", style = MaterialTheme.typography.bodySmall)
+                            Text("• Working Days: ${stats.presentDays + stats.halfDays} Days (Present: ${stats.presentDays}, Half: ${stats.halfDays}, Absent: ${stats.absentDays})", style = MaterialTheme.typography.bodySmall)
+                            Text("• Total Earned: ${Utils.formatCurrency(stats.totalEarned)}", style = MaterialTheme.typography.bodySmall)
+                            Text("• Total Paid: ${Utils.formatCurrency(stats.totalPaid)}", style = MaterialTheme.typography.bodySmall)
+                            Text("• Pending Balance: ${Utils.formatCurrency(stats.pendingBalance)}", style = MaterialTheme.typography.bodySmall)
+                            Text("• Records: ${attendanceHistory.size} Attendance entries, ${paymentHistory.size} Payment entries", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                // Action buttons stacked vertically in precise order with separate layout space
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            shareWorkerReport(
+                                context = context,
+                                worker = worker,
+                                phone = phoneInput,
+                                currentSiteName = currentSiteName,
+                                stats = stats,
+                                attendanceHistory = attendanceHistory,
+                                paymentHistory = paymentHistory,
+                                sites = sites,
+                                targetWhatsApp = true
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Send on WhatsApp", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            shareWorkerReport(
+                                context = context,
+                                worker = worker,
+                                phone = phoneInput,
+                                currentSiteName = currentSiteName,
+                                stats = stats,
+                                attendanceHistory = attendanceHistory,
+                                paymentHistory = paymentHistory,
+                                sites = sites,
+                                targetWhatsApp = false
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Share PDF Report", fontWeight = FontWeight.Bold)
+                    }
+
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cancel", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun shareWorkerReport(
+    context: Context,
+    worker: WorkerEntity,
+    phone: String,
+    currentSiteName: String,
+    stats: WorkerStats,
+    attendanceHistory: List<AttendanceEntity>,
+    paymentHistory: List<PaymentEntity>,
+    sites: List<SiteEntity>,
+    targetWhatsApp: Boolean
+) {
+    try {
+        val pdfFile = PdfReportGenerator.generateWorkerReportPdf(
+            context = context,
+            worker = worker,
+            siteName = currentSiteName,
+            stats = stats,
+            attendanceHistory = attendanceHistory,
+            paymentHistory = paymentHistory,
+            sites = sites
+        )
+
+        val uri: Uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+
+        val totalWorkingDays = stats.presentDays + stats.halfDays
+        val messageText = """
+            *Worker Statement: ${worker.name}*
+            Phone: ${if (worker.phone.isBlank()) "N/A" else worker.phone}
+            Current Site: $currentSiteName
+            
+            *Summary:*
+            • Present Days: ${stats.presentDays}
+            • Half Days: ${stats.halfDays}
+            • Absent Days: ${stats.absentDays}
+            • Total Working Days: $totalWorkingDays
+            • Total Earned: ${Utils.formatCurrency(stats.totalEarned)}
+            • Total Paid: ${Utils.formatCurrency(stats.totalPaid)}
+            • Pending Balance: ${Utils.formatCurrency(stats.pendingBalance)}
+            
+            Attached complete PDF report for full details.
+        """.trimIndent()
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, messageText)
+            putExtra(Intent.EXTRA_SUBJECT, "Worker Statement - ${worker.name}")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val formattedPhone = phone.replace(Regex("[^0-9]"), "")
+
+        if (targetWhatsApp && formattedPhone.isNotBlank()) {
+            val waPhone = if (formattedPhone.length == 10) "91$formattedPhone" else formattedPhone
+            try {
+                intent.setPackage("com.whatsapp")
+                intent.putExtra("jid", "$waPhone@s.whatsapp.net")
+                context.startActivity(intent)
+            } catch (_: Exception) {
+                try {
+                    intent.setPackage("com.whatsapp.w4b")
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    val waUri = Uri.parse("https://api.whatsapp.com/send?phone=$waPhone&text=${URLEncoder.encode(messageText, "UTF-8")}")
+                    val waIntent = Intent(Intent.ACTION_VIEW, waUri)
+                    try {
+                        context.startActivity(waIntent)
+                    } catch (_: Exception) {
+                        intent.setPackage(null)
+                        intent.removeExtra("jid")
+                        val chooser = Intent.createChooser(intent, "Share Worker Report")
+                        context.startActivity(chooser)
+                    }
+                }
+            }
+        } else {
+            val chooser = Intent.createChooser(intent, "Share Worker Report")
+            context.startActivity(chooser)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Failed to generate report: ${e.message}", Toast.LENGTH_LONG).show()
+    }
 }

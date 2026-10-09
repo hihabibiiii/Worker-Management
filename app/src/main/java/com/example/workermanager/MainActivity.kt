@@ -104,6 +104,17 @@ class MainActivity : ComponentActivity() {
                 var showMoreSheet by remember { mutableStateOf(false) }
                 val sheetState = rememberModalBottomSheetState()
 
+                val navigateToTab: (String) -> Unit = { targetRoute ->
+                    val startDestinationRoute = navController.graph.findStartDestination().route
+                    navController.navigate(targetRoute) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = (targetRoute != startDestinationRoute)
+                    }
+                }
+
                 Scaffold(
                     bottomBar = {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -125,13 +136,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                         onClick = {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
+                                            navigateToTab(screen.route)
                                         }
                                     )
                                 }
@@ -147,6 +152,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
+
                     NavHost(
                         navController = navController,
                         startDestination = Screen.Dashboard.route,
@@ -156,9 +162,9 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(
                                 viewModel = dashboardViewModel,
                                 siteViewModel = siteViewModel,
-                                onAddWorker = { navController.navigate(Screen.Workers.route) },
-                                onMarkAttendance = { navController.navigate(Screen.Attendance.route) },
-                                onMakePayment = { navController.navigate(Screen.Payments.route) },
+                                onAddWorker = { navigateToTab(Screen.Workers.route) },
+                                onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
+                                onMakePayment = { navigateToTab(Screen.Payments.route) },
                                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                                 onSiteClick = { siteId ->
                                     navController.navigate(Screen.SiteDetails.createRoute(siteId))
@@ -279,13 +285,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         modifier = Modifier.clickable {
                                             showMoreSheet = false
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
+                                            navigateToTab(screen.route)
                                         }
                                     )
                                 }

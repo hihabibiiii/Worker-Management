@@ -77,7 +77,6 @@ drawable ic_call_decline_low
 drawable ic_launcher
 drawable ic_launcher_background
 drawable logo
-drawable logo2
 drawable notification_action_background
 drawable notification_bg
 drawable notification_bg_low

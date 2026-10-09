@@ -46,7 +46,7 @@ fun DashboardScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("WorkCraft", fontWeight = FontWeight.Bold)
                         Text(
-                            "Smart Workforce Management",
+                            "Smart Work Management",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 10.sp,
                             color = Color.White

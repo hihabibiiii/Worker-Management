@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,9 +22,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -34,6 +37,12 @@ import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.*
 import java.net.URLEncoder
 import java.time.LocalDate
+
+enum class WorkerHistoryTab(val title: String) {
+    SITE("Site History"),
+    PAYMENT("Payment History"),
+    ATTENDANCE("Attendance History")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +64,7 @@ fun WorkerDetailsScreen(
     var showTransferDialog by remember { mutableStateOf(false) }
     var paymentDialogType by remember { mutableStateOf<PaymentType?>(null) }
     var showShareReportDialog by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(WorkerHistoryTab.ATTENDANCE) }
 
     Scaffold(
         topBar = {
@@ -112,47 +122,91 @@ fun WorkerDetailsScreen(
                 }
 
                 item {
-                    Text(
-                        "Site History", 
-                        style = MaterialTheme.typography.titleMedium, 
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        WorkerHistoryTab.entries.forEach { tab ->
+                            val isSelected = selectedTab == tab
+                            Surface(
+                                onClick = { selectedTab = tab },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp),
+                                shape = CircleShape,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                tonalElevation = if (isSelected) 4.dp else 1.dp
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = tab.title,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
-                items(siteHistory) { history ->
-                    val siteName = sites.find { it.id == history.siteId }?.name ?: "Unknown Site"
-                    SiteHistoryItem(history, siteName)
+                if (selectedTab == WorkerHistoryTab.SITE) {
+                    if (siteHistory.isEmpty()) {
+                        item {
+                            Text(
+                                "No site history recorded.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                    } else {
+                        items(siteHistory) { history ->
+                            val siteName = sites.find { it.id == history.siteId }?.name ?: "Unknown Site"
+                            SiteHistoryItem(history, siteName)
+                        }
+                    }
                 }
 
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Attendance History", 
-                        style = MaterialTheme.typography.titleMedium, 
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                if (selectedTab == WorkerHistoryTab.ATTENDANCE) {
+                    if (attendanceHistory.isEmpty()) {
+                        item {
+                            Text(
+                                "No attendance history recorded.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                    } else {
+                        items(attendanceHistory) { attendance ->
+                            val siteName = sites.find { it.id == attendance.siteId }?.name ?: "Unknown"
+                            AttendanceHistoryItem(attendance, siteName)
+                        }
+                    }
                 }
-                
-                items(attendanceHistory) { attendance ->
-                    val siteName = sites.find { it.id == attendance.siteId }?.name ?: "Unknown"
-                    AttendanceHistoryItem(attendance, siteName)
-                }
-                
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Payment History", 
-                        style = MaterialTheme.typography.titleMedium, 
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                
-                items(paymentHistory) { payment ->
-                    val siteName = sites.find { it.id == payment.siteId }?.name ?: "Unknown"
-                    PaymentHistoryItem(payment, siteName)
+
+                if (selectedTab == WorkerHistoryTab.PAYMENT) {
+                    if (paymentHistory.isEmpty()) {
+                        item {
+                            Text(
+                                "No payment history recorded.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                    } else {
+                        items(paymentHistory) { payment ->
+                            val siteName = sites.find { it.id == payment.siteId }?.name ?: "Unknown"
+                            PaymentHistoryItem(payment, siteName)
+                        }
+                    }
                 }
             }
         }

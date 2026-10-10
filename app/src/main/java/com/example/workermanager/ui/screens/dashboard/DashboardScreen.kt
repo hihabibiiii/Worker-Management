@@ -40,7 +40,7 @@ fun DashboardScreen(
     onAddWorker: () -> Unit = {},
     onMarkAttendance: () -> Unit,
     onMakePayment: () -> Unit = {},
-    onSettingsClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     onSiteClick: (Long) -> Unit
 ) {
     val stats by viewModel.stats.collectAsState()
@@ -77,11 +77,6 @@ fun DashboardScreen(
                                 color = Color.White
                             )
                         }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

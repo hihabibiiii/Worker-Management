@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.SiteEntity
@@ -236,25 +237,33 @@ fun SiteChip(
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
-        modifier = Modifier.height(if (workDays != null) 56.dp else 40.dp)
+        modifier = Modifier.defaultMinSize(minHeight = if (workDays != null) 48.dp else 40.dp)
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = if (workDays != null) 8.dp else 0.dp)
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = name,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                softWrap = true,
+                maxLines = 2
+            )
+            if (workDays != null) {
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = name,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+                    text = "Work : $workDays Days",
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    softWrap = true,
+                    maxLines = 2
                 )
-                if (workDays != null) {
-                    Text(
-                        text = "Work : $workDays Days",
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 10.sp
-                    )
-                }
             }
         }
     }

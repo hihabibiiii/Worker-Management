@@ -92,6 +92,12 @@ class PaymentViewModel(
         }
     }
 
+    fun updatePayment(payment: PaymentEntity) {
+        viewModelScope.launch {
+            paymentRepository.updatePayment(payment)
+        }
+    }
+
     fun deletePayment(payment: PaymentEntity) {
         viewModelScope.launch {
             paymentRepository.deletePayment(payment)

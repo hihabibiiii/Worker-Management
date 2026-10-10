@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
     data object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
-    data object Sites : Screen("sites", "Sites", Icons.Default.LocationOn)
+    data object Sites : Screen("sites", "All Sites", Icons.Default.LocationOn)
     data object Workers : Screen("workers", "Workers", Icons.Default.Groups)
     data object Attendance : Screen("attendance", "Attendance", Icons.Default.History)
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)

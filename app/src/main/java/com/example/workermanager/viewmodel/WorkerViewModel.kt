@@ -80,6 +80,18 @@ class WorkerViewModel(
         }
     }
 
+    fun updatePayment(payment: PaymentEntity) {
+        viewModelScope.launch {
+            paymentRepository.updatePayment(payment)
+        }
+    }
+
+    fun deletePayment(payment: PaymentEntity) {
+        viewModelScope.launch {
+            paymentRepository.deletePayment(payment)
+        }
+    }
+
     fun getWorkerStats(workerId: Long) = combine(
         attendanceRepository.getAttendanceByWorker(workerId),
         paymentRepository.getPaymentsByWorker(workerId)

@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -65,6 +67,9 @@ fun WorkerDetailsScreen(
     var paymentDialogType by remember { mutableStateOf<PaymentType?>(null) }
     var showShareReportDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(WorkerHistoryTab.ATTENDANCE) }
+
+    var paymentToEdit by remember { mutableStateOf<PaymentEntity?>(null) }
+    var paymentToDelete by remember { mutableStateOf<PaymentEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -204,7 +209,12 @@ fun WorkerDetailsScreen(
                     } else {
                         items(paymentHistory) { payment ->
                             val siteName = sites.find { it.id == payment.siteId }?.name ?: "Unknown"
-                            PaymentHistoryItem(payment, siteName)
+                            PaymentHistoryItem(
+                                payment = payment,
+                                siteName = siteName,
+                                onEdit = { paymentToEdit = payment },
+                                onDelete = { paymentToDelete = payment }
+                            )
                         }
                     }
                 }
@@ -240,6 +250,39 @@ fun WorkerDetailsScreen(
                         note = note
                     )
                     paymentDialogType = null
+                }
+            )
+        }
+
+        if (paymentToEdit != null) {
+            com.example.workermanager.ui.screens.payments.EditPaymentDialog(
+                payment = paymentToEdit!!,
+                sites = sites,
+                onDismiss = { paymentToEdit = null },
+                onConfirm = { updatedPayment ->
+                    paymentViewModel.updatePayment(updatedPayment)
+                    paymentToEdit = null
+                }
+            )
+        }
+
+        if (paymentToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { paymentToDelete = null },
+                title = { Text("Delete Payment?", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to delete this payment?", color = MaterialTheme.colorScheme.onSurface) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        paymentViewModel.deletePayment(paymentToDelete!!)
+                        paymentToDelete = null
+                    }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { paymentToDelete = null }) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                    }
                 }
             )
         }
@@ -499,35 +542,94 @@ fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PaymentHistoryItem(payment: PaymentEntity, siteName: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+fun PaymentHistoryItem(
+    payment: PaymentEntity,
+    siteName: String,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Box {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { menuExpanded = true }
+                ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column {
+            Row(
+                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        Utils.formatDate(payment.date), 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "${payment.paymentType.name} - $siteName", 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (payment.note.isNotEmpty()) {
+                        Text(
+                            "Note: ${payment.note}", 
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
                 Text(
-                    Utils.formatDate(payment.date), 
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    "${payment.paymentType.name} - $siteName", 
-                    style = MaterialTheme.typography.bodySmall, 
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
+                    Utils.formatCurrency(payment.amount), 
+                    fontWeight = FontWeight.ExtraBold, 
+                    color = Color(0xFF2E7D32)
                 )
             }
-            Text(
-                Utils.formatCurrency(payment.amount), 
-                fontWeight = FontWeight.ExtraBold, 
-                color = Color(0xFF2E7D32)
+        }
+
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Edit") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                onClick = {
+                    menuExpanded = false
+                    onEdit()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Delete", color = Color(0xFFC62828)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = Color(0xFFC62828),
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                onClick = {
+                    menuExpanded = false
+                    onDelete()
+                }
             )
         }
     }

@@ -494,7 +494,7 @@ fun WorkerDialog(
                             newSiteName = it
                             if (it.isNotBlank()) newSiteError = null
                         },
-                        label = { Text("Site Name*") },
+                        label = { Text("Site Name") },
                         singleLine = true,
                         isError = newSiteError != null,
                         supportingText = newSiteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },

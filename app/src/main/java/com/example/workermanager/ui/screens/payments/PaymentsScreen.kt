@@ -1,7 +1,9 @@
 package com.example.workermanager.ui.screens.payments
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +46,7 @@ fun PaymentsScreen(
     val selectedSiteId by viewModel.selectedSiteId.collectAsStateWithLifecycle()
     
     var showAddDialog by remember { mutableStateOf(false) }
+    var paymentToEdit by remember { mutableStateOf<PaymentEntity?>(null) }
     var paymentToDelete by remember { mutableStateOf<PaymentEntity?>(null) }
 
     Scaffold(
@@ -120,6 +124,7 @@ fun PaymentsScreen(
                                     payment = model.payment,
                                     workerName = model.workerName,
                                     siteName = model.siteName,
+                                    onEdit = { paymentToEdit = model.payment },
                                     onDelete = { paymentToDelete = model.payment }
                                 )
                             }
@@ -141,11 +146,23 @@ fun PaymentsScreen(
             )
         }
 
+        if (paymentToEdit != null) {
+            EditPaymentDialog(
+                payment = paymentToEdit!!,
+                sites = sites,
+                onDismiss = { paymentToEdit = null },
+                onConfirm = { updatedPayment ->
+                    viewModel.updatePayment(updatedPayment)
+                    paymentToEdit = null
+                }
+            )
+        }
+
         if (paymentToDelete != null) {
             AlertDialog(
                 onDismissRequest = { paymentToDelete = null },
-                title = { Text("Delete Payment", fontWeight = FontWeight.Bold) },
-                text = { Text("Are you sure you want to delete this payment record?", color = MaterialTheme.colorScheme.onSurface) },
+                title = { Text("Delete Payment?", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to delete this payment?", color = MaterialTheme.colorScheme.onSurface) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deletePayment(paymentToDelete!!)
@@ -187,69 +204,112 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PaymentCard(payment: PaymentEntity, workerName: String, siteName: String, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+fun PaymentCard(
+    payment: PaymentEntity,
+    workerName: String,
+    siteName: String,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { menuExpanded = true }
+                ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    workerName, 
-                    style = MaterialTheme.typography.titleMedium, 
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    "Site: $siteName", 
-                    style = MaterialTheme.typography.bodySmall, 
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Date: ${Utils.formatDate(payment.date)}", 
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    "Type: ${payment.paymentType.name} | ${payment.method.name}", 
-                    style = MaterialTheme.typography.bodySmall, 
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-                if (payment.note.isNotEmpty()) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Note: ${payment.note}", 
-                        style = MaterialTheme.typography.bodySmall,
+                        workerName, 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Site: $siteName", 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Date: ${Utils.formatDate(payment.date)}", 
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        "Type: ${payment.paymentType.name} | ${payment.method.name}", 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (payment.note.isNotEmpty()) {
+                        Text(
+                            "Note: ${payment.note}", 
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = Utils.formatCurrency(payment.amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32) // Darker Green
                     )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = Utils.formatCurrency(payment.amount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32) // Darker Green
-                )
-                IconButton(onClick = onDelete) {
+        }
+
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Edit") },
+                leadingIcon = {
                     Icon(
-                        Icons.Default.Delete, 
-                        contentDescription = "Delete", 
-                        tint = MaterialTheme.colorScheme.error
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
+                },
+                onClick = {
+                    menuExpanded = false
+                    onEdit()
                 }
-            }
+            )
+            DropdownMenuItem(
+                text = { Text("Delete", color = Color(0xFFC62828)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = Color(0xFFC62828),
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                onClick = {
+                    menuExpanded = false
+                    onDelete()
+                }
+            )
         }
     }
 }
@@ -435,6 +495,147 @@ fun AddPaymentDialog(
                 enabled = selectedSiteId != null && selectedWorkerId != null && amount.isNotEmpty()
             ) {
                 Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun EditPaymentDialog(
+    payment: PaymentEntity,
+    sites: List<SiteEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (PaymentEntity) -> Unit
+) {
+    var amount by remember { mutableStateOf(payment.amount.toString()) }
+    var selectedMethod by remember { mutableStateOf(payment.method) }
+    var selectedType by remember { mutableStateOf(payment.paymentType) }
+    var selectedDate by remember { mutableStateOf(payment.date) }
+    var selectedSiteId by remember { mutableStateOf<Long?>(payment.siteId) }
+    var note by remember { mutableStateOf(payment.note) }
+
+    var siteExpanded by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+        },
+        selectedDate.year,
+        selectedDate.monthValue - 1,
+        selectedDate.dayOfMonth
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Payment", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Site Selection
+                ExposedDropdownMenuBox(
+                    expanded = siteExpanded,
+                    onExpandedChange = { siteExpanded = !siteExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = sites.find { it.id == selectedSiteId }?.name ?: "Select Site*",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Site") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        sites.forEach { site ->
+                            DropdownMenuItem(
+                                text = { Text(site.name, fontWeight = FontWeight.Medium) },
+                                onClick = { 
+                                    selectedSiteId = site.id
+                                    siteExpanded = false 
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount*") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = Utils.formatDate(selectedDate),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date*") },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Payment Type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    PaymentType.entries.forEach { type ->
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(type.name, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                        )
+                    }
+                }
+
+                Text("Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PaymentMethod.entries.forEach { method ->
+                        FilterChip(
+                            selected = selectedMethod == method,
+                            onClick = { selectedMethod = method },
+                            label = { Text(method.name, fontWeight = FontWeight.Bold) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amountVal = amount.toDoubleOrNull() ?: 0.0
+                    if (selectedSiteId != null && amountVal > 0) {
+                        onConfirm(
+                            payment.copy(
+                                siteId = selectedSiteId!!,
+                                amount = amountVal,
+                                method = selectedMethod,
+                                paymentType = selectedType,
+                                date = selectedDate,
+                                note = note
+                            )
+                        )
+                    }
+                },
+                enabled = selectedSiteId != null && amount.isNotEmpty()
+            ) {
+                Text("Save Changes", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

@@ -157,6 +157,7 @@ fun AttendanceWorkerCard(
     onStatusChange: (AttendanceStatus, Double, String) -> Unit
 ) {
     var showOtDialog by remember { mutableStateOf(false) }
+    var pendingStatusConfirm by remember { mutableStateOf<AttendanceStatus?>(null) }
 
     Card(
         modifier = Modifier
@@ -203,13 +204,13 @@ fun AttendanceWorkerCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 StatusButton("P", AttendanceStatus.PRESENT, item.attendance?.status, Modifier.weight(1f)) {
-                    onStatusChange(AttendanceStatus.PRESENT, 0.0, "")
+                    pendingStatusConfirm = AttendanceStatus.PRESENT
                 }
                 StatusButton("HD", AttendanceStatus.HALF_DAY, item.attendance?.status, Modifier.weight(1f)) {
-                    onStatusChange(AttendanceStatus.HALF_DAY, 0.0, "")
+                    pendingStatusConfirm = AttendanceStatus.HALF_DAY
                 }
                 StatusButton("A", AttendanceStatus.ABSENT, item.attendance?.status, Modifier.weight(1f)) {
-                    onStatusChange(AttendanceStatus.ABSENT, 0.0, "")
+                    pendingStatusConfirm = AttendanceStatus.ABSENT
                 }
                 StatusButton("OT", AttendanceStatus.OVERTIME, item.attendance?.status, Modifier.weight(1f)) {
                     showOtDialog = true
@@ -228,6 +229,19 @@ fun AttendanceWorkerCard(
         }
     }
 
+    if (pendingStatusConfirm != null) {
+        AttendanceConfirmDialog(
+            workerName = item.worker.name,
+            status = pendingStatusConfirm!!,
+            onDismiss = { pendingStatusConfirm = null },
+            onConfirm = {
+                val statusToSave = pendingStatusConfirm!!
+                pendingStatusConfirm = null
+                onStatusChange(statusToSave, 0.0, "")
+            }
+        )
+    }
+
     if (showOtDialog) {
         OvertimeDialog(
             workerName = item.worker.name,
@@ -238,6 +252,58 @@ fun AttendanceWorkerCard(
             }
         )
     }
+}
+
+@Composable
+fun AttendanceConfirmDialog(
+    workerName: String,
+    status: AttendanceStatus,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val statusText = when (status) {
+        AttendanceStatus.PRESENT -> "Present"
+        AttendanceStatus.HALF_DAY -> "Half Day"
+        AttendanceStatus.ABSENT -> "Absent"
+        AttendanceStatus.OVERTIME -> "Overtime"
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Attendance", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Worker: $workerName",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Attendance: $statusText",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Are you sure you want to mark this attendance?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Yes", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("No", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+    )
 }
 
 @Composable

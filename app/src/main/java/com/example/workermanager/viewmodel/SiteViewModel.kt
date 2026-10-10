@@ -17,9 +17,26 @@ class SiteViewModel(private val repository: SiteRepository) : ViewModel() {
     val allSites: StateFlow<List<SiteEntity>> = repository.allSites
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun addSite(name: String, address: String, manager: String, startDate: LocalDate = LocalDate.now()) {
+    init {
+        ensureDefaultSite()
+    }
+
+    fun ensureDefaultSite() {
         viewModelScope.launch {
-            repository.insertSite(SiteEntity(name = name, address = address, manager = manager, startDate = startDate))
+            repository.ensureDefaultHomeSite()
+        }
+    }
+
+    fun addSite(
+        name: String, 
+        address: String = "", 
+        manager: String = "", 
+        startDate: LocalDate = LocalDate.now(),
+        onCreated: ((Long) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val id = repository.insertSite(SiteEntity(name = name, address = address, manager = manager, startDate = startDate))
+            onCreated?.invoke(id)
         }
     }
 

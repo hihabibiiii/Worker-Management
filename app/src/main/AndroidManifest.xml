@@ -7,9 +7,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/logo"
+        android:icon="@drawable/dashlogo"
         android:label="WorkCraft"
-        android:roundIcon="@drawable/logo"
+        android:roundIcon="@drawable/dashlogo"
         android:supportsRtl="true"
         android:theme="@style/Theme.WorkerManager"
         tools:targetApi="31">

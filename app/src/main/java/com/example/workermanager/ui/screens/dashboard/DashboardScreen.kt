@@ -7,18 +7,24 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.workermanager.R
 import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.DashboardViewModel
@@ -44,14 +50,28 @@ fun DashboardScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("WorkCraft", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Smart Work Management",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 10.sp,
-                            color = Color.White
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.dashlogo),
+                            contentDescription = "WorkCraft Logo",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
                         )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text("WorkCraft", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Smart Work Management",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 10.sp,
+                                color = Color.White
+                            )
+                        }
                     }
                 },
                 actions = {

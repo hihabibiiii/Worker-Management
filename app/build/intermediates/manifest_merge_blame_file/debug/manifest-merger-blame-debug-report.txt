@@ -33,12 +33,12 @@
 23        android:extractNativeLibs="false"
 24        android:fullBackupContent="@xml/backup_rules"
 24-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:9:9-54
-25        android:icon="@drawable/logo"
-25-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:10:9-38
+25        android:icon="@drawable/dashlogo"
+25-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:10:9-42
 26        android:label="WorkCraft"
 26-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:11:9-34
-27        android:roundIcon="@drawable/logo"
-27-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:12:9-43
+27        android:roundIcon="@drawable/dashlogo"
+27-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:12:9-47
 28        android:supportsRtl="true"
 28-->C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\AndroidManifest.xml:13:9-35
 29        android:testOnly="true"

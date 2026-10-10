@@ -22,9 +22,9 @@
         android:debuggable="true"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/logo"
+        android:icon="@drawable/dashlogo"
         android:label="WorkCraft"
-        android:roundIcon="@drawable/logo"
+        android:roundIcon="@drawable/dashlogo"
         android:supportsRtl="true"
         android:testOnly="true"
         android:theme="@style/Theme.WorkerManager" >

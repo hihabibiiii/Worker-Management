@@ -121,6 +121,11 @@ fun WorkersScreen(
                     showAddDialog = false
                     workerToEdit = null
                 },
+                onAddNewSite = { siteName, siteAddress, siteManager, onCreated ->
+                    siteViewModel.addSite(name = siteName, address = siteAddress, manager = siteManager) { newId ->
+                        onCreated(newId)
+                    }
+                },
                 onConfirm = { name, phone, type, dailyRate, otRate, date, siteId, notes, active ->
                     if (workerToEdit == null) {
                         viewModel.addWorker(name, phone, type, dailyRate, otRate, date, siteId, notes)
@@ -248,6 +253,7 @@ fun WorkerDialog(
     worker: WorkerEntity?,
     sites: List<SiteEntity>,
     onDismiss: () -> Unit,
+    onAddNewSite: (String, String, String, (Long) -> Unit) -> Unit,
     onConfirm: (String, String, WorkerType, Double, Double, LocalDate, Long?, String, Boolean) -> Unit
 ) {
     var name by remember { mutableStateOf(worker?.name ?: "") }
@@ -260,8 +266,24 @@ fun WorkerDialog(
     var notes by remember { mutableStateOf(worker?.notes ?: "") }
     var isActive by remember { mutableStateOf(worker?.isActive ?: true) }
 
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var siteError by remember { mutableStateOf<String?>(null) }
+
     var typeExpanded by remember { mutableStateOf(false) }
     var siteExpanded by remember { mutableStateOf(false) }
+
+    var showAddSiteDialog by remember { mutableStateOf(false) }
+    var newSiteName by remember { mutableStateOf("") }
+    var newSiteAddress by remember { mutableStateOf("") }
+    var newSiteManager by remember { mutableStateOf("") }
+    var newSiteError by remember { mutableStateOf<String?>(null) }
+
+    val displaySites = remember(sites) {
+        val home = sites.find { it.name.equals("Home", ignoreCase = true) }
+            ?: SiteEntity(id = -1L, name = "Home", address = "Home", manager = "Default")
+        val others = sites.filter { !it.name.equals("Home", ignoreCase = true) }
+        listOf(home) + others
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -273,8 +295,13 @@ fun WorkerDialog(
             ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { 
+                        name = it
+                        if (it.isNotBlank()) nameError = null
+                    },
                     label = { Text("Name*") },
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -323,23 +350,63 @@ fun WorkerDialog(
                     )
                 }
 
-                // Site selection (only for new workers or showing current)
+                // Site selection
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
                     OutlinedTextField(
                         value = sites.find { it.id == siteId }?.name ?: "Select Site",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Assign to Site") },
+                        label = { Text("Assign to Site*") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                        isError = siteError != null,
+                        supportingText = siteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
-                        sites.forEach { site ->
+                        displaySites.forEach { site ->
                             DropdownMenuItem(
                                 text = { Text(site.name, fontWeight = FontWeight.Medium) }, 
-                                onClick = { siteId = site.id; siteExpanded = false }
+                                onClick = { 
+                                    if (site.id == -1L) {
+                                        onAddNewSite("Home", "Home", "Default") { newId ->
+                                            siteId = newId
+                                            siteError = null
+                                        }
+                                    } else {
+                                        siteId = site.id
+                                        siteError = null
+                                    }
+                                    siteExpanded = false 
+                                }
                             )
                         }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "+ Add New Site",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
+                            onClick = {
+                                siteExpanded = false
+                                newSiteName = ""
+                                newSiteAddress = ""
+                                newSiteManager = ""
+                                newSiteError = null
+                                showAddSiteDialog = true
+                            }
+                        )
                     }
                 }
 
@@ -356,7 +423,23 @@ fun WorkerDialog(
                 onClick = {
                     val dRate = dailyRate.toDoubleOrNull() ?: 0.0
                     val oRate = otRate.toDoubleOrNull() ?: 0.0
-                    if (name.isNotBlank()) {
+                    var hasError = false
+
+                    if (name.isBlank()) {
+                        nameError = "Name is required"
+                        hasError = true
+                    } else {
+                        nameError = null
+                    }
+
+                    if (siteId == null) {
+                        siteError = "Please select a site"
+                        hasError = true
+                    } else {
+                        siteError = null
+                    }
+
+                    if (!hasError) {
                         onConfirm(name, phone, type, dRate, oRate, joiningDate, siteId, notes, isActive)
                     }
                 }
@@ -366,4 +449,75 @@ fun WorkerDialog(
             TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
         }
     )
+
+    if (showAddSiteDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddSiteDialog = false },
+            title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newSiteName,
+                        onValueChange = { 
+                            newSiteName = it
+                            if (it.isNotBlank()) newSiteError = null
+                        },
+                        label = { Text("Site Name*") },
+                        placeholder = { Text("e.g. Sharma Ji Ka Ghar") },
+                        singleLine = true,
+                        isError = newSiteError != null,
+                        supportingText = newSiteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newSiteAddress,
+                        onValueChange = { newSiteAddress = it },
+                        label = { Text("Site Address") },
+                        placeholder = { Text("e.g. Deoria, Uttar Pradesh") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newSiteManager,
+                        onValueChange = { newSiteManager = it },
+                        label = { Text("Site Manager") },
+                        placeholder = { Text("e.g. Ramesh Kumar") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmedName = newSiteName.trim()
+                        val trimmedAddress = newSiteAddress.trim()
+                        val trimmedManager = newSiteManager.trim()
+
+                        if (trimmedName.isEmpty()) {
+                            newSiteError = "Site name cannot be empty"
+                        } else if (sites.any { it.name.equals(trimmedName, ignoreCase = true) }) {
+                            newSiteError = "A site with this name already exists"
+                        } else {
+                            onAddNewSite(trimmedName, trimmedAddress, trimmedManager) { createdSiteId ->
+                                siteId = createdSiteId
+                                siteError = null
+                                showAddSiteDialog = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Save Site", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddSiteDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+        )
+    }
 }

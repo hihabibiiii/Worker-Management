@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -153,8 +154,8 @@ fun WorkersScreen(
         if (workerToDelete != null) {
             AlertDialog(
                 onDismissRequest = { workerToDelete = null },
-                title = { Text("Delete Worker", fontWeight = FontWeight.Bold) },
-                text = { Text("Delete this worker and all related attendance/payment records? This cannot be undone.", color = MaterialTheme.colorScheme.onSurface) },
+                title = { Text("Delete Worker?", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to delete this worker?", color = MaterialTheme.colorScheme.onSurface) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteWorker(workerToDelete!!)
@@ -182,6 +183,8 @@ fun WorkerCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -191,7 +194,7 @@ fun WorkerCard(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -225,21 +228,47 @@ fun WorkerCard(
                     color = if (pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
                 )
             }
-            Row {
-                IconButton(onClick = onEdit) {
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
                     Icon(
-                        Icons.Default.Edit, 
-                        contentDescription = "Edit", 
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        Icons.Default.MoreVert, 
+                        contentDescription = "More options", 
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete, 
-                        contentDescription = "Delete", 
-                        tint = Color(0xFFC62828), 
-                        modifier = Modifier.size(20.dp)
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onEdit()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete", color = Color(0xFFC62828)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFFC62828)
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete()
+                        }
                     )
                 }
             }
@@ -299,7 +328,7 @@ fun WorkerDialog(
                         name = it
                         if (it.isNotBlank()) nameError = null
                     },
-                    label = { Text("Name*") },
+                    label = { Text("Name") },
                     isError = nameError != null,
                     supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
@@ -336,7 +365,7 @@ fun WorkerDialog(
                     OutlinedTextField(
                         value = dailyRate, 
                         onValueChange = { dailyRate = it }, 
-                        label = { Text("Daily Rate*") }, 
+                        label = { Text("Daily Rate") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), 
                         modifier = Modifier.weight(1f)
                     )
@@ -356,7 +385,7 @@ fun WorkerDialog(
                         value = sites.find { it.id == siteId }?.name ?: "Select Site",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Assign to Site*") },
+                        label = { Text("Assign to Site") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
                         isError = siteError != null,
                         supportingText = siteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -392,7 +421,7 @@ fun WorkerDialog(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "+ Add New Site",
+                                        "Add New Site",
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -466,7 +495,6 @@ fun WorkerDialog(
                             if (it.isNotBlank()) newSiteError = null
                         },
                         label = { Text("Site Name*") },
-                        placeholder = { Text("e.g. Sharma Ji Ka Ghar") },
                         singleLine = true,
                         isError = newSiteError != null,
                         supportingText = newSiteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -476,7 +504,6 @@ fun WorkerDialog(
                         value = newSiteAddress,
                         onValueChange = { newSiteAddress = it },
                         label = { Text("Site Address") },
-                        placeholder = { Text("e.g. Deoria, Uttar Pradesh") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -484,7 +511,6 @@ fun WorkerDialog(
                         value = newSiteManager,
                         onValueChange = { newSiteManager = it },
                         label = { Text("Site Manager") },
-                        placeholder = { Text("e.g. Ramesh Kumar") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

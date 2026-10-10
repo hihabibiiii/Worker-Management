@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
@@ -40,9 +42,13 @@ fun SitesScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Site")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add Site", fontWeight = FontWeight.Bold) }
+            )
         }
     ) { padding ->
         if (sites.isEmpty()) {
@@ -66,6 +72,7 @@ fun SitesScreen(
 
         if (showAddDialog) {
             AddSiteDialog(
+                sites = sites,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { name, address, manager ->
                     viewModel.addSite(name, address, manager)
@@ -139,28 +146,79 @@ fun StatusChip(status: SiteStatus) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddSiteDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
+fun AddSiteDialog(
+    sites: List<SiteEntity> = emptyList(),
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, String) -> Unit
+) {
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var manager by remember { mutableStateOf("") }
+
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Site Name") })
-                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
-                OutlinedTextField(value = manager, onValueChange = { manager = it }, label = { Text("Site Manager") })
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { 
+                        name = it
+                        if (it.isNotBlank()) nameError = null
+                    },
+                    label = { Text("Site Name*") },
+                    placeholder = { Text("e.g. Sharma Ji Ka Ghar") },
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Site Address") },
+                    placeholder = { Text("e.g. Deoria, Uttar Pradesh") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = manager,
+                    onValueChange = { manager = it },
+                    label = { Text("Site Manager") },
+                    placeholder = { Text("e.g. Ramesh Kumar") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { if (name.isNotEmpty()) onConfirm(name, address, manager) }) {
-                Text("Add", fontWeight = FontWeight.Bold)
+            Button(
+                enabled = !isSubmitting,
+                onClick = {
+                    val trimmedName = name.trim()
+                    if (trimmedName.isEmpty()) {
+                        nameError = "Site name cannot be empty"
+                    } else if (sites.any { it.name.equals(trimmedName, ignoreCase = true) }) {
+                        nameError = "A site with this name already exists"
+                    } else {
+                        isSubmitting = true
+                        onConfirm(trimmedName, address.trim(), manager.trim())
+                    }
+                }
+            ) {
+                Text("Save Site", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
+            TextButton(onClick = onDismiss, enabled = !isSubmitting) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+            }
         }
     )
 }

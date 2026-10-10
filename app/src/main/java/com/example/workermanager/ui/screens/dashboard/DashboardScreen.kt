@@ -29,15 +29,17 @@ import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.DashboardViewModel
 import com.example.workermanager.viewmodel.SiteViewModel
+import com.example.workermanager.viewmodel.WorkerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     siteViewModel: SiteViewModel,
-    onAddWorker: () -> Unit,
+    workerViewModel: WorkerViewModel,
+    onAddWorker: () -> Unit = {},
     onMarkAttendance: () -> Unit,
-    onMakePayment: () -> Unit,
+    onMakePayment: () -> Unit = {},
     onSettingsClick: () -> Unit,
     onSiteClick: (Long) -> Unit
 ) {
@@ -45,6 +47,9 @@ fun DashboardScreen(
     val sites by siteViewModel.allSites.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val totalSiteWorkingDays by viewModel.totalSiteWorkingDays.collectAsState()
+
+    var showAddWorkerDialog by remember { mutableStateOf(false) }
+    var showAddSiteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -235,12 +240,40 @@ fun DashboardScreen(
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionCard("Add Worker", Icons.Default.PersonAdd, onAddWorker, Modifier.weight(1f))
+                ActionCard("Add Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
                 ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
-                ActionCard("Payment", Icons.Default.AccountBalanceWallet, onMakePayment, Modifier.weight(1f))
+                ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (showAddWorkerDialog) {
+            com.example.workermanager.ui.screens.workers.WorkerDialog(
+                worker = null,
+                sites = sites,
+                onDismiss = { showAddWorkerDialog = false },
+                onAddNewSite = { siteName, siteAddress, siteManager, onCreated ->
+                    siteViewModel.addSite(name = siteName, address = siteAddress, manager = siteManager) { newId ->
+                        onCreated(newId)
+                    }
+                },
+                onConfirm = { name, phone, type, dailyRate, otRate, date, siteId, notes, active ->
+                    workerViewModel.addWorker(name, phone, type, dailyRate, otRate, date, siteId, notes)
+                    showAddWorkerDialog = false
+                }
+            )
+        }
+
+        if (showAddSiteDialog) {
+            com.example.workermanager.ui.screens.sites.AddSiteDialog(
+                sites = sites,
+                onDismiss = { showAddSiteDialog = false },
+                onConfirm = { name, address, manager ->
+                    siteViewModel.addSite(name, address, manager)
+                    showAddSiteDialog = false
+                }
+            )
         }
     }
 }

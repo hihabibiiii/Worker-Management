@@ -162,9 +162,9 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(
                                 viewModel = dashboardViewModel,
                                 siteViewModel = siteViewModel,
+                                workerViewModel = workerViewModel,
                                 onAddWorker = { navigateToTab(Screen.Workers.route) },
                                 onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
-                                onMakePayment = { navigateToTab(Screen.Payments.route) },
                                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                                 onSiteClick = { siteId ->
                                     navController.navigate(Screen.SiteDetails.createRoute(siteId))

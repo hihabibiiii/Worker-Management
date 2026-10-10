@@ -51,9 +51,13 @@ fun ContractsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Contract")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add Contract", fontWeight = FontWeight.Bold) }
+            )
         }
     ) { padding ->
         Column(

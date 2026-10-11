@@ -28,5 +28,7 @@ data class ContractEntity(
     val totalAmount: Double,
     val startDate: LocalDate = LocalDate.now(),
     val notes: String = "",
-    val status: ContractStatus = ContractStatus.ACTIVE
+    val status: ContractStatus = ContractStatus.ACTIVE,
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

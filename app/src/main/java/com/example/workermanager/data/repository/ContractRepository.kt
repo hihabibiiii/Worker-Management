@@ -15,5 +15,13 @@ class ContractRepository(private val contractDao: ContractDao) {
 
     suspend fun updateContract(contract: ContractEntity) = contractDao.updateContract(contract)
 
-    suspend fun deleteContract(contract: ContractEntity) = contractDao.deleteContract(contract)
+    suspend fun deleteContract(contract: ContractEntity) = contractDao.softDeleteContract(contract.id)
+
+    suspend fun restoreContract(id: Long) = contractDao.restoreContract(id)
+
+    fun getDeletedContracts(): Flow<List<ContractEntity>> = contractDao.getDeletedContracts()
+
+    suspend fun permanentlyDeleteContract(id: Long) = contractDao.permanentlyDeleteContract(id)
+
+    suspend fun emptyContractTrash() = contractDao.emptyContractTrash()
 }

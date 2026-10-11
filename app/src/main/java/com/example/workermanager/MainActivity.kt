@@ -3,22 +3,21 @@ package com.example.workermanager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.ui.unit.dp
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.ListItem
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -42,6 +42,7 @@ import com.example.workermanager.ui.screens.contracts.ContractDetailsScreen
 import com.example.workermanager.ui.screens.contracts.ContractsScreen
 import com.example.workermanager.ui.screens.dashboard.DashboardScreen
 import com.example.workermanager.ui.screens.payments.PaymentsScreen
+import com.example.workermanager.ui.screens.recyclebin.RecycleBinScreen
 import com.example.workermanager.ui.screens.reports.ReportsScreen
 import com.example.workermanager.ui.screens.settings.SettingsScreen
 import com.example.workermanager.ui.screens.sites.SiteDetailsScreen
@@ -86,6 +87,15 @@ class MainActivity : ComponentActivity() {
                 val contractViewModel: ContractViewModel = viewModel(
                     factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)
                 )
+                val recycleBinViewModel: RecycleBinViewModel = viewModel(
+                    factory = RecycleBinViewModelFactory(
+                        app.workerRepository,
+                        app.siteRepository,
+                        app.contractRepository,
+                        app.paymentRepository,
+                        app.clientPaymentRepository
+                    )
+                )
 
                 val primaryNavItems = listOf(
                     Screen.Dashboard,
@@ -98,6 +108,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Sites,
                     Screen.Contracts,
                     Screen.Reports,
+                    Screen.RecycleBin,
                     Screen.Settings
                 )
                 
@@ -260,10 +271,17 @@ class MainActivity : ComponentActivity() {
                                 siteViewModel = siteViewModel
                             )
                         }
+                        composable(Screen.RecycleBin.route) {
+                            RecycleBinScreen(
+                                viewModel = recycleBinViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
                         composable(Screen.Settings.route) {
                             SettingsScreen(
                                 viewModel = settingsViewModel,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) }
                             )
                         }
                     }

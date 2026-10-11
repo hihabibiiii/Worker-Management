@@ -17,5 +17,13 @@ class ClientPaymentRepository(private val clientPaymentDao: ClientPaymentDao) {
 
     suspend fun updatePayment(payment: ClientPaymentEntity) = clientPaymentDao.updatePayment(payment)
 
-    suspend fun deletePayment(payment: ClientPaymentEntity) = clientPaymentDao.deletePayment(payment)
+    suspend fun deletePayment(payment: ClientPaymentEntity) = clientPaymentDao.softDeleteClientPayment(payment.id)
+
+    suspend fun restoreClientPayment(id: Long) = clientPaymentDao.restoreClientPayment(id)
+
+    fun getDeletedClientPayments(): Flow<List<ClientPaymentEntity>> = clientPaymentDao.getDeletedClientPayments()
+
+    suspend fun permanentlyDeleteClientPayment(id: Long) = clientPaymentDao.permanentlyDeleteClientPayment(id)
+
+    suspend fun emptyClientPaymentTrash() = clientPaymentDao.emptyClientPaymentTrash()
 }

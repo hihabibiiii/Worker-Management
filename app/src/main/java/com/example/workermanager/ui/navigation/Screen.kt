@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
@@ -19,6 +20,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
     data object Contracts : Screen("contracts", "Contracts", Icons.Default.Assignment)
     data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
+    data object RecycleBin : Screen("recycle_bin", "Recycle Bin", Icons.Default.DeleteSweep)
     
     data object SiteDetails : Screen("site_details/{siteId}", "Site Details") {
         fun createRoute(siteId: Long) = "site_details/$siteId"

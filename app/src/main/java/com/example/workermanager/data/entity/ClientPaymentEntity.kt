@@ -27,5 +27,7 @@ data class ClientPaymentEntity(
     val paymentDate: LocalDate = LocalDate.now(),
     val method: ClientPaymentMethod = ClientPaymentMethod.CASH,
     val note: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

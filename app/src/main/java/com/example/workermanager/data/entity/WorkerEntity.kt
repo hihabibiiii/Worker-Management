@@ -19,5 +19,7 @@ data class WorkerEntity(
     val joiningDate: LocalDate = LocalDate.now(),
     val currentSiteId: Long? = null,
     val isActive: Boolean = true,
-    val notes: String = ""
+    val notes: String = "",
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

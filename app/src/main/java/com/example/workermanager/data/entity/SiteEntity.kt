@@ -15,5 +15,7 @@ data class SiteEntity(
     val address: String = "",
     val manager: String = "",
     val startDate: LocalDate = LocalDate.now(),
-    val status: SiteStatus = SiteStatus.ACTIVE
+    val status: SiteStatus = SiteStatus.ACTIVE,
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

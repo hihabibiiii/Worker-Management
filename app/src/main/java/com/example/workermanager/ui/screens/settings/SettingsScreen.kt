@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
@@ -35,7 +36,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenRecycleBin: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
@@ -205,10 +207,24 @@ fun SettingsScreen(
             Text(
                 "Data Management", 
                 style = MaterialTheme.typography.titleMedium, 
-                color = Color(0xFFC62828), // Darker Red
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Recycle Bin", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("View and restore deleted items", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                modifier = Modifier.clickable { onOpenRecycleBin() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             
             ListItem(
                 headlineContent = { 

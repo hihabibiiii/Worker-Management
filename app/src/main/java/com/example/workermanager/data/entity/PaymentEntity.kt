@@ -39,5 +39,7 @@ data class PaymentEntity(
     val method: PaymentMethod = PaymentMethod.CASH,
     val paymentType: PaymentType = PaymentType.PAYMENT,
     val note: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null
 )

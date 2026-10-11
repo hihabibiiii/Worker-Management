@@ -29,5 +29,13 @@ class SiteRepository(private val siteDao: SiteDao) {
     
     suspend fun updateSite(site: SiteEntity) = siteDao.updateSite(site)
     
-    suspend fun deleteSite(site: SiteEntity) = siteDao.deleteSite(site)
+    suspend fun deleteSite(site: SiteEntity) = siteDao.softDeleteSite(site.id)
+
+    suspend fun restoreSite(id: Long) = siteDao.restoreSite(id)
+
+    fun getDeletedSites(): Flow<List<SiteEntity>> = siteDao.getDeletedSites()
+
+    suspend fun permanentlyDeleteSite(id: Long) = siteDao.permanentlyDeleteSite(id)
+
+    suspend fun emptySiteTrash() = siteDao.emptySiteTrash()
 }

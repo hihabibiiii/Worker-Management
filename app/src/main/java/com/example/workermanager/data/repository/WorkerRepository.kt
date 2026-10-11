@@ -36,7 +36,15 @@ class WorkerRepository(
 
     suspend fun updateWorker(worker: WorkerEntity) = workerDao.updateWorker(worker)
 
-    suspend fun deleteWorker(worker: WorkerEntity) = workerDao.deleteWorker(worker)
+    suspend fun deleteWorker(worker: WorkerEntity) = workerDao.softDeleteWorker(worker.id)
+
+    suspend fun restoreWorker(id: Long) = workerDao.restoreWorker(id)
+
+    fun getDeletedWorkers(): Flow<List<WorkerEntity>> = workerDao.getDeletedWorkers()
+
+    suspend fun permanentlyDeleteWorker(id: Long) = workerDao.permanentlyDeleteWorker(id)
+
+    suspend fun emptyWorkerTrash() = workerDao.emptyWorkerTrash()
 
     suspend fun transferWorker(workerId: Long, newSiteId: Long, transferDate: LocalDate) {
         // 1. Close current history

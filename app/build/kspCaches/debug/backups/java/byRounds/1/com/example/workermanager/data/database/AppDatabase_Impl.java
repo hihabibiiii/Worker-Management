@@ -62,21 +62,21 @@ public final class AppDatabase_Impl extends AppDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(4) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(5) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `status` TEXT NOT NULL, `overtimeHours` REAL NOT NULL, `overtimeAmount` REAL NOT NULL, `amount` REAL NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_attendance_workerId_siteId_date` ON `attendance` (`workerId`, `siteId`, `date`)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` TEXT NOT NULL, `method` TEXT NOT NULL, `paymentType` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `sites` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `address` TEXT NOT NULL, `manager` TEXT NOT NULL, `startDate` TEXT NOT NULL, `status` TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` TEXT NOT NULL, `method` TEXT NOT NULL, `paymentType` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sites` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `address` TEXT NOT NULL, `manager` TEXT NOT NULL, `startDate` TEXT NOT NULL, `status` TEXT NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `worker_site_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `contracts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientName` TEXT NOT NULL, `mobile` TEXT NOT NULL, `siteId` INTEGER, `totalAmount` REAL NOT NULL, `startDate` TEXT NOT NULL, `notes` TEXT NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `client_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `contractId` INTEGER NOT NULL, `amount` REAL NOT NULL, `paymentDate` TEXT NOT NULL, `method` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`contractId`) REFERENCES `contracts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `contracts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `clientName` TEXT NOT NULL, `mobile` TEXT NOT NULL, `siteId` INTEGER, `totalAmount` REAL NOT NULL, `startDate` TEXT NOT NULL, `notes` TEXT NOT NULL, `status` TEXT NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `client_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `contractId` INTEGER NOT NULL, `amount` REAL NOT NULL, `paymentDate` TEXT NOT NULL, `method` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`contractId`) REFERENCES `contracts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `site_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `isPresent` INTEGER NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_site_attendance_siteId_date` ON `site_attendance` (`siteId`, `date`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1725beb1012a7ee3b4808b1880f36322')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1eb5dd88488ed40c5bb5f0ced3d13aad')");
       }
 
       @Override
@@ -133,7 +133,7 @@ public final class AppDatabase_Impl extends AppDatabase {
       @NonNull
       public RoomOpenHelper.ValidationResult onValidateSchema(
           @NonNull final SupportSQLiteDatabase db) {
-        final HashMap<String, TableInfo.Column> _columnsWorkers = new HashMap<String, TableInfo.Column>(10);
+        final HashMap<String, TableInfo.Column> _columnsWorkers = new HashMap<String, TableInfo.Column>(12);
         _columnsWorkers.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsWorkers.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsWorkers.put("phone", new TableInfo.Column("phone", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -144,6 +144,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsWorkers.put("currentSiteId", new TableInfo.Column("currentSiteId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsWorkers.put("isActive", new TableInfo.Column("isActive", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsWorkers.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkers.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkers.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysWorkers = new HashSet<TableInfo.ForeignKey>(0);
         final HashSet<TableInfo.Index> _indicesWorkers = new HashSet<TableInfo.Index>(0);
         final TableInfo _infoWorkers = new TableInfo("workers", _columnsWorkers, _foreignKeysWorkers, _indicesWorkers);
@@ -176,7 +178,7 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoAttendance + "\n"
                   + " Found:\n" + _existingAttendance);
         }
-        final HashMap<String, TableInfo.Column> _columnsPayments = new HashMap<String, TableInfo.Column>(9);
+        final HashMap<String, TableInfo.Column> _columnsPayments = new HashMap<String, TableInfo.Column>(11);
         _columnsPayments.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsPayments.put("workerId", new TableInfo.Column("workerId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsPayments.put("siteId", new TableInfo.Column("siteId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -186,6 +188,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsPayments.put("paymentType", new TableInfo.Column("paymentType", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsPayments.put("note", new TableInfo.Column("note", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsPayments.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsPayments.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsPayments.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysPayments = new HashSet<TableInfo.ForeignKey>(2);
         _foreignKeysPayments.add(new TableInfo.ForeignKey("workers", "CASCADE", "NO ACTION", Arrays.asList("workerId"), Arrays.asList("id")));
         _foreignKeysPayments.add(new TableInfo.ForeignKey("sites", "CASCADE", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
@@ -197,13 +201,15 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoPayments + "\n"
                   + " Found:\n" + _existingPayments);
         }
-        final HashMap<String, TableInfo.Column> _columnsSites = new HashMap<String, TableInfo.Column>(6);
+        final HashMap<String, TableInfo.Column> _columnsSites = new HashMap<String, TableInfo.Column>(8);
         _columnsSites.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsSites.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsSites.put("address", new TableInfo.Column("address", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsSites.put("manager", new TableInfo.Column("manager", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsSites.put("startDate", new TableInfo.Column("startDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsSites.put("status", new TableInfo.Column("status", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSites.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSites.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysSites = new HashSet<TableInfo.ForeignKey>(0);
         final HashSet<TableInfo.Index> _indicesSites = new HashSet<TableInfo.Index>(0);
         final TableInfo _infoSites = new TableInfo("sites", _columnsSites, _foreignKeysSites, _indicesSites);
@@ -231,7 +237,7 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoWorkerSiteHistory + "\n"
                   + " Found:\n" + _existingWorkerSiteHistory);
         }
-        final HashMap<String, TableInfo.Column> _columnsContracts = new HashMap<String, TableInfo.Column>(8);
+        final HashMap<String, TableInfo.Column> _columnsContracts = new HashMap<String, TableInfo.Column>(10);
         _columnsContracts.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsContracts.put("clientName", new TableInfo.Column("clientName", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsContracts.put("mobile", new TableInfo.Column("mobile", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -240,6 +246,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsContracts.put("startDate", new TableInfo.Column("startDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsContracts.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsContracts.put("status", new TableInfo.Column("status", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContracts.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysContracts = new HashSet<TableInfo.ForeignKey>(1);
         _foreignKeysContracts.add(new TableInfo.ForeignKey("sites", "SET NULL", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
         final HashSet<TableInfo.Index> _indicesContracts = new HashSet<TableInfo.Index>(0);
@@ -250,7 +258,7 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoContracts + "\n"
                   + " Found:\n" + _existingContracts);
         }
-        final HashMap<String, TableInfo.Column> _columnsClientPayments = new HashMap<String, TableInfo.Column>(7);
+        final HashMap<String, TableInfo.Column> _columnsClientPayments = new HashMap<String, TableInfo.Column>(9);
         _columnsClientPayments.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsClientPayments.put("contractId", new TableInfo.Column("contractId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsClientPayments.put("amount", new TableInfo.Column("amount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -258,6 +266,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsClientPayments.put("method", new TableInfo.Column("method", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsClientPayments.put("note", new TableInfo.Column("note", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsClientPayments.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsClientPayments.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysClientPayments = new HashSet<TableInfo.ForeignKey>(1);
         _foreignKeysClientPayments.add(new TableInfo.ForeignKey("contracts", "CASCADE", "NO ACTION", Arrays.asList("contractId"), Arrays.asList("id")));
         final HashSet<TableInfo.Index> _indicesClientPayments = new HashSet<TableInfo.Index>(0);
@@ -286,7 +296,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "1725beb1012a7ee3b4808b1880f36322", "87f6a428478be22b5078874268f426f6");
+    }, "1eb5dd88488ed40c5bb5f0ced3d13aad", "152a04560342efcab3343c0ef31f4581");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;

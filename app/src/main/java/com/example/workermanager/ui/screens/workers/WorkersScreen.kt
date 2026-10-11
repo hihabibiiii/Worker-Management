@@ -451,7 +451,7 @@ fun WorkerDialog(
 
                 // Site selection
                 val siteFieldText = when (siteId) {
-                    NONE_SITE_ID -> "Personal"
+                    NONE_SITE_ID -> "None"
                     null -> "Select Site"
                     else -> sites.find { it.id == siteId }?.name ?: "Select Site"
                 }
@@ -469,7 +469,7 @@ fun WorkerDialog(
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
                         DropdownMenuItem(
-                            text = { Text("Personal", fontWeight = FontWeight.Medium) },
+                            text = { Text("None", fontWeight = FontWeight.Medium) },
                             onClick = {
                                 siteId = NONE_SITE_ID
                                 siteError = null

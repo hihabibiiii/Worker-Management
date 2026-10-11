@@ -42,6 +42,8 @@ import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerViewModel
 import java.time.LocalDate
 
+private const val NONE_SITE_ID = -1L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkersScreen(
@@ -448,9 +450,15 @@ fun WorkerDialog(
                 }
 
                 // Site selection
+                val siteFieldText = when (siteId) {
+                    NONE_SITE_ID -> "Personal"
+                    null -> "Select Site"
+                    else -> sites.find { it.id == siteId }?.name ?: "Select Site"
+                }
+
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
                     OutlinedTextField(
-                        value = sites.find { it.id == siteId }?.name ?: "Select Site",
+                        value = siteFieldText,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Assign to Site") },
@@ -460,6 +468,14 @@ fun WorkerDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Personal", fontWeight = FontWeight.Medium) },
+                            onClick = {
+                                siteId = NONE_SITE_ID
+                                siteError = null
+                                siteExpanded = false
+                            }
+                        )
                         displaySites.forEach { site ->
                             DropdownMenuItem(
                                 text = { Text(site.name, fontWeight = FontWeight.Medium) }, 
@@ -522,7 +538,7 @@ fun WorkerDialog(
                         nameError = null
                     }
 
-                    if (sites.isNotEmpty() && siteId == null) {
+                    if (siteId == null) {
                         siteError = "Please select a site"
                         hasError = true
                     } else {
@@ -530,7 +546,18 @@ fun WorkerDialog(
                     }
 
                     if (!hasError) {
-                        onConfirm(name, phone, type, dRate, oRate, joiningDate, siteId, notes, isActive)
+                        if (siteId == NONE_SITE_ID) {
+                            val existingSelfWork = sites.find { it.name.equals("Self Work", ignoreCase = true) }
+                            if (existingSelfWork != null) {
+                                onConfirm(name, phone, type, dRate, oRate, joiningDate, existingSelfWork.id, notes, isActive)
+                            } else {
+                                onAddNewSite("Self Work", "Self Work", "Default") { createdSiteId ->
+                                    onConfirm(name, phone, type, dRate, oRate, joiningDate, createdSiteId, notes, isActive)
+                                }
+                            }
+                        } else {
+                            onConfirm(name, phone, type, dRate, oRate, joiningDate, siteId, notes, isActive)
+                        }
                     }
                 }
             ) { Text("Save", fontWeight = FontWeight.Bold) }

@@ -76,25 +76,43 @@ class PaymentViewModel(
         method: PaymentMethod,
         type: PaymentType,
         date: LocalDate,
-        note: String
+        note: String,
+        onSuccess: (() -> Unit)? = null,
+        onError: ((Throwable) -> Unit)? = null
     ) {
         viewModelScope.launch {
-            val payment = PaymentEntity(
-                workerId = workerId,
-                siteId = siteId,
-                amount = amount,
-                date = date,
-                method = method,
-                paymentType = type,
-                note = note
-            )
-            paymentRepository.insertPayment(payment)
+            try {
+                val payment = PaymentEntity(
+                    workerId = workerId,
+                    siteId = siteId,
+                    amount = amount,
+                    date = date,
+                    method = method,
+                    paymentType = type,
+                    note = note
+                )
+                paymentRepository.insertPayment(payment)
+                onSuccess?.invoke()
+            } catch (e: Throwable) {
+                android.util.Log.e("WorkCraftDB", "Error adding payment", e)
+                onError?.invoke(e)
+            }
         }
     }
 
-    fun updatePayment(payment: PaymentEntity) {
+    fun updatePayment(
+        payment: PaymentEntity,
+        onSuccess: (() -> Unit)? = null,
+        onError: ((Throwable) -> Unit)? = null
+    ) {
         viewModelScope.launch {
-            paymentRepository.updatePayment(payment)
+            try {
+                paymentRepository.updatePayment(payment)
+                onSuccess?.invoke()
+            } catch (e: Throwable) {
+                android.util.Log.e("WorkCraftDB", "Error updating payment", e)
+                onError?.invoke(e)
+            }
         }
     }
 

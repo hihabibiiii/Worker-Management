@@ -56,6 +56,7 @@ fun WorkerDetailsScreen(
     siteViewModel: SiteViewModel,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val worker by viewModel.getWorkerById(workerId).collectAsState(initial = null)
     val stats by viewModel.getWorkerStats(workerId).collectAsState(initial = WorkerStats(0, 0, 0, 0.0, 0.0, 0.0, 0.0))
     val attendanceHistory by attendanceViewModel.getAttendanceByWorker(workerId).collectAsState(initial = emptyList())
@@ -247,9 +248,17 @@ fun WorkerDetailsScreen(
                         method = method,
                         type = type,
                         date = date,
-                        note = note
+                        note = note,
+                        onSuccess = {
+                            paymentDialogType = null
+                            if (method == PaymentMethod.UPI) {
+                                com.example.workermanager.util.UpiUtils.launchUpiApp(context)
+                            }
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, "Failed to save payment: ${error.localizedMessage ?: "Database error"}", Toast.LENGTH_LONG).show()
+                        }
                     )
-                    paymentDialogType = null
                 }
             )
         }
@@ -260,8 +269,18 @@ fun WorkerDetailsScreen(
                 sites = sites,
                 onDismiss = { paymentToEdit = null },
                 onConfirm = { updatedPayment ->
-                    paymentViewModel.updatePayment(updatedPayment)
-                    paymentToEdit = null
+                    paymentViewModel.updatePayment(
+                        updatedPayment,
+                        onSuccess = {
+                            paymentToEdit = null
+                            if (updatedPayment.method == PaymentMethod.UPI) {
+                                com.example.workermanager.util.UpiUtils.launchUpiApp(context)
+                            }
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, "Failed to update payment: ${error.localizedMessage ?: "Database error"}", Toast.LENGTH_LONG).show()
+                        }
+                    )
                 }
             )
         }
@@ -867,16 +886,19 @@ fun RecordWorkerPaymentDialog(
             }
         },
         confirmButton = {
+            var isSaving by remember { mutableStateOf(false) }
+            val buttonText = if (selectedMethod == PaymentMethod.UPI) "Save & Open UPI App" else "Save"
             Button(
                 onClick = {
                     val amountVal = amount.toDoubleOrNull() ?: 0.0
-                    if (selectedSiteId != 0L && amountVal > 0) {
+                    if (selectedSiteId != 0L && amountVal > 0 && !isSaving) {
+                        isSaving = true
                         onConfirm(selectedSiteId, amountVal, selectedMethod, selectedType, selectedDate, note)
                     }
                 },
-                enabled = selectedSiteId != 0L && (amount.toDoubleOrNull() ?: 0.0) > 0
+                enabled = !isSaving && selectedSiteId != 0L && (amount.toDoubleOrNull() ?: 0.0) > 0
             ) {
-                Text("Save", fontWeight = FontWeight.Bold)
+                Text(buttonText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

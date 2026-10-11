@@ -127,22 +127,37 @@ class ContractViewModel(
     fun getPaymentsForContract(contractId: Long): Flow<List<ClientPaymentEntity>> =
         clientPaymentRepository.getPaymentsByContract(contractId)
 
-    fun addClientPayment(contractId: Long, amount: Double, date: LocalDate, method: ClientPaymentMethod, note: String) {
+    fun addClientPayment(
+        contractId: Long,
+        amount: Double,
+        date: LocalDate,
+        method: ClientPaymentMethod,
+        note: String,
+        onSuccess: (() -> Unit)? = null,
+        onError: ((Throwable) -> Unit)? = null
+    ) {
         viewModelScope.launch {
-            val payment = ClientPaymentEntity(
-                contractId = contractId,
-                amount = amount,
-                paymentDate = date,
-                method = method,
-                note = note
-            )
-            clientPaymentRepository.insertPayment(payment)
-            
-            // Check if contract is completed
-            val totalReceived = clientPaymentRepository.getTotalReceivedByContract(contractId).first() ?: 0.0
-            val contract = contractRepository.getContractById(contractId).first()
-            if (contract != null && totalReceived + amount >= contract.totalAmount) {
-                contractRepository.updateContract(contract.copy(status = ContractStatus.COMPLETED))
+            try {
+                val payment = ClientPaymentEntity(
+                    contractId = contractId,
+                    amount = amount,
+                    paymentDate = date,
+                    method = method,
+                    note = note
+                )
+                clientPaymentRepository.insertPayment(payment)
+
+                // Check if contract is completed
+                val totalReceived = clientPaymentRepository.getTotalReceivedByContract(contractId).first() ?: 0.0
+                val contract = contractRepository.getContractById(contractId).first()
+                if (contract != null && totalReceived >= contract.totalAmount) {
+                    contractRepository.updateContract(contract.copy(status = ContractStatus.COMPLETED))
+                }
+
+                onSuccess?.invoke()
+            } catch (e: Throwable) {
+                android.util.Log.e("WorkCraftDB", "Error adding client payment", e)
+                onError?.invoke(e)
             }
         }
     }

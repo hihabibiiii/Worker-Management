@@ -35,6 +35,7 @@ fun ContractDetailsScreen(
     viewModel: ContractViewModel,
     onBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val contractModel by viewModel.getContractDetails(contractId).collectAsState(initial = null)
     val payments by viewModel.getPaymentsForContract(contractId).collectAsState(initial = emptyList())
     val sites by viewModel.allSites.collectAsState(initial = emptyList())
@@ -164,8 +165,22 @@ fun ContractDetailsScreen(
                 remainingAmount = contractModel?.remainingAmount ?: 0.0,
                 onDismiss = { showAddPaymentDialog = false },
                 onConfirm = { amount, date, method, note ->
-                    viewModel.addClientPayment(contractId, amount, date, method, note)
-                    showAddPaymentDialog = false
+                    viewModel.addClientPayment(
+                        contractId = contractId,
+                        amount = amount,
+                        date = date,
+                        method = method,
+                        note = note,
+                        onSuccess = {
+                            showAddPaymentDialog = false
+                            if (method == ClientPaymentMethod.UPI) {
+                                com.example.workermanager.util.UpiUtils.launchUpiApp(context)
+                            }
+                        },
+                        onError = { error ->
+                            android.widget.Toast.makeText(context, "Failed to save payment: ${error.localizedMessage ?: "Database error"}", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    )
                 }
             )
         }
@@ -321,15 +336,18 @@ fun AddClientPaymentDialog(
             }
         },
         confirmButton = {
+            var isSaving by remember { mutableStateOf(false) }
+            val buttonText = if (selectedMethod == ClientPaymentMethod.UPI) "Save & Open UPI App" else "Save"
             Button(
                 onClick = {
                     val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (amt > 0) {
+                    if (amt > 0 && !isSaving) {
+                        isSaving = true
                         onConfirm(amt, LocalDate.now(), selectedMethod, note)
-                        onDismiss()
                     }
-                }
-            ) { Text("Save") }
+                },
+                enabled = !isSaving && (amount.toDoubleOrNull() ?: 0.0) > 0
+            ) { Text(buttonText, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }

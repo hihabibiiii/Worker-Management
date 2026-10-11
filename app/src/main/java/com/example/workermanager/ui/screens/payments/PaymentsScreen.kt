@@ -134,14 +134,32 @@ fun PaymentsScreen(
             }
         }
 
+        val context = LocalContext.current
+
         if (showAddDialog) {
             AddPaymentDialog(
                 sites = sites,
                 workers = workers,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { workerId, siteId, amount, method, type, date, note ->
-                    viewModel.addPayment(workerId, siteId, amount, method, type, date, note)
-                    showAddDialog = false
+                    viewModel.addPayment(
+                        workerId = workerId,
+                        siteId = siteId,
+                        amount = amount,
+                        method = method,
+                        type = type,
+                        date = date,
+                        note = note,
+                        onSuccess = {
+                            showAddDialog = false
+                            if (method == PaymentMethod.UPI) {
+                                com.example.workermanager.util.UpiUtils.launchUpiApp(context)
+                            }
+                        },
+                        onError = { error ->
+                            android.widget.Toast.makeText(context, "Failed to save payment: ${error.localizedMessage ?: "Database error"}", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    )
                 }
             )
         }
@@ -152,8 +170,18 @@ fun PaymentsScreen(
                 sites = sites,
                 onDismiss = { paymentToEdit = null },
                 onConfirm = { updatedPayment ->
-                    viewModel.updatePayment(updatedPayment)
-                    paymentToEdit = null
+                    viewModel.updatePayment(
+                        updatedPayment,
+                        onSuccess = {
+                            paymentToEdit = null
+                            if (updatedPayment.method == PaymentMethod.UPI) {
+                                com.example.workermanager.util.UpiUtils.launchUpiApp(context)
+                            }
+                        },
+                        onError = { error ->
+                            android.widget.Toast.makeText(context, "Failed to update payment: ${error.localizedMessage ?: "Database error"}", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    )
                 }
             )
         }
@@ -485,16 +513,19 @@ fun AddPaymentDialog(
             }
         },
         confirmButton = {
+            var isSaving by remember { mutableStateOf(false) }
+            val buttonText = if (selectedMethod == PaymentMethod.UPI) "Save & Open UPI App" else "Save"
             Button(
                 onClick = {
                     val amountVal = amount.toDoubleOrNull() ?: 0.0
-                    if (selectedSiteId != null && selectedWorkerId != null && amountVal > 0) {
+                    if (selectedSiteId != null && selectedWorkerId != null && amountVal > 0 && !isSaving) {
+                        isSaving = true
                         onConfirm(selectedWorkerId!!, selectedSiteId!!, amountVal, selectedMethod, selectedType, selectedDate, note)
                     }
                 },
-                enabled = selectedSiteId != null && selectedWorkerId != null && amount.isNotEmpty()
+                enabled = !isSaving && selectedSiteId != null && selectedWorkerId != null && (amount.toDoubleOrNull() ?: 0.0) > 0
             ) {
-                Text("Save", fontWeight = FontWeight.Bold)
+                Text(buttonText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -617,10 +648,13 @@ fun EditPaymentDialog(
             }
         },
         confirmButton = {
+            var isSaving by remember { mutableStateOf(false) }
+            val buttonText = if (selectedMethod == PaymentMethod.UPI) "Save & Open UPI App" else "Save Changes"
             Button(
                 onClick = {
                     val amountVal = amount.toDoubleOrNull() ?: 0.0
-                    if (selectedSiteId != null && amountVal > 0) {
+                    if (selectedSiteId != null && amountVal > 0 && !isSaving) {
+                        isSaving = true
                         onConfirm(
                             payment.copy(
                                 siteId = selectedSiteId!!,
@@ -633,9 +667,9 @@ fun EditPaymentDialog(
                         )
                     }
                 },
-                enabled = selectedSiteId != null && amount.isNotEmpty()
+                enabled = !isSaving && selectedSiteId != null && (amount.toDoubleOrNull() ?: 0.0) > 0
             ) {
-                Text("Save Changes", fontWeight = FontWeight.Bold)
+                Text(buttonText, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

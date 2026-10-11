@@ -1,5 +1,14 @@
 package com.example.workermanager.ui.screens.workers
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,12 +22,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -309,6 +320,37 @@ fun WorkerDialog(
     var newSiteManager by remember { mutableStateOf("") }
     var newSiteError by remember { mutableStateOf<String?>(null) }
 
+    val context = LocalContext.current
+
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contactUri: Uri? = result.data?.data
+            if (contactUri != null) {
+                val (fetchedName, fetchedNumber) = processContactUri(context, contactUri)
+
+                if (!fetchedName.isNullOrBlank()) {
+                    name = fetchedName.trim()
+                    nameError = null
+                }
+
+                if (!fetchedNumber.isNullOrBlank()) {
+                    val normalized = normalizePhoneNumber(fetchedNumber)
+                    if (normalized.isNotEmpty()) {
+                        phone = normalized
+                    }
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Selected contact has no phone number.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
     val displaySites = remember(sites) {
         val selfWork = sites.find { it.name.equals("Self Work", ignoreCase = true) }
         val others = sites.filter { !it.name.equals("Self Work", ignoreCase = true) }
@@ -330,6 +372,31 @@ fun WorkerDialog(
                         if (it.isNotBlank()) nameError = null
                     },
                     label = { Text("Name") },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                                try {
+                                    contactPickerLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    Log.e("WorkCraftContact", "Failed to launch contact picker with Phone URI, trying Contacts URI", e)
+                                    try {
+                                        val fallbackIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+                                        contactPickerLauncher.launch(fallbackIntent)
+                                    } catch (ex: Exception) {
+                                        Log.e("WorkCraftContact", "Failed to launch fallback contact picker", ex)
+                                        Toast.makeText(context, "Unable to open contact picker.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PermContactCalendar,
+                                contentDescription = "Select Contact",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
                     isError = nameError != null,
                     supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
@@ -540,4 +607,95 @@ fun WorkerDialog(
             }
         )
     }
+}
+
+private fun processContactUri(context: Context, contactUri: Uri): Pair<String?, String?> {
+    var fetchedName: String? = null
+    var fetchedNumber: String? = null
+
+    try {
+        // Attempt 1: Query as CommonDataKinds.Phone URI
+        val phoneCursor = context.contentResolver.query(
+            contactUri,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null,
+            null,
+            null
+        )
+
+        phoneCursor?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+                if (nameIdx >= 0) fetchedName = cursor.getString(nameIdx)
+                if (numIdx >= 0) fetchedNumber = cursor.getString(numIdx)
+            }
+        }
+
+        // Attempt 2: If phone number was not retrieved, query Contacts table & Phone table
+        if (fetchedNumber.isNullOrBlank()) {
+            val contactCursor = context.contentResolver.query(
+                contactUri,
+                arrayOf(
+                    ContactsContract.Contacts._ID,
+                    ContactsContract.Contacts.DISPLAY_NAME,
+                    ContactsContract.Contacts.HAS_PHONE_NUMBER
+                ),
+                null,
+                null,
+                null
+            )
+
+            contactCursor?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIdx = cursor.getColumnIndex(ContactsContract.Contacts._ID)
+                    val nameIdx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                    val hasPhoneIdx = cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+
+                    if (fetchedName.isNullOrBlank() && nameIdx >= 0) {
+                        fetchedName = cursor.getString(nameIdx)
+                    }
+
+                    val contactId = if (idIdx >= 0) cursor.getString(idIdx) else null
+                    val hasPhone = if (hasPhoneIdx >= 0) cursor.getInt(hasPhoneIdx) else 0
+
+                    if (hasPhone > 0 && contactId != null) {
+                        val pCursor = context.contentResolver.query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                            arrayOf(contactId),
+                            null
+                        )
+                        pCursor?.use { pc ->
+                            if (pc.moveToFirst()) {
+                                val numIdx = pc.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                                if (numIdx >= 0) {
+                                    fetchedNumber = pc.getString(numIdx)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("WorkCraftContact", "Error reading contact details for URI: $contactUri", e)
+    }
+
+    return Pair(fetchedName, fetchedNumber)
+}
+
+private fun normalizePhoneNumber(rawNumber: String): String {
+    val trimmed = rawNumber.trim()
+    if (trimmed.isEmpty()) return ""
+
+    val hasPlus = trimmed.startsWith("+")
+    val digitsOnly = trimmed.filter { it.isDigit() }
+    
+    return if (hasPlus) "+$digitsOnly" else digitsOnly
 }

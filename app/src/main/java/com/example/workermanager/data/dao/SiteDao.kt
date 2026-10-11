@@ -9,6 +9,9 @@ interface SiteDao {
     @Query("SELECT * FROM sites ORDER BY name ASC")
     fun getAllSites(): Flow<List<SiteEntity>>
 
+    @Query("SELECT * FROM sites")
+    suspend fun getAllSitesList(): List<SiteEntity>
+
     @Query("SELECT * FROM sites WHERE id = :siteId")
     fun getSiteById(siteId: Long): Flow<SiteEntity?>
 

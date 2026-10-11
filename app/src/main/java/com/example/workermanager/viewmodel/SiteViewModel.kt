@@ -17,13 +17,10 @@ class SiteViewModel(private val repository: SiteRepository) : ViewModel() {
     val allSites: StateFlow<List<SiteEntity>> = repository.allSites
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    init {
-        ensureDefaultSite()
-    }
-
-    fun ensureDefaultSite() {
+    fun ensureSelfWorkIfNoSitesExist(onComplete: ((Long?) -> Unit)? = null) {
         viewModelScope.launch {
-            repository.ensureDefaultHomeSite()
+            val createdId = repository.ensureSelfWorkIfNoSitesExist()
+            onComplete?.invoke(createdId)
         }
     }
 

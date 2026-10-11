@@ -11,19 +11,18 @@ class SiteRepository(private val siteDao: SiteDao) {
     
     suspend fun getSiteByName(name: String): SiteEntity? = siteDao.getSiteByName(name)
 
-    suspend fun ensureDefaultHomeSite(): SiteEntity {
-        val existing = siteDao.getSiteByName("Home")
-        if (existing != null) {
-            return existing
+    suspend fun ensureSelfWorkIfNoSitesExist(): Long? {
+        val currentSites = siteDao.getAllSitesList()
+        if (currentSites.isEmpty()) {
+            val selfWorkSite = SiteEntity(
+                name = "Self Work",
+                address = "Self Work",
+                manager = "Default",
+                startDate = java.time.LocalDate.now()
+            )
+            return siteDao.insertSite(selfWorkSite)
         }
-        val homeSite = SiteEntity(
-            name = "Home",
-            address = "Home",
-            manager = "Default",
-            startDate = java.time.LocalDate.now()
-        )
-        val id = siteDao.insertSite(homeSite)
-        return homeSite.copy(id = id)
+        return null
     }
     
     suspend fun insertSite(site: SiteEntity) = siteDao.insertSite(site)

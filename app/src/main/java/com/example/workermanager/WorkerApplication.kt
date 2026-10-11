@@ -10,7 +10,7 @@ class WorkerApplication : Application() {
     val siteRepository by lazy { SiteRepository(database.siteDao()) }
     
     val workerRepository by lazy { 
-        WorkerRepository(database.workerDao(), database.workerSiteHistoryDao()) 
+        WorkerRepository(database.workerDao(), database.workerSiteHistoryDao(), database.siteDao()) 
     }
     
     val attendanceRepository by lazy { 

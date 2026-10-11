@@ -10,7 +10,8 @@ import java.time.LocalDate
 
 class WorkerRepository(
     private val workerDao: WorkerDao,
-    private val historyDao: WorkerSiteHistoryDao
+    private val historyDao: WorkerSiteHistoryDao,
+    private val siteDao: com.example.workermanager.data.dao.SiteDao? = null
 ) {
     val allWorkers: Flow<List<WorkerEntity>> = workerDao.getAllWorkers()
     val activeWorkers: Flow<List<WorkerEntity>> = workerDao.getActiveWorkers()
@@ -20,15 +21,30 @@ class WorkerRepository(
     fun searchWorkers(query: String): Flow<List<WorkerEntity>> = workerDao.searchWorkers(query)
 
     suspend fun insertWorker(worker: WorkerEntity, siteId: Long?): Long {
+        var targetSiteId = siteId
+
+        if (targetSiteId == null && siteDao != null) {
+            val existingSites = siteDao.getAllSitesList()
+            if (existingSites.isEmpty()) {
+                val selfWorkSite = com.example.workermanager.data.entity.SiteEntity(
+                    name = "Self Work",
+                    address = "Self Work",
+                    manager = "Default",
+                    startDate = LocalDate.now()
+                )
+                targetSiteId = siteDao.insertSite(selfWorkSite)
+            }
+        }
+
         val workerId = workerDao.insertWorker(worker)
-        if (siteId != null) {
+        if (targetSiteId != null) {
             val history = WorkerSiteHistoryEntity(
                 workerId = workerId,
-                siteId = siteId,
+                siteId = targetSiteId,
                 startDate = LocalDate.now()
             )
             historyDao.insert(history)
-            workerDao.updateWorker(worker.copy(id = workerId, currentSiteId = siteId))
+            workerDao.updateWorker(worker.copy(id = workerId, currentSiteId = targetSiteId))
         }
         return workerId
     }

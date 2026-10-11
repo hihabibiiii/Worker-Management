@@ -281,12 +281,14 @@ fun WorkerCard(
 fun WorkerDialog(
     worker: WorkerEntity?,
     sites: List<SiteEntity>,
+    initialName: String = "",
+    initialPhone: String = "",
     onDismiss: () -> Unit,
     onAddNewSite: (String, String, String, (Long) -> Unit) -> Unit,
     onConfirm: (String, String, WorkerType, Double, Double, LocalDate, Long?, String, Boolean) -> Unit
 ) {
-    var name by remember { mutableStateOf(worker?.name ?: "") }
-    var phone by remember { mutableStateOf(worker?.phone ?: "") }
+    var name by remember(worker, initialName) { mutableStateOf(worker?.name ?: initialName) }
+    var phone by remember(worker, initialPhone) { mutableStateOf(worker?.phone ?: initialPhone) }
     var type by remember { mutableStateOf(worker?.workerType ?: WorkerType.LABOUR) }
     var dailyRate by remember { mutableStateOf(worker?.dailyRate?.toString() ?: "") }
     var otRate by remember { mutableStateOf(worker?.overtimeRate?.toString() ?: "") }
@@ -308,10 +310,9 @@ fun WorkerDialog(
     var newSiteError by remember { mutableStateOf<String?>(null) }
 
     val displaySites = remember(sites) {
-        val home = sites.find { it.name.equals("Home", ignoreCase = true) }
-            ?: SiteEntity(id = -1L, name = "Home", address = "Home", manager = "Default")
-        val others = sites.filter { !it.name.equals("Home", ignoreCase = true) }
-        listOf(home) + others
+        val selfWork = sites.find { it.name.equals("Self Work", ignoreCase = true) }
+        val others = sites.filter { !it.name.equals("Self Work", ignoreCase = true) }
+        if (selfWork != null) listOf(selfWork) + others else others
     }
 
     AlertDialog(
@@ -396,15 +397,8 @@ fun WorkerDialog(
                             DropdownMenuItem(
                                 text = { Text(site.name, fontWeight = FontWeight.Medium) }, 
                                 onClick = { 
-                                    if (site.id == -1L) {
-                                        onAddNewSite("Home", "Home", "Default") { newId ->
-                                            siteId = newId
-                                            siteError = null
-                                        }
-                                    } else {
-                                        siteId = site.id
-                                        siteError = null
-                                    }
+                                    siteId = site.id
+                                    siteError = null
                                     siteExpanded = false 
                                 }
                             )
@@ -461,7 +455,7 @@ fun WorkerDialog(
                         nameError = null
                     }
 
-                    if (siteId == null) {
+                    if (sites.isNotEmpty() && siteId == null) {
                         siteError = "Please select a site"
                         hasError = true
                     } else {

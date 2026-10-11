@@ -172,8 +172,7 @@ fun AddSiteDialog(
                         name = it
                         if (it.isNotBlank()) nameError = null
                     },
-                    label = { Text("Site Name*") },
-                    placeholder = { Text("e.g. Sharma Ji Ka Ghar") },
+                    label = { Text("Site Name") },
                     singleLine = true,
                     isError = nameError != null,
                     supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -183,7 +182,6 @@ fun AddSiteDialog(
                     value = address,
                     onValueChange = { address = it },
                     label = { Text("Site Address") },
-                    placeholder = { Text("e.g. Deoria, Uttar Pradesh") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -191,7 +189,6 @@ fun AddSiteDialog(
                     value = manager,
                     onValueChange = { manager = it },
                     label = { Text("Site Manager") },
-                    placeholder = { Text("e.g. Ramesh Kumar") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

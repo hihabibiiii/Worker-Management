@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
@@ -23,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workermanager.WorkerApplication
+import com.example.workermanager.data.preference.ThemeMode
 import com.example.workermanager.util.ExcelExporter
 import com.example.workermanager.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -39,8 +41,10 @@ fun SettingsScreen(
     val app = context.applicationContext as WorkerApplication
     val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var exportedUri by remember { mutableStateOf<Uri?>(null) }
+    val themeMode by viewModel.themeMode.collectAsState()
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -90,6 +94,42 @@ fun SettingsScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
         ) {
+            Text(
+                "Appearance", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Theme", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        when (themeMode) {
+                            ThemeMode.SYSTEM -> "System Default (follow phone's theme)"
+                            ThemeMode.LIGHT -> "Light theme"
+                            ThemeMode.DARK -> "Dark theme"
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    Icon(
+                        imageVector = Icons.Default.DarkMode, 
+                        contentDescription = "Theme", 
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                modifier = Modifier.clickable { showThemeDialog = true },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
             Text(
                 "General", 
                 style = MaterialTheme.typography.titleMedium, 
@@ -180,6 +220,55 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFC62828)) },
                 modifier = Modifier.clickable { showDeleteDialog = true },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+        }
+
+        if (showThemeDialog) {
+            AlertDialog(
+                onDismissRequest = { showThemeDialog = false },
+                title = { Text("Choose Theme", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ThemeMode.entries.forEach { mode ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setThemeMode(mode)
+                                        showThemeDialog = false
+                                    }
+                                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = (themeMode == mode),
+                                    onClick = {
+                                        viewModel.setThemeMode(mode)
+                                        showThemeDialog = false
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        mode.title,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        mode.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showThemeDialog = false }) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                    }
+                }
             )
         }
 

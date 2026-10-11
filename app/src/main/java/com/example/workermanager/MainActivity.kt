@@ -56,9 +56,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WorkerManagerTheme {
+            val app = application as WorkerApplication
+            val themeMode by app.themePreferenceManager.themeMode.collectAsState()
+
+            WorkerManagerTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
-                val app = application as WorkerApplication
                 
                 val siteViewModel: SiteViewModel = viewModel(
                     factory = SiteViewModelFactory(app.siteRepository)
@@ -79,7 +81,7 @@ class MainActivity : ComponentActivity() {
                     factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
                 )
                 val settingsViewModel: SettingsViewModel = viewModel(
-                    factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository)
+                    factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.themePreferenceManager)
                 )
                 val contractViewModel: ContractViewModel = viewModel(
                     factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)

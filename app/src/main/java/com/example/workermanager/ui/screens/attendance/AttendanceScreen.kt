@@ -327,13 +327,13 @@ fun StatusButton(
         onClick = onClick,
         modifier = modifier.height(36.dp),
         shape = MaterialTheme.shapes.small,
-        color = if (isSelected) color else Color(0xFFEEEEEE),
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBDBDBD))
+        color = if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant,
+        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = label,
-                color = if (isSelected) Color.White else Color(0xFF333333),
+                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )

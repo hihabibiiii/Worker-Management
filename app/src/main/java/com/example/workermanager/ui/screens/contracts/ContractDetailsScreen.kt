@@ -1,5 +1,13 @@
 package com.example.workermanager.ui.screens.contracts
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,17 +20,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.ClientPaymentEntity
 import com.example.workermanager.data.entity.ClientPaymentMethod
+import com.example.workermanager.util.ContactUtils
 import com.example.workermanager.data.entity.ContractStatus
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.ContractViewModel
@@ -386,6 +397,36 @@ fun EditContractDialog(
     var notes by remember { mutableStateOf(contract.notes) }
     var siteExpanded by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contactUri: Uri? = result.data?.data
+            if (contactUri != null) {
+                val (fetchedName, fetchedNumber) = ContactUtils.processContactUri(context, contactUri)
+
+                if (!fetchedName.isNullOrBlank()) {
+                    name = fetchedName.trim()
+                }
+
+                if (!fetchedNumber.isNullOrBlank()) {
+                    val normalized = ContactUtils.normalizePhoneNumber(fetchedNumber)
+                    if (normalized.isNotEmpty()) {
+                        mobile = normalized
+                    }
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Selected contact has no phone number.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Contract", fontWeight = FontWeight.Bold) },
@@ -394,7 +435,37 @@ fun EditContractDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Client Name*") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Client Name*") },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                                try {
+                                    contactPickerLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    Log.e("WorkCraftContact", "Failed to launch contact picker with Phone URI, trying Contacts URI", e)
+                                    try {
+                                        val fallbackIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+                                        contactPickerLauncher.launch(fallbackIntent)
+                                    } catch (ex: Exception) {
+                                        Log.e("WorkCraftContact", "Failed to launch fallback contact picker", ex)
+                                        Toast.makeText(context, "Unable to open contact picker.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PermContactCalendar,
+                                contentDescription = "Select Contact",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 OutlinedTextField(value = mobile, onValueChange = { mobile = it }, label = { Text("Mobile Number") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
                 
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {

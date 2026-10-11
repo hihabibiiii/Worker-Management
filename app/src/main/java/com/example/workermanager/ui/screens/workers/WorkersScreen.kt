@@ -451,9 +451,13 @@ fun WorkerDialog(
 
                 // Site selection
                 val siteFieldText = when (siteId) {
-                    NONE_SITE_ID -> "None"
+                    NONE_SITE_ID -> "Personal"
                     null -> "Select Site"
                     else -> sites.find { it.id == siteId }?.name ?: "Select Site"
+                }
+
+                val hasSelfWorkSite = remember(sites) {
+                    sites.any { it.name.equals("Self Work", ignoreCase = true) }
                 }
 
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
@@ -468,14 +472,16 @@ fun WorkerDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
-                        DropdownMenuItem(
-                            text = { Text("None", fontWeight = FontWeight.Medium) },
-                            onClick = {
-                                siteId = NONE_SITE_ID
-                                siteError = null
-                                siteExpanded = false
-                            }
-                        )
+                        if (!hasSelfWorkSite) {
+                            DropdownMenuItem(
+                                text = { Text("Personal", fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    siteId = NONE_SITE_ID
+                                    siteError = null
+                                    siteExpanded = false
+                                }
+                            )
+                        }
                         displaySites.forEach { site ->
                             DropdownMenuItem(
                                 text = { Text(site.name, fontWeight = FontWeight.Medium) }, 

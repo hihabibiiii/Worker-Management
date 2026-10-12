@@ -174,6 +174,33 @@ class ContractViewModel(
             }
         }
     }
+
+    fun updateClientPayment(payment: ClientPaymentEntity, newAmount: Double, newMethod: ClientPaymentMethod, newNote: String) {
+        viewModelScope.launch {
+            try {
+                val updatedPayment = payment.copy(
+                    amount = newAmount,
+                    method = newMethod,
+                    note = newNote,
+                    isEdited = true
+                )
+                clientPaymentRepository.updatePayment(updatedPayment)
+
+                // Re-check status
+                val totalReceived = clientPaymentRepository.getTotalReceivedByContract(payment.contractId).first() ?: 0.0
+                val contract = contractRepository.getContractById(payment.contractId).first()
+                if (contract != null) {
+                    if (totalReceived >= contract.totalAmount) {
+                        contractRepository.updateContract(contract.copy(status = ContractStatus.COMPLETED))
+                    } else {
+                        contractRepository.updateContract(contract.copy(status = ContractStatus.ACTIVE))
+                    }
+                }
+            } catch (e: Throwable) {
+                android.util.Log.e("WorkCraftDB", "Error updating client payment", e)
+            }
+        }
+    }
 }
 
 class ContractViewModelFactory(

@@ -61,7 +61,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `client_payments` (`id`,`contractId`,`amount`,`paymentDate`,`method`,`note`,`createdAt`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `client_payments` (`id`,`contractId`,`amount`,`paymentDate`,`method`,`note`,`createdAt`,`isDeleted`,`deletedAt`,`isEdited`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -87,6 +87,8 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
         } else {
           statement.bindLong(9, entity.getDeletedAt());
         }
+        final int _tmp_3 = entity.isEdited() ? 1 : 0;
+        statement.bindLong(10, _tmp_3);
       }
     };
     this.__deletionAdapterOfClientPaymentEntity = new EntityDeletionOrUpdateAdapter<ClientPaymentEntity>(__db) {
@@ -106,7 +108,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `client_payments` SET `id` = ?,`contractId` = ?,`amount` = ?,`paymentDate` = ?,`method` = ?,`note` = ?,`createdAt` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `client_payments` SET `id` = ?,`contractId` = ?,`amount` = ?,`paymentDate` = ?,`method` = ?,`note` = ?,`createdAt` = ?,`isDeleted` = ?,`deletedAt` = ?,`isEdited` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -132,7 +134,9 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
         } else {
           statement.bindLong(9, entity.getDeletedAt());
         }
-        statement.bindLong(10, entity.getId());
+        final int _tmp_3 = entity.isEdited() ? 1 : 0;
+        statement.bindLong(10, _tmp_3);
+        statement.bindLong(11, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeleteClientPayment = new SharedSQLiteStatement(__db) {
@@ -349,6 +353,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfIsEdited = CursorUtil.getColumnIndexOrThrow(_cursor, "isEdited");
           final List<ClientPaymentEntity> _result = new ArrayList<ClientPaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ClientPaymentEntity _item;
@@ -389,7 +394,11 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ClientPaymentEntity(_tmpId,_tmpContractId,_tmpAmount,_tmpPaymentDate,_tmpMethod,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final boolean _tmpIsEdited;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsEdited);
+            _tmpIsEdited = _tmp_4 != 0;
+            _item = new ClientPaymentEntity(_tmpId,_tmpContractId,_tmpAmount,_tmpPaymentDate,_tmpMethod,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpIsEdited);
             _result.add(_item);
           }
           return _result;
@@ -496,6 +505,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfIsEdited = CursorUtil.getColumnIndexOrThrow(_cursor, "isEdited");
           final List<ClientPaymentEntity> _result = new ArrayList<ClientPaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ClientPaymentEntity _item;
@@ -536,7 +546,11 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ClientPaymentEntity(_tmpId,_tmpContractId,_tmpAmount,_tmpPaymentDate,_tmpMethod,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final boolean _tmpIsEdited;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsEdited);
+            _tmpIsEdited = _tmp_4 != 0;
+            _item = new ClientPaymentEntity(_tmpId,_tmpContractId,_tmpAmount,_tmpPaymentDate,_tmpMethod,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpIsEdited);
             _result.add(_item);
           }
           return _result;

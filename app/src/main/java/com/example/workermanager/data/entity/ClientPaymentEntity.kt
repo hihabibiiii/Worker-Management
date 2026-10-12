@@ -29,5 +29,6 @@ data class ClientPaymentEntity(
     val note: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val isEdited: Boolean = false
 )

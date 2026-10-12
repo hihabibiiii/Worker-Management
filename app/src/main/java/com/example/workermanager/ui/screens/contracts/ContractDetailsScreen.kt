@@ -8,7 +8,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -46,11 +48,12 @@ fun ContractDetailsScreen(
     viewModel: ContractViewModel,
     onBack: () -> Unit
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val contractModel by viewModel.getContractDetails(contractId).collectAsState(initial = null)
     val payments by viewModel.getPaymentsForContract(contractId).collectAsState(initial = emptyList())
     val sites by viewModel.allSites.collectAsState(initial = emptyList())
     var showAddPaymentDialog by remember { mutableStateOf(false) }
+    var paymentToEdit by remember { mutableStateOf<ClientPaymentEntity?>(null) }
     var paymentToDelete by remember { mutableStateOf<ClientPaymentEntity?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -122,6 +125,7 @@ fun ContractDetailsScreen(
                     items(payments) { payment ->
                         PaymentItem(
                             payment = payment,
+                            onEdit = { paymentToEdit = payment },
                             onDelete = { paymentToDelete = payment }
                         )
                     }
@@ -189,9 +193,21 @@ fun ContractDetailsScreen(
                             }
                         },
                         onError = { error ->
-                            android.widget.Toast.makeText(context, "Failed to save payment: ${error.localizedMessage ?: "Database error"}", android.widget.Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Failed to save payment: ${error.localizedMessage ?: "Database error"}", Toast.LENGTH_LONG).show()
                         }
                     )
+                }
+            )
+        }
+
+        if (paymentToEdit != null) {
+            EditClientPaymentDialog(
+                payment = paymentToEdit!!,
+                onDismiss = { paymentToEdit = null },
+                onConfirm = { amount, method, note ->
+                    viewModel.updateClientPayment(paymentToEdit!!, amount, method, note)
+                    paymentToEdit = null
+                    Toast.makeText(context, "Payment updated successfully", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -270,29 +286,185 @@ fun SummaryCard(model: com.example.workermanager.viewmodel.ContractUiModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PaymentItem(payment: ClientPaymentEntity, onDelete: () -> Unit) {
+fun PaymentItem(
+    payment: ClientPaymentEntity,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { menuExpanded = true }
+            ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(Utils.formatDate(payment.paymentDate), fontWeight = FontWeight.Bold)
-                Text("${payment.method.name} ${if (payment.note.isNotEmpty()) "- ${payment.note}" else ""}", style = MaterialTheme.typography.bodySmall)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(Utils.formatCurrency(payment.amount), fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+        Box(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = Utils.formatDate(payment.paymentDate),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (payment.isEdited) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(
+                                    text = "Edited",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    val methodText = payment.method.name.replace("_", " ")
+                    val noteText = if (payment.note.isNotBlank()) " • ${payment.note}" else ""
+                    Text(
+                        text = "$methodText$noteText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = Utils.formatCurrency(payment.amount),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Edit Payment", fontWeight = FontWeight.Medium) },
+                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    onClick = {
+                        menuExpanded = false
+                        onEdit()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Delete Payment", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    onClick = {
+                        menuExpanded = false
+                        onDelete()
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    onClick = { menuExpanded = false }
+                )
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditClientPaymentDialog(
+    payment: ClientPaymentEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (Double, ClientPaymentMethod, String) -> Unit
+) {
+    var amount by remember { mutableStateOf(payment.amount.toString()) }
+    var note by remember { mutableStateOf(payment.note) }
+    var selectedMethod by remember { mutableStateOf(payment.method) }
+    var methodExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Client Payment", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount*") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(expanded = methodExpanded, onExpandedChange = { methodExpanded = !methodExpanded }) {
+                    OutlinedTextField(
+                        value = selectedMethod.name.replace("_", " "),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Payment Method") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = methodExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = methodExpanded, onDismissRequest = { methodExpanded = false }) {
+                        ClientPaymentMethod.entries.forEach { method ->
+                            DropdownMenuItem(
+                                text = { Text(method.name.replace("_", " ")) },
+                                onClick = { selectedMethod = method; methodExpanded = false }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text("Note") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amt = amount.toDoubleOrNull() ?: 0.0
+                    if (amt > 0) {
+                        onConfirm(amt, selectedMethod, note)
+                    }
+                },
+                enabled = (amount.toDoubleOrNull() ?: 0.0) > 0
+            ) { Text("Save Changes", fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

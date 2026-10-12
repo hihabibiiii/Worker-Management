@@ -20,14 +20,31 @@ class WorkerViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val workers: StateFlow<List<WorkerEntity>> = _searchQuery
-        .flatMapLatest { query ->
-            if (query.isEmpty()) repository.allWorkers else repository.searchWorkers(query)
+    private val _selectedSiteFilterId = MutableStateFlow<Long?>(null)
+    val selectedSiteFilterId: StateFlow<Long?> = _selectedSiteFilterId
+
+    val workers: StateFlow<List<WorkerEntity>> = combine(
+        _searchQuery,
+        _selectedSiteFilterId,
+        repository.allWorkers
+    ) { query, siteFilterId, allWorkersList ->
+        var list = allWorkersList
+        if (siteFilterId != null) {
+            list = list.filter { it.currentSiteId == siteFilterId }
         }
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        if (query.isNotBlank()) {
+            val q = query.trim().lowercase()
+            list = list.filter { it.name.lowercase().contains(q) || it.phone.contains(q) }
+        }
+        list
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setSelectedSiteFilter(siteId: Long?) {
+        _selectedSiteFilterId.value = siteId
     }
 
     fun addWorker(

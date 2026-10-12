@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -54,6 +55,7 @@ fun WorkersScreen(
     val workers by viewModel.workers.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedSiteFilterId by viewModel.selectedSiteFilterId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var workerToEdit by remember { mutableStateOf<WorkerEntity?>(null) }
     var workerToDelete by remember { mutableStateOf<WorkerEntity?>(null) }
@@ -90,7 +92,7 @@ fun WorkersScreen(
                 onValueChange = { viewModel.updateSearchQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Search by name or phone") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
@@ -100,9 +102,51 @@ fun WorkersScreen(
                 )
             )
 
+            if (sites.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    item {
+                        FilterChip(
+                            selected = selectedSiteFilterId == null,
+                            onClick = { viewModel.setSelectedSiteFilter(null) },
+                            label = { Text("All Workers", fontWeight = FontWeight.Bold) }
+                        )
+                    }
+                    items(sites) { site ->
+                        FilterChip(
+                            selected = selectedSiteFilterId == site.id,
+                            onClick = { viewModel.setSelectedSiteFilter(site.id) },
+                            label = { Text(site.name, fontWeight = FontWeight.Medium) }
+                        )
+                    }
+                }
+            }
+
             if (workers.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No workers added yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = if (selectedSiteFilterId != null) "No workers assigned to this site." else "No workers added yet.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        if (selectedSiteFilterId != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TextButton(onClick = { viewModel.setSelectedSiteFilter(null) }) {
+                                Text("Show All Workers", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             } else {
                 LazyColumn(

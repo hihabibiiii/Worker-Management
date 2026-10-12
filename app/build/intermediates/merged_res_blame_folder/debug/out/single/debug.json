@@ -1,34 +1,30 @@
 [
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\drawable_ic_launcher_background.xml.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\drawable\\ic_launcher_background.xml"
+        "merged": "com.example.workermanager.app-merged_res-56:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.workermanager.app-main-58:/drawable/ic_launcher_background.xml"
     },
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\drawable_logo.jpeg.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\drawable\\logo.jpeg"
+        "merged": "com.example.workermanager.app-merged_res-56:/drawable_ic_launcher.xml.flat",
+        "source": "com.example.workermanager.app-main-58:/drawable/ic_launcher.xml"
     },
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\xml_backup_rules.xml.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\xml\\backup_rules.xml"
+        "merged": "com.example.workermanager.app-merged_res-56:/xml_backup_rules.xml.flat",
+        "source": "com.example.workermanager.app-main-58:/xml/backup_rules.xml"
     },
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\drawable_dashlogo.jpeg.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\drawable\\dashlogo.jpeg"
+        "merged": "com.example.workermanager.app-merged_res-56:/drawable_logo.jpeg.flat",
+        "source": "com.example.workermanager.app-main-58:/drawable/logo.jpeg"
     },
     {
         "merged": "com.example.workermanager.app-merged_res-56:/drawable_dashlogo.jpeg.flat",
         "source": "com.example.workermanager.app-main-58:/drawable/dashlogo.jpeg"
     },
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\xml_data_extraction_rules.xml.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\xml\\data_extraction_rules.xml"
+        "merged": "com.example.workermanager.app-merged_res-56:/xml_provider_paths.xml.flat",
+        "source": "com.example.workermanager.app-main-58:/xml/provider_paths.xml"
     },
     {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\drawable_ic_launcher.xml.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\drawable\\ic_launcher.xml"
-    },
-    {
-        "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-56:\\xml_provider_paths.xml.flat",
-        "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-58:\\xml\\provider_paths.xml"
+        "merged": "com.example.workermanager.app-merged_res-56:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.workermanager.app-main-58:/xml/data_extraction_rules.xml"
     }
 ]

@@ -190,6 +190,7 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Sites.route) {
                             SitesScreen(
                                 viewModel = siteViewModel,
+                                onBack = { navController.popBackStack() },
                                 onSiteClick = { siteId ->
                                     navController.navigate(Screen.SiteDetails.createRoute(siteId))
                                 }
@@ -252,6 +253,7 @@ class MainActivity : ComponentActivity() {
                             ContractsScreen(
                                 viewModel = contractViewModel,
                                 sites = sitesList,
+                                onBack = { navController.popBackStack() },
                                 onContractClick = { contractId ->
                                     navController.navigate(Screen.ContractDetails.createRoute(contractId))
                                 }
@@ -271,7 +273,8 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Reports.route) {
                             ReportsScreen(
                                 viewModel = reportViewModel,
-                                siteViewModel = siteViewModel
+                                siteViewModel = siteViewModel,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable(Screen.RecycleBin.route) {

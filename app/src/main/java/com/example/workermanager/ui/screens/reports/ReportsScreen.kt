@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -33,7 +34,8 @@ import com.example.workermanager.util.ShareUtils
 @Composable
 fun ReportsScreen(
     viewModel: ReportViewModel,
-    siteViewModel: SiteViewModel
+    siteViewModel: SiteViewModel,
+    onBack: () -> Unit = {}
 ) {
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
@@ -44,9 +46,15 @@ fun ReportsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Performance Reports", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
                 )
             )

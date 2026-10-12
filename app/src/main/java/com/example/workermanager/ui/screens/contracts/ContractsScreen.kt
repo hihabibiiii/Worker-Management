@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material.icons.filled.Search
@@ -44,6 +45,7 @@ import java.time.LocalDate
 fun ContractsScreen(
     viewModel: ContractViewModel,
     sites: List<SiteEntity>,
+    onBack: () -> Unit = {},
     onContractClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,9 +57,16 @@ fun ContractsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Contracts / Clients", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         },

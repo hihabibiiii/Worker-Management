@@ -75,7 +75,10 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(horizontalAlignment = Alignment.Start) {
-                            Text("WorkCraft", fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Work", fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Craft", fontWeight = FontWeight.Bold, color = Color(0xFF81D4FA))
+                            }
                             Text(
                                 "Smart Work Management",
                                 style = MaterialTheme.typography.bodySmall,

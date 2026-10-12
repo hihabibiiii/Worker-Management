@@ -244,7 +244,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ActionCard("Add Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
+                    ActionCard("Add New Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
                     ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
                     ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
                 }
@@ -252,9 +252,10 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ActionCard("Recycle Bin", Icons.Default.DeleteSweep, onNavigateToRecycleBin, Modifier.weight(1f))
                     ActionCard("Add Contract", Icons.AutoMirrored.Filled.Assignment, { showAddContractDialog = true }, Modifier.weight(1f))
                     ActionCard("Reports", Icons.Default.Assessment, onNavigateToReports, Modifier.weight(1f))
+                    ActionCard("Recycle Bin", Icons.Default.DeleteSweep, onNavigateToRecycleBin, Modifier.weight(1f))
+
                 }
             }
 
@@ -406,16 +407,21 @@ fun ActionCard(label: String, icon: ImageVector, onClick: () -> Unit, modifier: 
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                label, 
+                text = label, 
                 fontSize = 10.sp, 
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
         }
     }

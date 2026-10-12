@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.workermanager.R
 import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.util.Utils
+import com.example.workermanager.viewmodel.ContractViewModel
 import com.example.workermanager.viewmodel.DashboardViewModel
 import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerViewModel
@@ -37,9 +39,12 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     siteViewModel: SiteViewModel,
     workerViewModel: WorkerViewModel,
+    contractViewModel: ContractViewModel? = null,
     onAddWorker: () -> Unit = {},
     onMarkAttendance: () -> Unit,
     onMakePayment: () -> Unit = {},
+    onNavigateToRecycleBin: () -> Unit = {},
+    onNavigateToReports: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onSiteClick: (Long) -> Unit
 ) {
@@ -50,6 +55,7 @@ fun DashboardScreen(
 
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
+    var showAddContractDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -230,15 +236,26 @@ fun DashboardScreen(
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionCard("Add Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
-                ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
-                ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionCard("Add Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
+                    ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
+                    ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionCard("Recycle Bin", Icons.Default.DeleteSweep, onNavigateToRecycleBin, Modifier.weight(1f))
+                    ActionCard("Add Contract", Icons.AutoMirrored.Filled.Assignment, { showAddContractDialog = true }, Modifier.weight(1f))
+                    ActionCard("Reports", Icons.Default.Assessment, onNavigateToReports, Modifier.weight(1f))
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -268,6 +285,17 @@ fun DashboardScreen(
                 onConfirm = { name, address, manager ->
                     siteViewModel.addSite(name, address, manager)
                     showAddSiteDialog = false
+                }
+            )
+        }
+
+        if (showAddContractDialog && contractViewModel != null) {
+            com.example.workermanager.ui.screens.contracts.AddContractDialog(
+                sites = sites,
+                onDismiss = { showAddContractDialog = false },
+                onConfirm = { name, mobile, siteId, amount, date, notes ->
+                    contractViewModel.addContract(name, mobile, siteId, amount, date, notes)
+                    showAddContractDialog = false
                 }
             )
         }

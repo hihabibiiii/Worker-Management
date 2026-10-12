@@ -176,8 +176,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = dashboardViewModel,
                                 siteViewModel = siteViewModel,
                                 workerViewModel = workerViewModel,
+                                contractViewModel = contractViewModel,
                                 onAddWorker = { navigateToTab(Screen.Workers.route) },
                                 onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
+                                onNavigateToRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
+                                onNavigateToReports = { navigateToTab(Screen.Reports.route) },
                                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                                 onSiteClick = { siteId ->
                                     navController.navigate(Screen.SiteDetails.createRoute(siteId))

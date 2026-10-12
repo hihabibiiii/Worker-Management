@@ -145,7 +145,7 @@ fun SettingsScreen(
                     Text("App Version", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
                 },
                 supportingContent = { 
-                    Text("1.0.0", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                    Text("2.1.1", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                 },
                 leadingContent = { Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)

@@ -793,7 +793,7 @@ fun RecordWorkerPaymentDialog(
     var selectedSiteId by remember { mutableStateOf<Long>(worker.currentSiteId ?: sites.firstOrNull()?.id ?: 0L) }
     var amount by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf(PaymentMethod.CASH) }
-    var selectedType by remember { mutableStateOf(initialType) }
+    val selectedType = initialType
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var note by remember { mutableStateOf("") }
     var siteExpanded by remember { mutableStateOf(false) }
@@ -822,18 +822,29 @@ fun RecordWorkerPaymentDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Type selector
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = selectedType == PaymentType.ADVANCE,
-                        onClick = { selectedType = PaymentType.ADVANCE },
-                        label = { Text("Advance", fontWeight = FontWeight.Bold) }
-                    )
-                    FilterChip(
-                        selected = selectedType == PaymentType.PAYMENT,
-                        onClick = { selectedType = PaymentType.PAYMENT },
-                        label = { Text("Payment", fontWeight = FontWeight.Bold) }
-                    )
+                // Fixed Payment Type Indicator
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Type: ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = if (selectedType == PaymentType.ADVANCE) "Advance" else "Payment",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (selectedType == PaymentType.ADVANCE) Color(0xFFEF6C00) else Color(0xFF1565C0)
+                        )
+                    }
                 }
 
                 // Site selection

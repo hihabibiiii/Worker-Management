@@ -6,7 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -135,16 +139,29 @@ class MainActivity : ComponentActivity() {
 
                         // Only show bottom bar for main screens
                         if (allNavItems.any { it.route == currentDestination?.route }) {
-                            NavigationBar {
+                            NavigationBar(
+                                modifier = Modifier.height(66.dp),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 3.dp
+                            ) {
                                 primaryNavItems.forEach { screen ->
                                     NavigationBarItem(
-                                        icon = { screen.icon?.let { Icon(it, contentDescription = null) } },
+                                        icon = {
+                                            screen.icon?.let {
+                                                Icon(
+                                                    imageVector = it,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        },
                                         label = { 
                                             Text(
                                                 text = screen.title,
                                                 maxLines = 1,
                                                 softWrap = false,
-                                                fontSize = 10.sp
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium
                                             ) 
                                         },
                                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
@@ -154,8 +171,22 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 NavigationBarItem(
-                                    icon = { Icon(Icons.Default.MoreHoriz, contentDescription = "More") },
-                                    label = { Text("More", maxLines = 1, softWrap = false, fontSize = 10.sp) },
+                                    icon = {
+                                        Icon(
+                                            Icons.Default.MoreHoriz,
+                                            contentDescription = "More",
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = "More",
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    },
                                     selected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true },
                                     onClick = {
                                         showMoreSheet = true

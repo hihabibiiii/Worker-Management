@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -111,8 +112,8 @@ fun DashboardScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(horizontalAlignment = Alignment.Start) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Work", fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Craft", fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Work", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.White)
+                                Text("Craft", fontWeight = FontWeight.Bold,fontSize = 24.sp, color = Color.White)
                             }
                             Text(
                                 "Smart Work Management",
@@ -232,8 +233,10 @@ fun DashboardScreen(
                 }
             }
 
-            // Client Payments Summary (Visible only when at least one client/contract exists)
+            // Client Payments Summary (Expandable dropdown card, visible when contracts exist)
             if (stats.totalContracts > 0) {
+                var isClientSummaryExpanded by remember { mutableStateOf(false) }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     modifier = Modifier
@@ -243,28 +246,49 @@ fun DashboardScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Client Payments Summary",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SummaryRow("Total Contracts", stats.totalContracts.toString())
-                        SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
-                        SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
-                        SummaryRow(
-                            label = "Total Remaining",
-                            value = Utils.formatCurrency(stats.totalContractRemaining),
-                            isBold = true,
-                            valueColor = MaterialTheme.colorScheme.error
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isClientSummaryExpanded = !isClientSummaryExpanded },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Client Payments Summary",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Icon(
+                                imageVector = if (isClientSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isClientSummaryExpanded) "Collapse Summary" else "Expand Summary",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        AnimatedVisibility(visible = isClientSummaryExpanded) {
+                            Column {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                SummaryRow("Total Contracts", stats.totalContracts.toString())
+                                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
+                                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                                )
+                                SummaryRow(
+                                    label = "Total Remaining",
+                                    value = Utils.formatCurrency(stats.totalContractRemaining),
+                                    isBold = true,
+                                    valueColor = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             // Find Existing Backup Prompt (Visible when database is empty)
             if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {

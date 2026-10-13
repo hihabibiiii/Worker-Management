@@ -52,7 +52,7 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR ABORT INTO `worker_site_history` (`id`,`workerId`,`siteId`,`startDate`,`endDate`,`createdAt`) VALUES (nullif(?, 0),?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `worker_site_history` (`id`,`workerId`,`siteId`,`startDate`,`endDate`,`createdAt`) VALUES (nullif(?, 0),?,?,?,?,?)";
       }
 
       @Override
@@ -512,6 +512,68 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             }
           } else {
             _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getAllHistory(
+      final Continuation<? super List<WorkerSiteHistoryEntity>> $completion) {
+    final String _sql = "SELECT * FROM worker_site_history";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<WorkerSiteHistoryEntity>>() {
+      @Override
+      @NonNull
+      public List<WorkerSiteHistoryEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final List<WorkerSiteHistoryEntity> _result = new ArrayList<WorkerSiteHistoryEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final WorkerSiteHistoryEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final LocalDate _tmpEndDate;
+            final String _tmp_2;
+            if (_cursor.isNull(_cursorIndexOfEndDate)) {
+              _tmp_2 = null;
+            } else {
+              _tmp_2 = _cursor.getString(_cursorIndexOfEndDate);
+            }
+            _tmpEndDate = __converters.toLocalDate(_tmp_2);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            _result.add(_item);
           }
           return _result;
         } finally {

@@ -262,6 +262,58 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
     });
   }
 
+  @Override
+  public Object getAllSiteAttendance(
+      final Continuation<? super List<SiteAttendanceEntity>> $completion) {
+    final String _sql = "SELECT * FROM site_attendance";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<SiteAttendanceEntity>>() {
+      @Override
+      @NonNull
+      public List<SiteAttendanceEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final List<SiteAttendanceEntity> _result = new ArrayList<SiteAttendanceEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final SiteAttendanceEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_1;
+            }
+            final boolean _tmpIsPresent;
+            final int _tmp_2;
+            _tmp_2 = _cursor.getInt(_cursorIndexOfIsPresent);
+            _tmpIsPresent = _tmp_2 != 0;
+            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

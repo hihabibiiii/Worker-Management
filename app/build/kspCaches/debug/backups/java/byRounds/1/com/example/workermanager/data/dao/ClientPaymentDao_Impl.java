@@ -1,6 +1,7 @@
 package com.example.workermanager.data.dao;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
@@ -412,6 +413,84 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getAllClientPaymentsRaw(
+      final Continuation<? super List<ClientPaymentEntity>> $completion) {
+    final String _sql = "SELECT * FROM client_payments";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<ClientPaymentEntity>>() {
+      @Override
+      @NonNull
+      public List<ClientPaymentEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfContractId = CursorUtil.getColumnIndexOrThrow(_cursor, "contractId");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfPaymentDate = CursorUtil.getColumnIndexOrThrow(_cursor, "paymentDate");
+          final int _cursorIndexOfMethod = CursorUtil.getColumnIndexOrThrow(_cursor, "method");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfIsEdited = CursorUtil.getColumnIndexOrThrow(_cursor, "isEdited");
+          final List<ClientPaymentEntity> _result = new ArrayList<ClientPaymentEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final ClientPaymentEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpContractId;
+            _tmpContractId = _cursor.getLong(_cursorIndexOfContractId);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final LocalDate _tmpPaymentDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfPaymentDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfPaymentDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpPaymentDate = _tmp_1;
+            }
+            final ClientPaymentMethod _tmpMethod;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfMethod);
+            _tmpMethod = __converters.toClientPaymentMethod(_tmp_2);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final boolean _tmpIsEdited;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsEdited);
+            _tmpIsEdited = _tmp_4 != 0;
+            _item = new ClientPaymentEntity(_tmpId,_tmpContractId,_tmpAmount,_tmpPaymentDate,_tmpMethod,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpIsEdited);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override

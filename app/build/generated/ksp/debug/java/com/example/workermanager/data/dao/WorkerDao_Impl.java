@@ -1,6 +1,7 @@
 package com.example.workermanager.data.dao;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
@@ -431,6 +432,93 @@ public final class WorkerDao_Impl implements WorkerDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getAllWorkersRaw(final Continuation<? super List<WorkerEntity>> $completion) {
+    final String _sql = "SELECT * FROM workers";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<WorkerEntity>>() {
+      @Override
+      @NonNull
+      public List<WorkerEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfPhone = CursorUtil.getColumnIndexOrThrow(_cursor, "phone");
+          final int _cursorIndexOfWorkerType = CursorUtil.getColumnIndexOrThrow(_cursor, "workerType");
+          final int _cursorIndexOfDailyRate = CursorUtil.getColumnIndexOrThrow(_cursor, "dailyRate");
+          final int _cursorIndexOfOvertimeRate = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeRate");
+          final int _cursorIndexOfJoiningDate = CursorUtil.getColumnIndexOrThrow(_cursor, "joiningDate");
+          final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
+          final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
+          final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final WorkerEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpPhone;
+            _tmpPhone = _cursor.getString(_cursorIndexOfPhone);
+            final WorkerType _tmpWorkerType;
+            final String _tmp;
+            _tmp = _cursor.getString(_cursorIndexOfWorkerType);
+            _tmpWorkerType = __converters.toWorkerType(_tmp);
+            final double _tmpDailyRate;
+            _tmpDailyRate = _cursor.getDouble(_cursorIndexOfDailyRate);
+            final double _tmpOvertimeRate;
+            _tmpOvertimeRate = _cursor.getDouble(_cursorIndexOfOvertimeRate);
+            final LocalDate _tmpJoiningDate;
+            final String _tmp_1;
+            if (_cursor.isNull(_cursorIndexOfJoiningDate)) {
+              _tmp_1 = null;
+            } else {
+              _tmp_1 = _cursor.getString(_cursorIndexOfJoiningDate);
+            }
+            final LocalDate _tmp_2 = __converters.toLocalDate(_tmp_1);
+            if (_tmp_2 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpJoiningDate = _tmp_2;
+            }
+            final Long _tmpCurrentSiteId;
+            if (_cursor.isNull(_cursorIndexOfCurrentSiteId)) {
+              _tmpCurrentSiteId = null;
+            } else {
+              _tmpCurrentSiteId = _cursor.getLong(_cursorIndexOfCurrentSiteId);
+            }
+            final boolean _tmpIsActive;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsActive);
+            _tmpIsActive = _tmp_3 != 0;
+            final String _tmpNotes;
+            _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override

@@ -9,6 +9,9 @@ interface ContractDao {
     @Query("SELECT * FROM contracts WHERE isDeleted = 0 ORDER BY startDate DESC")
     fun getAllContracts(): Flow<List<ContractEntity>>
 
+    @Query("SELECT * FROM contracts")
+    suspend fun getAllContractsRaw(): List<ContractEntity>
+
     @Query("SELECT * FROM contracts WHERE id = :id")
     fun getContractById(id: Long): Flow<ContractEntity?>
 

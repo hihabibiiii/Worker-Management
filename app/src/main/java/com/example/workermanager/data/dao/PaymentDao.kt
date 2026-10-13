@@ -10,6 +10,9 @@ interface PaymentDao {
     @Query("SELECT * FROM payments WHERE isDeleted = 0 ORDER BY date DESC")
     fun getAllPayments(): Flow<List<PaymentEntity>>
 
+    @Query("SELECT * FROM payments")
+    suspend fun getAllPaymentsRaw(): List<PaymentEntity>
+
     @Query("SELECT * FROM payments WHERE siteId = :siteId AND isDeleted = 0 ORDER BY date DESC")
     fun getPaymentsBySite(siteId: Long): Flow<List<PaymentEntity>>
 

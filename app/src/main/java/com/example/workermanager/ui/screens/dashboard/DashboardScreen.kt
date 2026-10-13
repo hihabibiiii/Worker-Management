@@ -64,20 +64,21 @@ fun DashboardScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
+
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.logo),
                             contentDescription = "WorkCraft Logo",
                             contentScale = ContentScale.Fit,
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(50.dp)
                                 .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(horizontalAlignment = Alignment.Start) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Work", fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Craft", fontWeight = FontWeight.Bold, color = Color(0xFF81D4FA))
+                                Text("Craft", fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Text(
                                 "Smart Work Management",

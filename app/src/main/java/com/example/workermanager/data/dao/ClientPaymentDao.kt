@@ -9,6 +9,9 @@ interface ClientPaymentDao {
     @Query("SELECT * FROM client_payments WHERE contractId = :contractId AND isDeleted = 0 ORDER BY paymentDate DESC")
     fun getPaymentsByContract(contractId: Long): Flow<List<ClientPaymentEntity>>
 
+    @Query("SELECT * FROM client_payments")
+    suspend fun getAllClientPaymentsRaw(): List<ClientPaymentEntity>
+
     @Query("SELECT SUM(amount) FROM client_payments WHERE contractId = :contractId AND isDeleted = 0")
     fun getTotalReceivedByContract(contractId: Long): Flow<Double?>
 

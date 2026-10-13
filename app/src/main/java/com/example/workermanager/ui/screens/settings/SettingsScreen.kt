@@ -10,11 +10,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.RestorePage
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,11 +28,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workermanager.WorkerApplication
 import com.example.workermanager.data.preference.ThemeMode
+import com.example.workermanager.util.BackupManager
+import com.example.workermanager.util.BackupPayload
 import com.example.workermanager.util.ExcelExporter
 import com.example.workermanager.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +49,60 @@ fun SettingsScreen(
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
     val scope = rememberCoroutineScope()
+    
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var exportedUri by remember { mutableStateOf<Uri?>(null) }
     val themeMode by viewModel.themeMode.collectAsState()
+
+    var isBackingUp by remember { mutableStateOf(false) }
+    var isRestoring by remember { mutableStateOf(false) }
+    var pendingRestorePayload by remember { mutableStateOf<BackupPayload?>(null) }
+
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                isBackingUp = true
+                try {
+                    context.contentResolver.openOutputStream(it)?.use { stream ->
+                        BackupManager.exportBackup(app.database, stream)
+                    }
+                    Toast.makeText(context, "Backup created successfully!", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    isBackingUp = false
+                }
+            }
+        }
+    }
+
+    val openRestoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                isRestoring = true
+                try {
+                    val payload = context.contentResolver.openInputStream(it)?.use { stream ->
+                        BackupManager.validateAndParseBackup(stream)
+                    }
+                    if (payload != null) {
+                        pendingRestorePayload = payload
+                    } else {
+                        Toast.makeText(context, "Invalid backup file format.", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Restore error: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    isRestoring = false
+                }
+            }
+        }
+    }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -214,6 +270,51 @@ fun SettingsScreen(
 
             ListItem(
                 headlineContent = { 
+                    Text("Backup Data", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("Save a backup copy of all application records", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { 
+                    if (isBackingUp) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.Backup, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isBackingUp) {
+                    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                    createBackupLauncher.launch("WorkCraft_Backup_$timestamp.json")
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Restore Data", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("Restore records from a previously saved backup file", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { 
+                    if (isRestoring) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.RestorePage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isRestoring) {
+                    openRestoreLauncher.launch(arrayOf("application/json", "*/*"))
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+            ListItem(
+                headlineContent = { 
                     Text("Recycle Bin", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
                 },
                 supportingContent = { 
@@ -236,6 +337,64 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFC62828)) },
                 modifier = Modifier.clickable { showDeleteDialog = true },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+        }
+
+        if (pendingRestorePayload != null) {
+            val payload = pendingRestorePayload!!
+            AlertDialog(
+                onDismissRequest = { pendingRestorePayload = null },
+                title = { Text("Restore Backup?", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            "Are you sure you want to restore records from this backup file?",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("• Backup Date: ${SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(payload.timestamp))}", style = MaterialTheme.typography.bodySmall)
+                        Text("• Workers: ${payload.workers.size}", style = MaterialTheme.typography.bodySmall)
+                        Text("• Sites: ${payload.sites.size}", style = MaterialTheme.typography.bodySmall)
+                        Text("• Attendance Records: ${payload.attendance.size}", style = MaterialTheme.typography.bodySmall)
+                        Text("• Payments: ${payload.payments.size}", style = MaterialTheme.typography.bodySmall)
+                        Text("• Contracts: ${payload.contracts.size}", style = MaterialTheme.typography.bodySmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "A temporary safety backup of your current database will be created before restoration.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val targetPayload = payload
+                            pendingRestorePayload = null
+                            scope.launch {
+                                isRestoring = true
+                                try {
+                                    BackupManager.createSafetyBackupInternal(context, app.database)
+                                    BackupManager.restoreBackup(app.database, targetPayload)
+                                    Toast.makeText(context, "Data restored successfully!", Toast.LENGTH_LONG).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Restoration failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                } finally {
+                                    isRestoring = false
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Restore Data", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingRestorePayload = null }) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
             )
         }
 

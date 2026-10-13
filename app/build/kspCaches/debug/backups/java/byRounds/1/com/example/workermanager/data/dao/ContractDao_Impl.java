@@ -1,6 +1,7 @@
 package com.example.workermanager.data.dao;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
@@ -417,6 +418,85 @@ public final class ContractDao_Impl implements ContractDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getAllContractsRaw(final Continuation<? super List<ContractEntity>> $completion) {
+    final String _sql = "SELECT * FROM contracts";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<ContractEntity>>() {
+      @Override
+      @NonNull
+      public List<ContractEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfClientName = CursorUtil.getColumnIndexOrThrow(_cursor, "clientName");
+          final int _cursorIndexOfMobile = CursorUtil.getColumnIndexOrThrow(_cursor, "mobile");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfTotalAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "totalAmount");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final List<ContractEntity> _result = new ArrayList<ContractEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final ContractEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpClientName;
+            _tmpClientName = _cursor.getString(_cursorIndexOfClientName);
+            final String _tmpMobile;
+            _tmpMobile = _cursor.getString(_cursorIndexOfMobile);
+            final Long _tmpSiteId;
+            if (_cursor.isNull(_cursorIndexOfSiteId)) {
+              _tmpSiteId = null;
+            } else {
+              _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            }
+            final double _tmpTotalAmount;
+            _tmpTotalAmount = _cursor.getDouble(_cursorIndexOfTotalAmount);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final String _tmpNotes;
+            _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final ContractStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toContractStatus(_tmp_2);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override

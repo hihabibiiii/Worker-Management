@@ -9,6 +9,9 @@ interface WorkerDao {
     @Query("SELECT * FROM workers WHERE isDeleted = 0 ORDER BY name ASC")
     fun getAllWorkers(): Flow<List<WorkerEntity>>
 
+    @Query("SELECT * FROM workers")
+    suspend fun getAllWorkersRaw(): List<WorkerEntity>
+
     @Query("SELECT * FROM workers WHERE id = :workerId")
     fun getWorkerById(workerId: Long): Flow<WorkerEntity?>
 

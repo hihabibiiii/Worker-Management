@@ -10,6 +10,9 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance ORDER BY date DESC")
     fun getAllAttendance(): Flow<List<AttendanceEntity>>
 
+    @Query("SELECT * FROM attendance")
+    suspend fun getAllAttendanceRaw(): List<AttendanceEntity>
+
     @Query("SELECT * FROM attendance WHERE date = :date")
     fun getAttendanceByDate(date: LocalDate): Flow<List<AttendanceEntity>>
 

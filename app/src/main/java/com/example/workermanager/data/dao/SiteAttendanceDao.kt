@@ -21,4 +21,7 @@ interface SiteAttendanceDao {
 
     @Query("SELECT * FROM site_attendance WHERE date = :date")
     fun getAllSiteAttendanceByDate(date: LocalDate): Flow<List<SiteAttendanceEntity>>
+
+    @Query("SELECT * FROM site_attendance")
+    suspend fun getAllSiteAttendance(): List<SiteAttendanceEntity>
 }

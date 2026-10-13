@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.test.app-mergeDebugAndroidTestResources-32:/values-eu/values-eu.xml",
+            "outputFile": "com.example.workermanager.test.app-mergeDebugAndroidTestResources-36:/values-eu/values-eu.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\9.0-milestone-1\\transforms\\a60698f5d80b4685f99d738ddf6643a0\\transformed\\ui-release\\res\\values-eu\\values-eu.xml",

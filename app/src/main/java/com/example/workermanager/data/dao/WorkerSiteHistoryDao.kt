@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 @Dao
 interface WorkerSiteHistoryDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(history: WorkerSiteHistoryEntity)
 
     @Update
@@ -30,4 +30,7 @@ interface WorkerSiteHistoryDao {
     
     @Query("SELECT siteId FROM worker_site_history WHERE workerId = :workerId AND startDate <= :date AND (endDate IS NULL OR endDate >= :date) LIMIT 1")
     suspend fun getSiteIdForWorkerOnDate(workerId: Long, date: LocalDate): Long?
+
+    @Query("SELECT * FROM worker_site_history")
+    suspend fun getAllHistory(): List<WorkerSiteHistoryEntity>
 }

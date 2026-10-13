@@ -395,6 +395,75 @@ public final class SiteDao_Impl implements SiteDao {
   }
 
   @Override
+  public Object getAllSitesRaw(final Continuation<? super List<SiteEntity>> $completion) {
+    final String _sql = "SELECT * FROM sites";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<SiteEntity>>() {
+      @Override
+      @NonNull
+      public List<SiteEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfAddress = CursorUtil.getColumnIndexOrThrow(_cursor, "address");
+          final int _cursorIndexOfManager = CursorUtil.getColumnIndexOrThrow(_cursor, "manager");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final List<SiteEntity> _result = new ArrayList<SiteEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final SiteEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpAddress;
+            _tmpAddress = _cursor.getString(_cursorIndexOfAddress);
+            final String _tmpManager;
+            _tmpManager = _cursor.getString(_cursorIndexOfManager);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final SiteStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toSiteStatus(_tmp_2);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Flow<SiteEntity> getSiteById(final long siteId) {
     final String _sql = "SELECT * FROM sites WHERE id = ?";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);

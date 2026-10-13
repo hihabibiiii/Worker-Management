@@ -446,6 +446,7 @@ fun WorkerStatsSection(
             Column(modifier = Modifier.padding(16.dp)) {
                 SummaryStatRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
                 SummaryStatRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
+                SummaryStatRow("Total Advance", Utils.formatCurrency(stats.totalAdvance))
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)

@@ -120,6 +120,7 @@ class WorkerViewModel(
         
         val totalEarned = attendance.sumOf { it.amount }
         val totalPaid = payments.sumOf { it.amount }
+        val totalAdvance = payments.filter { it.paymentType == PaymentType.ADVANCE }.sumOf { it.amount }
         
         WorkerStats(
             presentDays = present,
@@ -128,19 +129,21 @@ class WorkerViewModel(
             overtimeHours = overtimeHours,
             totalEarned = totalEarned,
             totalPaid = totalPaid,
+            totalAdvance = totalAdvance,
             pendingBalance = totalEarned - totalPaid
         )
     }
 }
 
 data class WorkerStats(
-    val presentDays: Int,
-    val halfDays: Int,
-    val absentDays: Int,
-    val overtimeHours: Double,
-    val totalEarned: Double,
-    val totalPaid: Double,
-    val pendingBalance: Double
+    val presentDays: Int = 0,
+    val halfDays: Int = 0,
+    val absentDays: Int = 0,
+    val overtimeHours: Double = 0.0,
+    val totalEarned: Double = 0.0,
+    val totalPaid: Double = 0.0,
+    val totalAdvance: Double = 0.0,
+    val pendingBalance: Double = 0.0
 )
 
 class WorkerViewModelFactory(

@@ -8,14 +8,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestorePage
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -27,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workermanager.WorkerApplication
+import com.example.workermanager.data.preference.AutoBackupPreferenceManager
 import com.example.workermanager.data.preference.ThemeMode
 import com.example.workermanager.util.BackupManager
 import com.example.workermanager.util.BackupPayload
@@ -49,7 +55,13 @@ fun SettingsScreen(
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
     val scope = rememberCoroutineScope()
-    
+
+    val autoBackupPrefManager = remember { AutoBackupPreferenceManager(context) }
+    val isAutoBackupEnabled by autoBackupPrefManager.isAutoBackupEnabled.collectAsState()
+    val lastBackupTime by autoBackupPrefManager.lastBackupTime.collectAsState()
+    val lastBackupStatus by autoBackupPrefManager.lastBackupStatus.collectAsState()
+    val backupUri by autoBackupPrefManager.backupUri.collectAsState()
+
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
@@ -59,6 +71,23 @@ fun SettingsScreen(
     var isBackingUp by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
     var pendingRestorePayload by remember { mutableStateOf<BackupPayload?>(null) }
+
+    val selectFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                // Permission take error handling
+            }
+            autoBackupPrefManager.setBackupUri(it.toString())
+            Toast.makeText(context, "Backup folder configured!", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val createBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -149,6 +178,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
         ) {
@@ -260,6 +290,72 @@ fun SettingsScreen(
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             
+            Text(
+                "Automatic & Shared Backup", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Automatic Backup", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text("Periodically save backups to Documents/WorkCraftBackups", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { Icon(Icons.Default.Autorenew, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                trailingContent = {
+                    Switch(
+                        checked = isAutoBackupEnabled,
+                        onCheckedChange = { autoBackupPrefManager.setAutoBackupEnabled(it) }
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            ListItem(
+                headlineContent = { 
+                    Text("Backup Folder", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        if (backupUri != null) "Folder Configured (Documents/WorkCraftBackups)" else "Default: Documents/WorkCraftBackups",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { Icon(Icons.Default.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                modifier = Modifier.clickable { selectFolderLauncher.launch(null) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            ListItem(
+                headlineContent = { 
+                    Text("Backup Now", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    val timeStr = if (lastBackupTime > 0) SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(lastBackupTime)) else "Never"
+                    Text("Status: $lastBackupStatus | Last: $timeStr", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
+                },
+                leadingContent = { Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                modifier = Modifier.clickable {
+                    scope.launch {
+                        val success = BackupManager.performAutoBackup(context, app.database, autoBackupPrefManager)
+                        if (success) {
+                            Toast.makeText(context, "Automatic Backup completed successfully!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val statusMsg = autoBackupPrefManager.lastBackupStatus.value
+                            Toast.makeText(context, statusMsg, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
             Text(
                 "Data Management", 
                 style = MaterialTheme.typography.titleMedium, 
@@ -473,7 +569,7 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             )

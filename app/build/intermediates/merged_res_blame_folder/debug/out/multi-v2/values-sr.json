@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-54:/values-sr/values-sr.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-59:/values-sr/values-sr.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\9.0-milestone-1\\transforms\\39c1db12a598f42905e4ff983fbfd230\\transformed\\foundation-release\\res\\values-sr\\values-sr.xml",

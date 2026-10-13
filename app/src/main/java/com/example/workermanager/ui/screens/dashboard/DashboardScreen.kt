@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,9 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit = {},
     onSiteClick: (Long) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val app = context.applicationContext as com.example.workermanager.WorkerApplication
+    val scope = rememberCoroutineScope()
     val stats by viewModel.stats.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
@@ -56,6 +60,36 @@ fun DashboardScreen(
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
     var showAddContractDialog by remember { mutableStateOf(false) }
+    var existingAutoBackup by remember { mutableStateOf<com.example.workermanager.util.BackupPayload?>(null) }
+
+    val selectBackupFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                try {
+                    val payload = context.contentResolver.openInputStream(it)?.use { stream ->
+                        com.example.workermanager.util.BackupManager.validateAndParseBackup(stream)
+                    }
+                    if (payload != null) {
+                        existingAutoBackup = payload
+                    } else {
+                        android.widget.Toast.makeText(context, "Invalid backup file format.", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(context, "Backup error: ${e.localizedMessage ?: "Invalid file"}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val prefManager = com.example.workermanager.data.preference.AutoBackupPreferenceManager(context)
+        val backup = com.example.workermanager.util.BackupManager.findExistingAutoBackup(context, prefManager)
+        if (backup != null && sites.isEmpty() && stats.totalContracts == 0) {
+            existingAutoBackup = backup
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -67,7 +101,7 @@ fun DashboardScreen(
 
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo),
+                            painter = painterResource(id = R.drawable.dashlogo),
                             contentDescription = "WorkCraft Logo",
                             contentScale = ContentScale.Fit,
                             modifier = Modifier
@@ -232,6 +266,43 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Find Existing Backup Prompt (Visible when database is empty)
+            if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Backup, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "If you backed up your WorkCraft data on this device previously, locate your backup file in Documents/WorkCraftBackups to restore your records.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                selectBackupFileLauncher.launch(arrayOf("application/json", "*/*"))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Locate Backup File", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             // Quick Actions
             Text(
                 "Quick Actions",
@@ -301,6 +372,47 @@ fun DashboardScreen(
                 onConfirm = { name, mobile, siteId, amount, date, notes ->
                     contractViewModel.addContract(name, mobile, siteId, amount, date, notes)
                     showAddContractDialog = false
+                }
+            )
+        }
+
+        if (existingAutoBackup != null) {
+            val payload = existingAutoBackup!!
+            AlertDialog(
+                onDismissRequest = { existingAutoBackup = null },
+                title = { Text("Existing WorkCraft Backup Found", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            "We found a previous WorkCraft backup containing ${payload.workers.size} workers and ${payload.sites.size} sites. Would you like to restore your records?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val targetPayload = payload
+                            existingAutoBackup = null
+                            scope.launch {
+                                try {
+                                    com.example.workermanager.util.BackupManager.createSafetyBackupInternal(context, app.database)
+                                    com.example.workermanager.util.BackupManager.restoreBackup(app.database, targetPayload)
+                                    android.widget.Toast.makeText(context, "Data restored successfully!", android.widget.Toast.LENGTH_LONG).show()
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "Restoration failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Restore Data", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { existingAutoBackup = null }) {
+                        Text("Start Fresh", color = MaterialTheme.colorScheme.onSurface)
+                    }
                 }
             )
         }

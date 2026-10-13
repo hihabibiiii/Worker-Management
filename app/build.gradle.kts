@@ -84,6 +84,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
+    // WorkManager & DocumentFile
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
     // Excel Export - Using a more Android-compatible configuration of POI
     implementation("org.apache.poi:poi:5.2.2")
     implementation("org.apache.poi:poi-ooxml:5.2.2") {

@@ -9,26 +9,32 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.workermanager.util.ShareUtils
 import com.example.workermanager.util.Utils
+import com.example.workermanager.viewmodel.MonthSummaryModel
+import com.example.workermanager.viewmodel.ReportType
 import com.example.workermanager.viewmodel.ReportViewModel
 import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerMonthlyReport
+import java.time.LocalDate
+import java.time.Year
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
-
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.ui.platform.LocalContext
-import com.example.workermanager.util.ShareUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +43,18 @@ fun ReportsScreen(
     siteViewModel: SiteViewModel,
     onBack: () -> Unit = {}
 ) {
+    val selectedReportType by viewModel.selectedReportType.collectAsState()
+    val selectedWeekStartDate by viewModel.selectedWeekStartDate.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
+    val selectedYear by viewModel.selectedYear.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
-    val reports by viewModel.monthlyReport.collectAsState()
+
+    val weeklyReports by viewModel.weeklyReport.collectAsState()
+    val monthlyReports by viewModel.monthlyReport.collectAsState()
+    val yearlySummaryReport by viewModel.yearlySummaryReport.collectAsState()
+
+    val currentReports = if (selectedReportType == ReportType.WEEKLY) weeklyReports else monthlyReports
 
     Scaffold(
         topBar = {
@@ -48,7 +62,7 @@ fun ReportsScreen(
                 title = { Text("Performance Reports", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -66,59 +80,270 @@ fun ReportsScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Selectors Section
-            Column(modifier = Modifier.padding(16.dp)) {
-                MonthSelector(
-                    selectedMonth = selectedMonth,
-                    onMonthChange = { viewModel.updateMonth(it) }
+            // Report Type Toggle Tabs (3 Options: Weekly, Monthly, Yearly)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = selectedReportType == ReportType.WEEKLY,
+                    onClick = { viewModel.updateReportType(ReportType.WEEKLY) },
+                    label = {
+                        Text(
+                            text = "Weekly",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        SiteChip(
-                            name = "All Sites",
-                            isSelected = selectedSiteId == null,
-                            onClick = { viewModel.updateSite(null) }
+                FilterChip(
+                    selected = selectedReportType == ReportType.MONTHLY,
+                    onClick = { viewModel.updateReportType(ReportType.MONTHLY) },
+                    label = {
+                        Text(
+                            text = "Monthly",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
-                    items(sites) { site ->
-                        SiteChip(
-                            name = site.name,
-                            isSelected = selectedSiteId == site.id,
-                            onClick = { viewModel.updateSite(site.id) }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = selectedReportType == ReportType.YEARLY,
+                    onClick = { viewModel.updateReportType(ReportType.YEARLY) },
+                    label = {
+                        Text(
+                            text = "Yearly",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Site Filter Chips
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    SiteChip(
+                        name = "All Sites",
+                        isSelected = selectedSiteId == null,
+                        onClick = { viewModel.updateSite(null) }
+                    )
+                }
+                items(sites) { site ->
+                    SiteChip(
+                        name = site.name,
+                        isSelected = selectedSiteId == site.id,
+                        onClick = { viewModel.updateSite(site.id) }
+                    )
                 }
             }
-            
-            SummarySection(reports)
-            
-            Text(
-                "Worker Performance",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(reports) { report ->
-                    ReportItem(report)
+
+            if (selectedReportType == ReportType.YEARLY) {
+                // Yearly Summary View
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    YearSelector(
+                        selectedYear = selectedYear,
+                        onYearChange = { viewModel.updateYear(it) }
+                    )
                 }
-                
-                if (reports.isEmpty()) {
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("No data available for this selection.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    "Year ${yearlySummaryReport.year} Overall Summary", 
+                                    style = MaterialTheme.typography.titleSmall, 
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                ReportStatRow("Total Attendance (Days)", "${yearlySummaryReport.totalPresent} Present | ${yearlySummaryReport.totalHalfDay} Half Day | ${yearlySummaryReport.totalAbsent} Absent")
+                                ReportStatRow("Total Overtime Hours", "${yearlySummaryReport.totalOvertimeHours} hrs")
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                                ReportStatRow("Total Paid to Workers", Utils.formatCurrency(yearlySummaryReport.totalWorkerPaid), isBold = true)
+                                ReportStatRow("Salary Paid", Utils.formatCurrency(yearlySummaryReport.salaryPaid))
+                                ReportStatRow("Advances Paid", Utils.formatCurrency(yearlySummaryReport.advancePaid))
+                                ReportStatRow("Bonuses Paid", Utils.formatCurrency(yearlySummaryReport.bonusPaid))
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                                ReportStatRow("Client Payments Received", Utils.formatCurrency(yearlySummaryReport.totalContractReceived), isBold = true, valueColor = Color(0xFF2E7D32))
+                            }
+                        }
+                    }
+
+                    item {
+                        Text(
+                            "Month-wise Breakdown (${yearlySummaryReport.year})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
+                    items(yearlySummaryReport.monthSummaries) { monthSummary ->
+                        MonthSummaryCard(monthSummary)
+                    }
+                }
+            } else {
+                // Date Selectors Section for Weekly & Monthly
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    if (selectedReportType == ReportType.WEEKLY) {
+                        WeekSelector(
+                            selectedWeekStartDate = selectedWeekStartDate,
+                            onWeekChange = { viewModel.updateWeek(it) }
+                        )
+                    } else {
+                        MonthSelector(
+                            selectedMonth = selectedMonth,
+                            onMonthChange = { viewModel.updateMonth(it) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SummarySection(
+                    reports = currentReports,
+                    title = if (selectedReportType == ReportType.WEEKLY) "Weekly Summary" else "Monthly Summary"
+                )
+
+                Text(
+                    "Worker Performance",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(currentReports) { report ->
+                        ReportItem(report)
+                    }
+
+                    if (currentReports.isEmpty()) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                Text("No data available for this selection.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun YearSelector(
+    selectedYear: Year,
+    onYearChange: (Year) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { onYearChange(selectedYear.minusYears(1)) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft, 
+                    contentDescription = "Previous Year",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                text = "Year ${selectedYear.value}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            IconButton(onClick = { onYearChange(selectedYear.plusYears(1)) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight, 
+                    contentDescription = "Next Year",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthSummaryCard(summary: MonthSummaryModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                summary.monthName, 
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    "P: ${summary.presentDays} | H: ${summary.halfDays} | A: ${summary.absentDays} | OT: ${summary.overtimeHours}h",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    "Earned: ${Utils.formatCurrency(summary.totalEarned)}", 
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Paid: ${Utils.formatCurrency(summary.totalPaid)}", 
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Due: ${Utils.formatCurrency(summary.pendingBalance)}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (summary.pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                )
             }
         }
     }
@@ -143,6 +368,56 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+@Composable
+fun WeekSelector(
+    selectedWeekStartDate: LocalDate,
+    onWeekChange: (LocalDate) -> Unit
+) {
+    val formatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()) }
+    val startDateStr = selectedWeekStartDate.format(formatter)
+    val endDateStr = selectedWeekStartDate.plusDays(6).format(formatter)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { onWeekChange(selectedWeekStartDate.minusWeeks(1)) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft, 
+                    contentDescription = "Previous Week",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "$startDateStr – $endDateStr",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Weekly Period (Mon - Sun)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = { onWeekChange(selectedWeekStartDate.plusWeeks(1)) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight, 
+                    contentDescription = "Next Week",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -187,7 +462,7 @@ fun MonthSelector(
 }
 
 @Composable
-fun SummarySection(reports: List<WorkerMonthlyReport>) {
+fun SummarySection(reports: List<WorkerMonthlyReport>, title: String = "Summary") {
     val totalEarned = reports.sumOf { it.totalEarned }
     val totalPaid = reports.sumOf { it.totalPaid }
     val totalPending = totalEarned - totalPaid
@@ -198,7 +473,7 @@ fun SummarySection(reports: List<WorkerMonthlyReport>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Monthly Summary", 
+                title, 
                 style = MaterialTheme.typography.titleSmall, 
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer

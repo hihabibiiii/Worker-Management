@@ -14,7 +14,14 @@ import java.util.concurrent.TimeUnit
 class AutoBackupPreferenceManager(private val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("workcraft_autobackup_prefs", Context.MODE_PRIVATE)
 
-    private val _isAutoBackupEnabled = MutableStateFlow(prefs.getBoolean(KEY_ENABLED, false))
+    init {
+        if (!prefs.contains(KEY_ENABLED)) {
+            prefs.edit().putBoolean(KEY_ENABLED, true).apply()
+            scheduleWorkManager()
+        }
+    }
+
+    private val _isAutoBackupEnabled = MutableStateFlow(prefs.getBoolean(KEY_ENABLED, true))
     val isAutoBackupEnabled: StateFlow<Boolean> = _isAutoBackupEnabled
 
     private val _backupUri = MutableStateFlow(prefs.getString(KEY_URI, null))

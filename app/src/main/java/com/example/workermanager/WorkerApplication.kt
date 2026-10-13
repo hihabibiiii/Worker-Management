@@ -2,6 +2,7 @@ package com.example.workermanager
 
 import android.app.Application
 import com.example.workermanager.data.database.AppDatabase
+import com.example.workermanager.data.preference.AutoBackupPreferenceManager
 import com.example.workermanager.data.preference.ThemePreferenceManager
 import com.example.workermanager.data.repository.*
 
@@ -25,4 +26,12 @@ class WorkerApplication : Application() {
     val contractRepository by lazy { ContractRepository(database.contractDao()) }
 
     val clientPaymentRepository by lazy { ClientPaymentRepository(database.clientPaymentDao()) }
+
+    override fun onCreate() {
+        super.onCreate()
+        val autoBackupManager = AutoBackupPreferenceManager(this)
+        if (autoBackupManager.isAutoBackupEnabled.value) {
+            autoBackupManager.scheduleWorkManager()
+        }
+    }
 }

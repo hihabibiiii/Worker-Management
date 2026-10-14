@@ -1,6 +1,7 @@
 package com.example.workermanager.ui.screens.payments
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -215,6 +216,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {
@@ -252,6 +254,7 @@ fun PaymentCard(
                     onLongClick = { menuExpanded = true }
                 ),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Row(

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -143,6 +144,7 @@ fun WorkerDetailsScreen(
                                     .height(50.dp),
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
                                 tonalElevation = if (isSelected) 4.dp else 1.dp
                             ) {
                                 Box(
@@ -335,6 +337,7 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
@@ -469,7 +472,8 @@ fun WorkerStatsSection(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 SummaryStatRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
@@ -497,6 +501,7 @@ fun WorkerStatsSection(
                 onClick = onAdvanceClick,
                 modifier = Modifier.weight(1f).height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
             ) {
                 Row(
@@ -512,6 +517,7 @@ fun WorkerStatsSection(
                 onClick = onPaymentClick,
                 modifier = Modifier.weight(1f).height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
             ) {
                 Row(
@@ -527,6 +533,7 @@ fun WorkerStatsSection(
                 onClick = onWhatsAppReportClick,
                 modifier = Modifier.weight(1f).height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                 contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
             ) {
                 Row(
@@ -547,6 +554,7 @@ fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
@@ -592,6 +600,7 @@ fun SiteHistoryItem(history: WorkerSiteHistoryEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -620,6 +629,7 @@ fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -677,6 +687,7 @@ fun PaymentHistoryItem(
                     onLongClick = { menuExpanded = true }
                 ),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Row(

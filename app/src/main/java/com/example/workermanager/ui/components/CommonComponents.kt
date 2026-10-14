@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,6 +74,7 @@ fun WorkCraftCard(
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp, pressedElevation = 4.dp)
     ) {
         Column(
@@ -92,7 +94,8 @@ fun StatusBadge(
     Surface(
         modifier = modifier,
         color = backgroundColor,
-        shape = RoundedCornerShape(6.dp)
+        shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.3f))
     ) {
         Text(
             text = text,
@@ -126,6 +129,7 @@ fun EmptyStateView(
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                 modifier = Modifier.size(72.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {

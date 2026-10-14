@@ -329,36 +329,109 @@ fun WorkerDetailsScreen(
 
 @Composable
 fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
+    val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Section: Circular Avatar
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
                     Text(
-                        worker.name, 
-                        style = MaterialTheme.typography.headlineSmall, 
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        worker.workerType.name, 
-                        style = MaterialTheme.typography.bodyMedium, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        text = worker.name.trim().take(1).uppercase(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-                StatusChip(isActive = worker.isActive)
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            DetailRow("Phone", worker.phone.ifEmpty { "N/A" })
-            DetailRow("Daily Rate", Utils.formatCurrency(worker.dailyRate))
-            DetailRow("OT Rate / Hr", Utils.formatCurrency(worker.overtimeRate))
-            
-            val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
-            DetailRow("Current Site", currentSiteName)
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // Center Section: Worker Info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = worker.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val formattedType = worker.workerType.name.lowercase().replaceFirstChar { it.uppercase() }
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.extraSmall
+                    ) {
+                        Text(
+                            text = formattedType,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    if (worker.phone.isNotBlank()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(
+                                text = worker.phone,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                val rateInfo = if (worker.overtimeRate > 0) {
+                    "$currentSiteName · ${Utils.formatCurrency(worker.dailyRate)}/day (OT: ${Utils.formatCurrency(worker.overtimeRate)}/h)"
+                } else {
+                    "$currentSiteName · ${Utils.formatCurrency(worker.dailyRate)}/day"
+                }
+
+                Text(
+                    text = rateInfo,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Right Section: Status Chip
+            StatusChip(isActive = worker.isActive)
         }
     }
 }

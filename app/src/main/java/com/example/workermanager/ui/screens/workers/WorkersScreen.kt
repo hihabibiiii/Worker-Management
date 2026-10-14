@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.SiteEntity
@@ -247,88 +249,117 @@ fun WorkerCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = MaterialTheme.shapes.medium
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Row 1: Worker Name & Three-Dot Menu
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    worker.name, 
-                    style = MaterialTheme.typography.titleMedium, 
+                    text = worker.name,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        worker.workerType.name, 
-                        style = MaterialTheme.typography.bodySmall, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        siteName, 
-                        style = MaterialTheme.typography.bodySmall, 
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More Options",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Color(0xFFC62828)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = Color(0xFFC62828),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onDelete()
+                            }
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Row 2: Worker Type • Site Name
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    "Balance: ${Utils.formatCurrency(pendingBalance)}",
+                    text = worker.workerType.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "•",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = siteName,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Box {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        Icons.Default.MoreVert, 
-                        contentDescription = "More options", 
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Edit") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onEdit()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete", color = Color(0xFFC62828)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = Color(0xFFC62828)
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onDelete()
-                        }
-                    )
-                }
-            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Row 3: Balance Amount
+            Text(
+                text = "Balance: ${Utils.formatCurrency(pendingBalance)}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+            )
         }
     }
 }

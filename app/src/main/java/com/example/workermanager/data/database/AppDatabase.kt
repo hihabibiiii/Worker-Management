@@ -19,9 +19,11 @@ import com.example.workermanager.data.entity.*
         WorkerSiteHistoryEntity::class,
         ContractEntity::class,
         ClientPaymentEntity::class,
-        SiteAttendanceEntity::class
+        SiteAttendanceEntity::class,
+        SiteExpenseEntity::class,
+        SiteExpensePaymentEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -34,6 +36,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun contractDao(): ContractDao
     abstract fun clientPaymentDao(): ClientPaymentDao
     abstract fun siteAttendanceDao(): SiteAttendanceDao
+    abstract fun siteExpenseDao(): SiteExpenseDao
+    abstract fun siteExpensePaymentDao(): SiteExpensePaymentDao
 
     companion object {
         @Volatile
@@ -122,6 +126,44 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `site_expenses` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`siteId` INTEGER NOT NULL, " +
+                    "`expenseDate` TEXT NOT NULL, " +
+                    "`category` TEXT NOT NULL, " +
+                    "`description` TEXT NOT NULL, " +
+                    "`quantity` REAL, " +
+                    "`rate` REAL, " +
+                    "`amount` REAL NOT NULL, " +
+                    "`paidBy` TEXT NOT NULL, " +
+                    "`paymentMethod` TEXT NOT NULL, " +
+                    "`notes` TEXT NOT NULL, " +
+                    "`receiptPath` TEXT, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "`isDeleted` INTEGER NOT NULL DEFAULT 0, " +
+                    "`deletedAt` INTEGER, " +
+                    "FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `site_expense_payments` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`expenseId` INTEGER NOT NULL, " +
+                    "`paymentDate` TEXT NOT NULL, " +
+                    "`amount` REAL NOT NULL, " +
+                    "`paidBy` TEXT NOT NULL, " +
+                    "`paymentMethod` TEXT NOT NULL, " +
+                    "`notes` TEXT NOT NULL, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "`isDeleted` INTEGER NOT NULL DEFAULT 0, " +
+                    "`deletedAt` INTEGER, " +
+                    "FOREIGN KEY(`expenseId`) REFERENCES `site_expenses`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -129,7 +171,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "worker_manager_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
                 INSTANCE = instance
                 instance

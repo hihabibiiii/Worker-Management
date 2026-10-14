@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -19,6 +20,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Attendance : Screen("attendance", "Attendance", Icons.Default.History)
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
     data object Contracts : Screen("contracts", "Contracts", Icons.Default.Assignment)
+    data object SiteExpenses : Screen("site_expenses", "Site Expenses", Icons.Default.ReceiptLong)
     data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
     data object RecycleBin : Screen("recycle_bin", "Recycle Bin", Icons.Default.DeleteSweep)
     

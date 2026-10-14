@@ -100,6 +100,9 @@ class MainActivity : ComponentActivity() {
                         app.clientPaymentRepository
                     )
                 )
+                val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
+                    factory = SiteExpenseViewModelFactory(app.siteExpenseRepository, app.siteRepository)
+                )
 
                 val primaryNavItems = listOf(
                     Screen.Dashboard,
@@ -111,6 +114,7 @@ class MainActivity : ComponentActivity() {
                 val moreNavItems = listOf(
                     Screen.Sites,
                     Screen.Contracts,
+                    Screen.SiteExpenses,
                     Screen.Reports,
                     Screen.RecycleBin,
                     Screen.Settings
@@ -288,6 +292,13 @@ class MainActivity : ComponentActivity() {
                                 onContractClick = { contractId ->
                                     navController.navigate(Screen.ContractDetails.createRoute(contractId))
                                 }
+                            )
+                        }
+                        composable(Screen.SiteExpenses.route) {
+                            com.example.workermanager.ui.screens.expenses.SiteExpensesScreen(
+                                viewModel = siteExpenseViewModel,
+                                siteViewModel = siteViewModel,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable(

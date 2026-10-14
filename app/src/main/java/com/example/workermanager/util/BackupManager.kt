@@ -35,7 +35,9 @@ data class BackupPayload(
     var contracts: List<ContractEntity> = emptyList(),
     var clientPayments: List<ClientPaymentEntity> = emptyList(),
     var workerSiteHistory: List<WorkerSiteHistoryEntity> = emptyList(),
-    var siteAttendance: List<SiteAttendanceEntity> = emptyList()
+    var siteAttendance: List<SiteAttendanceEntity> = emptyList(),
+    var siteExpenses: List<SiteExpenseEntity> = emptyList(),
+    var siteExpensePayments: List<SiteExpensePaymentEntity> = emptyList()
 )
 
 object BackupManager {
@@ -62,7 +64,9 @@ object BackupManager {
             contracts = database.contractDao().getAllContractsRaw(),
             clientPayments = database.clientPaymentDao().getAllClientPaymentsRaw(),
             workerSiteHistory = database.workerSiteHistoryDao().getAllHistory(),
-            siteAttendance = database.siteAttendanceDao().getAllSiteAttendance()
+            siteAttendance = database.siteAttendanceDao().getAllSiteAttendance(),
+            siteExpenses = database.siteExpenseDao().getAllExpensesRaw(),
+            siteExpensePayments = database.siteExpensePaymentDao().getAllPaymentsRaw()
         )
     }
 
@@ -394,6 +398,10 @@ object BackupManager {
             payload.clientPayments.forEach { database.clientPaymentDao().insertPayment(it) }
             payload.workerSiteHistory.forEach { database.workerSiteHistoryDao().insert(it) }
             payload.siteAttendance.forEach { database.siteAttendanceDao().insertSiteAttendance(it) }
+
+            // 4. Insert Site Expenses and Expense Payments
+            payload.siteExpenses.forEach { database.siteExpenseDao().insertExpense(it) }
+            payload.siteExpensePayments.forEach { database.siteExpensePaymentDao().insertPayment(it) }
         }
     }
 }

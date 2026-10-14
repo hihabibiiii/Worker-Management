@@ -1,0 +1,26 @@
+package com.example.workermanager.data.dao
+
+import androidx.room.*
+import com.example.workermanager.data.entity.SiteExpensePaymentEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface SiteExpensePaymentDao {
+    @Query("SELECT * FROM site_expense_payments WHERE isDeleted = 0 ORDER BY paymentDate DESC, id DESC")
+    fun getAllPayments(): Flow<List<SiteExpensePaymentEntity>>
+
+    @Query("SELECT * FROM site_expense_payments")
+    suspend fun getAllPaymentsRaw(): List<SiteExpensePaymentEntity>
+
+    @Query("SELECT * FROM site_expense_payments WHERE expenseId = :expenseId AND isDeleted = 0 ORDER BY paymentDate DESC, id DESC")
+    fun getPaymentsForExpense(expenseId: Long): Flow<List<SiteExpensePaymentEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPayment(payment: SiteExpensePaymentEntity): Long
+
+    @Update
+    suspend fun updatePayment(payment: SiteExpensePaymentEntity)
+
+    @Query("UPDATE site_expense_payments SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
+    suspend fun softDeletePayment(id: Long, deletedAt: Long = System.currentTimeMillis())
+}

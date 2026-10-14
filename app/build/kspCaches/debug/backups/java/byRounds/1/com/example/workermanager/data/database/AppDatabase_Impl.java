@@ -23,6 +23,10 @@ import com.example.workermanager.data.dao.SiteAttendanceDao;
 import com.example.workermanager.data.dao.SiteAttendanceDao_Impl;
 import com.example.workermanager.data.dao.SiteDao;
 import com.example.workermanager.data.dao.SiteDao_Impl;
+import com.example.workermanager.data.dao.SiteExpenseDao;
+import com.example.workermanager.data.dao.SiteExpenseDao_Impl;
+import com.example.workermanager.data.dao.SiteExpensePaymentDao;
+import com.example.workermanager.data.dao.SiteExpensePaymentDao_Impl;
 import com.example.workermanager.data.dao.WorkerDao;
 import com.example.workermanager.data.dao.WorkerDao_Impl;
 import com.example.workermanager.data.dao.WorkerSiteHistoryDao;
@@ -59,10 +63,14 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile SiteAttendanceDao _siteAttendanceDao;
 
+  private volatile SiteExpenseDao _siteExpenseDao;
+
+  private volatile SiteExpensePaymentDao _siteExpensePaymentDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(6) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(7) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
@@ -75,8 +83,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `client_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `contractId` INTEGER NOT NULL, `amount` REAL NOT NULL, `paymentDate` TEXT NOT NULL, `method` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `isEdited` INTEGER NOT NULL, FOREIGN KEY(`contractId`) REFERENCES `contracts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `site_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `isPresent` INTEGER NOT NULL, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_site_attendance_siteId_date` ON `site_attendance` (`siteId`, `date`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `site_expenses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `siteId` INTEGER NOT NULL, `expenseDate` TEXT NOT NULL, `category` TEXT NOT NULL, `description` TEXT NOT NULL, `quantity` REAL, `rate` REAL, `amount` REAL NOT NULL, `paidBy` TEXT NOT NULL, `paymentMethod` TEXT NOT NULL, `notes` TEXT NOT NULL, `receiptPath` TEXT, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `site_expense_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `expenseId` INTEGER NOT NULL, `paymentDate` TEXT NOT NULL, `amount` REAL NOT NULL, `paidBy` TEXT NOT NULL, `paymentMethod` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`expenseId`) REFERENCES `site_expenses`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6d9185ed175684c338fe18d2ec019a9b')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8a7c73d36676b752b37092dc7d85f643')");
       }
 
       @Override
@@ -89,6 +99,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `contracts`");
         db.execSQL("DROP TABLE IF EXISTS `client_payments`");
         db.execSQL("DROP TABLE IF EXISTS `site_attendance`");
+        db.execSQL("DROP TABLE IF EXISTS `site_expenses`");
+        db.execSQL("DROP TABLE IF EXISTS `site_expense_payments`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -295,9 +307,56 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoSiteAttendance + "\n"
                   + " Found:\n" + _existingSiteAttendance);
         }
+        final HashMap<String, TableInfo.Column> _columnsSiteExpenses = new HashMap<String, TableInfo.Column>(15);
+        _columnsSiteExpenses.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("siteId", new TableInfo.Column("siteId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("expenseDate", new TableInfo.Column("expenseDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("category", new TableInfo.Column("category", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("description", new TableInfo.Column("description", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("quantity", new TableInfo.Column("quantity", "REAL", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("rate", new TableInfo.Column("rate", "REAL", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("amount", new TableInfo.Column("amount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("paidBy", new TableInfo.Column("paidBy", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("paymentMethod", new TableInfo.Column("paymentMethod", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("receiptPath", new TableInfo.Column("receiptPath", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpenses.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysSiteExpenses = new HashSet<TableInfo.ForeignKey>(1);
+        _foreignKeysSiteExpenses.add(new TableInfo.ForeignKey("sites", "CASCADE", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesSiteExpenses = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoSiteExpenses = new TableInfo("site_expenses", _columnsSiteExpenses, _foreignKeysSiteExpenses, _indicesSiteExpenses);
+        final TableInfo _existingSiteExpenses = TableInfo.read(db, "site_expenses");
+        if (!_infoSiteExpenses.equals(_existingSiteExpenses)) {
+          return new RoomOpenHelper.ValidationResult(false, "site_expenses(com.example.workermanager.data.entity.SiteExpenseEntity).\n"
+                  + " Expected:\n" + _infoSiteExpenses + "\n"
+                  + " Found:\n" + _existingSiteExpenses);
+        }
+        final HashMap<String, TableInfo.Column> _columnsSiteExpensePayments = new HashMap<String, TableInfo.Column>(10);
+        _columnsSiteExpensePayments.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("expenseId", new TableInfo.Column("expenseId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("paymentDate", new TableInfo.Column("paymentDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("amount", new TableInfo.Column("amount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("paidBy", new TableInfo.Column("paidBy", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("paymentMethod", new TableInfo.Column("paymentMethod", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsSiteExpensePayments.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysSiteExpensePayments = new HashSet<TableInfo.ForeignKey>(1);
+        _foreignKeysSiteExpensePayments.add(new TableInfo.ForeignKey("site_expenses", "CASCADE", "NO ACTION", Arrays.asList("expenseId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesSiteExpensePayments = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoSiteExpensePayments = new TableInfo("site_expense_payments", _columnsSiteExpensePayments, _foreignKeysSiteExpensePayments, _indicesSiteExpensePayments);
+        final TableInfo _existingSiteExpensePayments = TableInfo.read(db, "site_expense_payments");
+        if (!_infoSiteExpensePayments.equals(_existingSiteExpensePayments)) {
+          return new RoomOpenHelper.ValidationResult(false, "site_expense_payments(com.example.workermanager.data.entity.SiteExpensePaymentEntity).\n"
+                  + " Expected:\n" + _infoSiteExpensePayments + "\n"
+                  + " Found:\n" + _existingSiteExpensePayments);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "6d9185ed175684c338fe18d2ec019a9b", "3c582e2a503ada618000e4a64bd80118");
+    }, "8a7c73d36676b752b37092dc7d85f643", "3c889e7e0883807f8cb95171abdb6c30");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -308,7 +367,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments","site_attendance");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments","site_attendance","site_expenses","site_expense_payments");
   }
 
   @Override
@@ -332,6 +391,8 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `contracts`");
       _db.execSQL("DELETE FROM `client_payments`");
       _db.execSQL("DELETE FROM `site_attendance`");
+      _db.execSQL("DELETE FROM `site_expenses`");
+      _db.execSQL("DELETE FROM `site_expense_payments`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -357,6 +418,8 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(ContractDao.class, ContractDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ClientPaymentDao.class, ClientPaymentDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(SiteAttendanceDao.class, SiteAttendanceDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(SiteExpenseDao.class, SiteExpenseDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(SiteExpensePaymentDao.class, SiteExpensePaymentDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -483,6 +546,34 @@ public final class AppDatabase_Impl extends AppDatabase {
           _siteAttendanceDao = new SiteAttendanceDao_Impl(this);
         }
         return _siteAttendanceDao;
+      }
+    }
+  }
+
+  @Override
+  public SiteExpenseDao siteExpenseDao() {
+    if (_siteExpenseDao != null) {
+      return _siteExpenseDao;
+    } else {
+      synchronized(this) {
+        if(_siteExpenseDao == null) {
+          _siteExpenseDao = new SiteExpenseDao_Impl(this);
+        }
+        return _siteExpenseDao;
+      }
+    }
+  }
+
+  @Override
+  public SiteExpensePaymentDao siteExpensePaymentDao() {
+    if (_siteExpensePaymentDao != null) {
+      return _siteExpensePaymentDao;
+    } else {
+      synchronized(this) {
+        if(_siteExpensePaymentDao == null) {
+          _siteExpensePaymentDao = new SiteExpensePaymentDao_Impl(this);
+        }
+        return _siteExpensePaymentDao;
       }
     }
   }

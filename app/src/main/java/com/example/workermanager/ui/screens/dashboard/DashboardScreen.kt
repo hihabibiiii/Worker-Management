@@ -212,15 +212,15 @@ fun DashboardScreen(
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text(
-                        "Financial Summary",
+                        "Worker Payment Summary",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    SummaryRow("Today's Earnings", Utils.formatCurrency(stats.todayEarned))
+                    SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
                     Spacer(modifier = Modifier.height(6.dp))
-                    SummaryRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
+                    SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
                     Spacer(modifier = Modifier.height(6.dp))
                     SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))

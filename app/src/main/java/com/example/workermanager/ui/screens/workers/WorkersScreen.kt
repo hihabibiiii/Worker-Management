@@ -114,17 +114,55 @@ fun WorkersScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     item {
+                        val isAllSelected = selectedSiteFilterId == null
                         FilterChip(
-                            selected = selectedSiteFilterId == null,
+                            selected = isAllSelected,
                             onClick = { viewModel.setSelectedSiteFilter(null) },
-                            label = { Text("All Workers", fontWeight = FontWeight.Bold) }
+                            label = {
+                                Text(
+                                    text = "All Workers",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isAllSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                     items(sites) { site ->
+                        val isSiteSelected = selectedSiteFilterId == site.id
                         FilterChip(
-                            selected = selectedSiteFilterId == site.id,
+                            selected = isSiteSelected,
                             onClick = { viewModel.setSelectedSiteFilter(site.id) },
-                            label = { Text(site.name, fontWeight = FontWeight.Medium) }
+                            label = {
+                                Text(
+                                    text = site.name,
+                                    fontWeight = if (isSiteSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 12.sp
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSiteSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }

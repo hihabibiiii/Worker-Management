@@ -458,7 +458,7 @@ fun StatusBadge(status: ExpensePaymentStatus) {
     val (color, text) = when (status) {
         ExpensePaymentStatus.PAID -> Color(0xFF2E7D32) to "PAID"
         ExpensePaymentStatus.PARTIALLY_PAID -> Color(0xFFEF6C00) to "PARTIAL"
-        ExpensePaymentStatus.UNPAID -> Color(0xFFC62828) to "UNPAID"
+        ExpensePaymentStatus.UNPAID -> Color(0xFFC62828) to "UDHAAR"
     }
 
     Surface(
@@ -476,6 +476,10 @@ fun StatusBadge(status: ExpensePaymentStatus) {
     }
 }
 
+enum class PaymentModeOption {
+    PAID, UDHAAR, PARTIAL
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseDialog(
@@ -488,6 +492,8 @@ fun AddExpenseDialog(
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedCategory by remember { mutableStateOf(ExpenseCategory.NASHTA) }
     var amountStr by remember { mutableStateOf("") }
+    var selectedPaymentMode by remember { mutableStateOf(PaymentModeOption.PAID) }
+    var partialAmountStr by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf(ExpensePaymentMethod.CASH) }
     var notes by remember { mutableStateOf("") }
 
@@ -558,15 +564,47 @@ fun AddExpenseDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Payment Status Options (PAID, UDHAAR, PARTIAL)
+                Text("Payment Status*", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ExpenseChip(
+                        label = "PAID (Full)",
+                        isSelected = selectedPaymentMode == PaymentModeOption.PAID,
+                        onClick = { selectedPaymentMode = PaymentModeOption.PAID }
+                    )
+                    ExpenseChip(
+                        label = "UDHAAR (Unpaid)",
+                        isSelected = selectedPaymentMode == PaymentModeOption.UDHAAR,
+                        onClick = { selectedPaymentMode = PaymentModeOption.UDHAAR }
+                    )
+                    ExpenseChip(
+                        label = "PARTIAL",
+                        isSelected = selectedPaymentMode == PaymentModeOption.PARTIAL,
+                        onClick = { selectedPaymentMode = PaymentModeOption.PARTIAL }
+                    )
+                }
+
+                if (selectedPaymentMode == PaymentModeOption.PARTIAL) {
+                    OutlinedTextField(
+                        value = partialAmountStr,
+                        onValueChange = { partialAmountStr = it },
+                        label = { Text("Amount Paid Now (₹)*") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 // Payment Method
-                Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ExpensePaymentMethod.entries.forEach { method ->
-                        ExpenseChip(
-                            label = method.displayName,
-                            isSelected = selectedMethod == method,
-                            onClick = { selectedMethod = method }
-                        )
+                if (selectedPaymentMode != PaymentModeOption.UDHAAR) {
+                    Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExpensePaymentMethod.entries.forEach { method ->
+                            ExpenseChip(
+                                label = method.displayName,
+                                isSelected = selectedMethod == method,
+                                onClick = { selectedMethod = method }
+                            )
+                        }
                     }
                 }
 
@@ -597,6 +635,12 @@ fun AddExpenseDialog(
             Button(
                 onClick = {
                     val amt = amountStr.toDoubleOrNull() ?: 0.0
+                    val initialPaid = when (selectedPaymentMode) {
+                        PaymentModeOption.PAID -> amt
+                        PaymentModeOption.UDHAAR -> 0.0
+                        PaymentModeOption.PARTIAL -> (partialAmountStr.toDoubleOrNull() ?: 0.0).coerceAtMost(amt)
+                    }
+
                     if (selectedSiteIdState != null && amt > 0) {
                         onConfirm(
                             selectedSiteIdState!!,
@@ -610,11 +654,12 @@ fun AddExpenseDialog(
                             selectedMethod,
                             notes.trim(),
                             null,
-                            0.0
+                            initialPaid
                         )
                     }
                 },
-                enabled = selectedSiteIdState != null && (amountStr.toDoubleOrNull() ?: 0.0) > 0
+                enabled = selectedSiteIdState != null && (amountStr.toDoubleOrNull() ?: 0.0) > 0 &&
+                        (selectedPaymentMode != PaymentModeOption.PARTIAL || (partialAmountStr.toDoubleOrNull() ?: 0.0) > 0)
             ) {
                 Text("Save Expense", fontWeight = FontWeight.Bold)
             }

@@ -154,6 +154,31 @@ class SiteExpenseViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SiteExpenseDashboardStats())
 
+    val categoryBreakdown: StateFlow<Map<ExpenseCategory, Double>> = combine(
+        repository.allExpenses,
+        _selectedSiteId,
+        _dateFilterRange
+    ) { expenses, siteId, dateRange ->
+        val today = LocalDate.now()
+        val monday = today.with(DayOfWeek.MONDAY)
+        val currentMonth = YearMonth.now()
+
+        val filtered = expenses.filter { exp ->
+            (siteId == null || exp.siteId == siteId) &&
+            when (dateRange) {
+                DateFilterRange.ALL -> true
+                DateFilterRange.TODAY -> exp.expenseDate == today
+                DateFilterRange.YESTERDAY -> exp.expenseDate == today.minusDays(1)
+                DateFilterRange.WEEKLY -> !exp.expenseDate.isBefore(monday) && !exp.expenseDate.isAfter(monday.plusDays(6))
+                DateFilterRange.MONTHLY -> exp.expenseDate.year == currentMonth.year && exp.expenseDate.monthValue == currentMonth.monthValue
+                DateFilterRange.YEARLY -> exp.expenseDate.year == today.year
+            }
+        }
+
+        filtered.groupBy { it.category }
+            .mapValues { entry -> entry.value.sumOf { it.amount } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     fun setSelectedSite(siteId: Long?) { _selectedSiteId.value = siteId }
     fun setSelectedCategory(cat: ExpenseCategory?) { _selectedCategory.value = cat }
     fun setSelectedStatus(status: ExpensePaymentStatus?) { _selectedStatus.value = status }

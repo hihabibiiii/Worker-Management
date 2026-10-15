@@ -2,11 +2,11 @@ package com.example.workermanager.ui.screens.expenses
 
 import android.app.DatePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.*
@@ -40,13 +41,12 @@ fun SiteExpensesScreen(
     val context = LocalContext.current
     val sites by siteViewModel.allSites.collectAsState(initial = emptyList())
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
-    val selectedStatus by viewModel.selectedStatus.collectAsState()
-    val dateFilterRange by viewModel.dateFilterRange.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     val stats by viewModel.dashboardStats.collectAsState()
     val uiModels by viewModel.expenseUiModels.collectAsState()
+
+    val selectedSiteName = sites.find { it.id == selectedSiteId }?.name
 
     var showAddExpenseDialog by remember { mutableStateOf(false) }
     var selectedUiModelDetails by remember { mutableStateOf<SiteExpenseUiModel?>(null) }
@@ -57,9 +57,24 @@ fun SiteExpensesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Site Expenses", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = selectedSiteName ?: "Site Expenses",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            if (selectedSiteId != null) {
+                                viewModel.setSelectedSite(null)
+                            } else {
+                                onBack()
+                            }
+                        }
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -87,136 +102,123 @@ fun SiteExpensesScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Dashboard Summary Cards
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ExpenseStatBox("Today's Expense", Utils.formatCurrency(stats.todayExpense), Color(0xFFEF6C00), Modifier.weight(1f))
-                            ExpenseStatBox("This Month", Utils.formatCurrency(stats.monthExpense), Color(0xFF1565C0), Modifier.weight(1f))
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ExpenseStatBox("Total Expense", Utils.formatCurrency(stats.totalExpense), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-                            ExpenseStatBox("Total Paid", Utils.formatCurrency(stats.totalPaid), Color(0xFF2E7D32), Modifier.weight(1f))
-                            ExpenseStatBox("Pending (Udhaar)", Utils.formatCurrency(stats.totalPending), Color(0xFFC62828), Modifier.weight(1f))
-                        }
-                    }
-                }
+            if (selectedSiteId == null) {
+                // MAIN SCREEN: SITE SEARCH & SITE LIST
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.setSearchQuery(it) },
+                        placeholder = { Text("Search site name...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
 
-                // Filter & Search Section
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { viewModel.setSearchQuery(it) },
-                            placeholder = { Text("Search description, note or payer...") },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        // Site Filter Chips
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                ExpenseChip(
-                                    label = "All Sites",
-                                    isSelected = selectedSiteId == null,
-                                    onClick = { viewModel.setSelectedSite(null) }
-                                )
-                            }
-                            items(sites) { site ->
-                                ExpenseChip(
-                                    label = site.name,
-                                    isSelected = selectedSiteId == site.id,
-                                    onClick = { viewModel.setSelectedSite(site.id) }
-                                )
-                            }
-                        }
-
-                        // Category & Status Filters
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                ExpenseChip(
-                                    label = "All Categories",
-                                    isSelected = selectedCategory == null,
-                                    onClick = { viewModel.setSelectedCategory(null) }
-                                )
-                            }
-                            items(ExpenseCategory.entries) { cat ->
-                                ExpenseChip(
-                                    label = cat.displayName,
-                                    isSelected = selectedCategory == cat,
-                                    onClick = { viewModel.setSelectedCategory(cat) }
-                                )
-                            }
-                        }
-
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                ExpenseChip(
-                                    label = "All Statuses",
-                                    isSelected = selectedStatus == null,
-                                    onClick = { viewModel.setSelectedStatus(null) }
-                                )
-                            }
-                            items(ExpensePaymentStatus.entries) { st ->
-                                ExpenseChip(
-                                    label = st.name.replace("_", " "),
-                                    isSelected = selectedStatus == st,
-                                    onClick = { viewModel.setSelectedStatus(st) }
-                                )
-                            }
-                        }
-
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(DateFilterRange.entries) { range ->
-                                ExpenseChip(
-                                    label = range.displayName,
-                                    isSelected = dateFilterRange == range,
-                                    onClick = { viewModel.setDateFilterRange(range) }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item {
                     Text(
-                        "Expense History (${uiModels.size})",
+                        "Select a Site to View Expenses",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                }
 
-                if (uiModels.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("No expense records found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val filteredSites = if (searchQuery.isBlank()) {
+                        sites
+                    } else {
+                        sites.filter {
+                            it.name.lowercase().contains(searchQuery.trim().lowercase()) ||
+                            it.address.lowercase().contains(searchQuery.trim().lowercase())
                         }
                     }
-                } else {
-                    items(uiModels) { model ->
-                        ExpenseCard(
-                            model = model,
-                            onClick = { selectedUiModelDetails = model },
-                            onRecordPayment = { expenseToRecordPayment = model },
-                            onEdit = { expenseToEdit = model.expense },
-                            onDelete = { expenseToDelete = model.expense }
+
+                    if (filteredSites.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No project sites found.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(filteredSites) { site ->
+                                SiteExpenseSelectCard(
+                                    site = site,
+                                    onClick = { viewModel.setSelectedSite(site.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                // SELECTED SITE DETAILS & EXPENSE HISTORY VIEW
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Selected Site 4-Item Summary Cards
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                ExpenseStatBox("Today Expense", Utils.formatCurrency(stats.todayExpense), Color(0xFFEF6C00), Modifier.weight(1f))
+                                ExpenseStatBox("Total Expense", Utils.formatCurrency(stats.totalExpense), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                ExpenseStatBox("Total Paid", Utils.formatCurrency(stats.totalPaid), Color(0xFF2E7D32), Modifier.weight(1f))
+                                ExpenseStatBox("Total Remain", Utils.formatCurrency(stats.totalPending), if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32), Modifier.weight(1f))
+                            }
+                        }
+                    }
+
+                    // Site History Heading
+                    item {
+                        Text(
+                            "Site History (${uiModels.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
+                    }
+
+                    if (uiModels.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "Is site ke liye abhi koi expense record nahi hai.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    } else {
+                        items(uiModels) { model ->
+                            ExpenseCard(
+                                model = model,
+                                onClick = { selectedUiModelDetails = model },
+                                onRecordPayment = { expenseToRecordPayment = model },
+                                onEdit = { expenseToEdit = model.expense },
+                                onDelete = { expenseToDelete = model.expense }
+                            )
+                        }
                     }
                 }
             }
@@ -225,6 +227,7 @@ fun SiteExpensesScreen(
         if (showAddExpenseDialog) {
             AddExpenseDialog(
                 sites = sites,
+                initialSiteId = selectedSiteId,
                 onDismiss = { showAddExpenseDialog = false },
                 onConfirm = { siteId, date, cat, desc, qty, rate, amt, paidBy, method, notes, receiptPath, initialPaid ->
                     viewModel.addExpense(siteId, date, cat, desc, qty, rate, amt, paidBy, method, notes, receiptPath, initialPaid)
@@ -304,10 +307,63 @@ fun SiteExpensesScreen(
 }
 
 @Composable
+fun SiteExpenseSelectCard(site: SiteEntity, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = site.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (site.address.isNotEmpty()) {
+                    Text(
+                        text = site.address,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Text(
+                    text = "Manager: ${site.manager.ifEmpty { "N/A" }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "View Expenses",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
 fun ExpenseStatBox(label: String, value: String, valueColor: Color, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -327,6 +383,7 @@ fun ExpenseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = 2.dp,
         modifier = Modifier.height(32.dp)
     ) {
@@ -350,48 +407,46 @@ fun ExpenseCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
-    Box {
-        Card(
-            modifier = Modifier.fillMaxWidth().clickable { onClick() },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(model.expense.description, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("${model.expense.category.displayName} • ${model.siteName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        Text(Utils.formatDate(model.expense.expenseDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    StatusBadge(model.status)
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(model.expense.description, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${model.expense.category.displayName} • ${model.siteName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text(Utils.formatDate(model.expense.expenseDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                StatusBadge(model.status)
+            }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Total: ${Utils.formatCurrency(model.expense.amount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Paid: ${Utils.formatCurrency(model.totalPaid)}", fontSize = 12.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                Text("Remain: ${Utils.formatCurrency(model.pendingAmount)}", fontSize = 12.sp, color = if (model.pendingAmount > 0) Color(0xFFC62828) else Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+            }
+
+            if (model.pendingAmount > 0.001) {
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                OutlinedButton(
+                    onClick = onRecordPayment,
+                    modifier = Modifier.fillMaxWidth().height(36.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Text("Total: ${Utils.formatCurrency(model.expense.amount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("Paid: ${Utils.formatCurrency(model.totalPaid)}", fontSize = 12.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                    Text("Pending: ${Utils.formatCurrency(model.pendingAmount)}", fontSize = 12.sp, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
-                }
-
-                if (model.pendingAmount > 0.001) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = onRecordPayment,
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("Record Payment (Udhaar)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
+                    Text("Record Payment (Udhaar)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -408,7 +463,8 @@ fun StatusBadge(status: ExpensePaymentStatus) {
 
     Surface(
         color = color.copy(alpha = 0.15f),
-        shape = MaterialTheme.shapes.extraSmall
+        shape = MaterialTheme.shapes.extraSmall,
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f))
     ) {
         Text(
             text = text,
@@ -424,19 +480,15 @@ fun StatusBadge(status: ExpensePaymentStatus) {
 @Composable
 fun AddExpenseDialog(
     sites: List<SiteEntity>,
+    initialSiteId: Long? = null,
     onDismiss: () -> Unit,
     onConfirm: (Long, LocalDate, ExpenseCategory, String, Double?, Double?, Double, String, ExpensePaymentMethod, String, String?, Double) -> Unit
 ) {
-    var selectedSiteId by remember { mutableStateOf<Long?>(sites.firstOrNull()?.id) }
+    var selectedSiteIdState by remember { mutableStateOf<Long?>(initialSiteId ?: sites.firstOrNull()?.id) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedCategory by remember { mutableStateOf(ExpenseCategory.NASHTA) }
-    var description by remember { mutableStateOf("") }
-    var quantityStr by remember { mutableStateOf("") }
-    var rateStr by remember { mutableStateOf("") }
     var amountStr by remember { mutableStateOf("") }
-    var paidBy by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf(ExpensePaymentMethod.CASH) }
-    var initialAmountPaidStr by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
     var siteExpanded by remember { mutableStateOf(false) }
@@ -449,15 +501,6 @@ fun AddExpenseDialog(
         selectedDate.year, selectedDate.monthValue - 1, selectedDate.dayOfMonth
     )
 
-    // Auto calculate amount when quantity and rate change
-    LaunchedEffect(quantityStr, rateStr) {
-        val q = quantityStr.toDoubleOrNull()
-        val r = rateStr.toDoubleOrNull()
-        if (q != null && r != null && q > 0 && r > 0) {
-            amountStr = (q * r).toString()
-        }
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("+ Add Site Expense", fontWeight = FontWeight.Bold) },
@@ -469,7 +512,7 @@ fun AddExpenseDialog(
                 // Site Picker
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
                     OutlinedTextField(
-                        value = sites.find { it.id == selectedSiteId }?.name ?: "Select Site*",
+                        value = sites.find { it.id == selectedSiteIdState }?.name ?: "Select Site*",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Site*") },
@@ -480,7 +523,7 @@ fun AddExpenseDialog(
                         sites.forEach { site ->
                             DropdownMenuItem(
                                 text = { Text(site.name) },
-                                onClick = { selectedSiteId = site.id; siteExpanded = false }
+                                onClick = { selectedSiteIdState = site.id; siteExpanded = false }
                             )
                         }
                     }
@@ -506,30 +549,7 @@ fun AddExpenseDialog(
                     }
                 }
 
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description* (e.g., 10 workers lunch)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = quantityStr,
-                        onValueChange = { quantityStr = it },
-                        label = { Text("Qty (Opt)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = rateStr,
-                        onValueChange = { rateStr = it },
-                        label = { Text("Rate (Opt)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
+                // Total Expense Amount
                 OutlinedTextField(
                     value = amountStr,
                     onValueChange = { amountStr = it },
@@ -538,21 +558,19 @@ fun AddExpenseDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = initialAmountPaidStr,
-                    onValueChange = { initialAmountPaidStr = it },
-                    label = { Text("Initial Amount Paid Now (₹, Opt)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Payment Method
+                Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ExpensePaymentMethod.entries.forEach { method ->
+                        ExpenseChip(
+                            label = method.displayName,
+                            isSelected = selectedMethod == method,
+                            onClick = { selectedMethod = method }
+                        )
+                    }
+                }
 
-                OutlinedTextField(
-                    value = paidBy,
-                    onValueChange = { paidBy = it },
-                    label = { Text("Paid By (e.g. Manager / Self)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
+                // Expense Date
                 OutlinedTextField(
                     value = Utils.formatDate(selectedDate),
                     onValueChange = {},
@@ -566,6 +584,7 @@ fun AddExpenseDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Notes
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -578,25 +597,24 @@ fun AddExpenseDialog(
             Button(
                 onClick = {
                     val amt = amountStr.toDoubleOrNull() ?: 0.0
-                    val initPaid = initialAmountPaidStr.toDoubleOrNull() ?: 0.0
-                    if (selectedSiteId != null && description.isNotBlank() && amt > 0) {
+                    if (selectedSiteIdState != null && amt > 0) {
                         onConfirm(
-                            selectedSiteId!!,
+                            selectedSiteIdState!!,
                             selectedDate,
                             selectedCategory,
-                            description.trim(),
-                            quantityStr.toDoubleOrNull(),
-                            rateStr.toDoubleOrNull(),
+                            selectedCategory.displayName,
+                            null,
+                            null,
                             amt,
-                            paidBy.trim(),
+                            "",
                             selectedMethod,
                             notes.trim(),
                             null,
-                            initPaid
+                            0.0
                         )
                     }
                 },
-                enabled = selectedSiteId != null && description.isNotBlank() && (amountStr.toDoubleOrNull() ?: 0.0) > 0
+                enabled = selectedSiteIdState != null && (amountStr.toDoubleOrNull() ?: 0.0) > 0
             ) {
                 Text("Save Expense", fontWeight = FontWeight.Bold)
             }

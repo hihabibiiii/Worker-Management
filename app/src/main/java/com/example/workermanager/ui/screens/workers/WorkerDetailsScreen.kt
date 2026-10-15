@@ -369,6 +369,7 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
                 Text(
                     text = worker.name,
                     style = MaterialTheme.typography.titleLarge,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -383,7 +384,6 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
                 ) {
                     val formattedType = worker.workerType.name.lowercase().replaceFirstChar { it.uppercase() }
                     Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = MaterialTheme.shapes.extraSmall
                     ) {
                         Text(
@@ -398,7 +398,6 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
 
                     if (worker.phone.isNotBlank()) {
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = MaterialTheme.shapes.extraSmall
                         ) {
                             Text(

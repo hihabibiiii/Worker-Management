@@ -29,6 +29,8 @@ class WorkerApplication : Application() {
 
     val siteExpenseRepository by lazy { SiteExpenseRepository(database.siteExpenseDao(), database.siteExpensePaymentDao()) }
 
+    val materialRepository by lazy { MaterialRepository(database.materialDao(), database.materialTransactionDao()) }
+
     override fun onCreate() {
         super.onCreate()
         val autoBackupManager = AutoBackupPreferenceManager(this)

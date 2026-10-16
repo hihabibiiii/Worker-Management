@@ -493,7 +493,7 @@ fun AddExpenseDialog(
 ) {
     var selectedSiteIdState by remember { mutableStateOf<Long?>(initialSiteId ?: sites.firstOrNull()?.id) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedCategory by remember { mutableStateOf(ExpenseCategory.NASHTA) }
+    var selectedCategoryState by remember { mutableStateOf<ExpenseCategory?>(ExpenseCategory.NASHTA) }
     var amountStr by remember { mutableStateOf("") }
     var paidBy by remember { mutableStateOf("") }
     var selectedPaymentMode by remember { mutableStateOf(PaymentModeOption.PAID) }
@@ -520,40 +520,103 @@ fun AddExpenseDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Site Picker
-                ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = sites.find { it.id == selectedSiteIdState }?.name ?: "Select Site*",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Site*") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        trailingIcon = {
+                            IconButton(onClick = { siteExpanded = true }) {
+                                Icon(
+                                    imageVector = if (siteExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select Site"
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
-                    ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
-                        sites.forEach { site ->
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { siteExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = siteExpanded,
+                        onDismissRequest = { siteExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.85f)
+                    ) {
+                        if (sites.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text(site.name) },
-                                onClick = { selectedSiteIdState = site.id; siteExpanded = false }
+                                text = { Text("No sites available", color = MaterialTheme.colorScheme.error) },
+                                onClick = { siteExpanded = false }
                             )
+                        } else {
+                            sites.forEach { site ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = site.name,
+                                            fontWeight = if (site.id == selectedSiteIdState) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    onClick = { selectedSiteIdState = site.id; siteExpanded = false }
+                                )
+                            }
                         }
                     }
                 }
 
                 // Category Picker
-                ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = !categoryExpanded }) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = selectedCategory.displayName,
+                        value = selectedCategoryState?.displayName ?: "Select Category*",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Category*") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        trailingIcon = {
+                            IconButton(onClick = { categoryExpanded = true }) {
+                                Icon(
+                                    imageVector = if (categoryExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select Category"
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
-                    ExposedDropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { categoryExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.85f)
+                    ) {
                         ExpenseCategory.entries.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.displayName) },
-                                onClick = { selectedCategory = cat; categoryExpanded = false }
+                                text = {
+                                    Text(
+                                        text = cat.displayName,
+                                        fontWeight = if (cat == selectedCategoryState) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                onClick = { selectedCategoryState = cat; categoryExpanded = false }
                             )
                         }
                     }
@@ -655,12 +718,12 @@ fun AddExpenseDialog(
                     }
                     val finalPaidBy = if (selectedPaymentMode == PaymentModeOption.UDHAAR) "" else paidBy.trim()
 
-                    if (selectedSiteIdState != null && amt > 0) {
+                    if (selectedSiteIdState != null && selectedCategoryState != null && amt > 0) {
                         onConfirm(
                             selectedSiteIdState!!,
                             selectedDate,
-                            selectedCategory,
-                            selectedCategory.displayName,
+                            selectedCategoryState!!,
+                            selectedCategoryState!!.displayName,
                             null,
                             null,
                             amt,
@@ -673,6 +736,7 @@ fun AddExpenseDialog(
                     }
                 },
                 enabled = selectedSiteIdState != null &&
+                        selectedCategoryState != null &&
                         (amountStr.toDoubleOrNull() ?: 0.0) > 0 &&
                         (selectedPaymentMode == PaymentModeOption.UDHAAR || paidBy.trim().isNotBlank()) &&
                         (selectedPaymentMode != PaymentModeOption.PARTIAL || (partialAmountStr.toDoubleOrNull() ?: 0.0) > 0)

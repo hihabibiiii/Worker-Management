@@ -115,54 +115,22 @@ fun WorkersScreen(
                 ) {
                     item {
                         val isAllSelected = selectedSiteFilterId == null
-                        FilterChip(
-                            selected = isAllSelected,
-                            onClick = { viewModel.setSelectedSiteFilter(null) },
-                            label = {
-                                Text(
-                                    text = "All Workers",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isAllSelected,
-                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                selectedBorderColor = MaterialTheme.colorScheme.primary
-                            )
+                        val totalWorkersCount = workers.size
+                        WorkerSiteFilterChip(
+                            title = "All Sites",
+                            workerCount = totalWorkersCount,
+                            isSelected = isAllSelected,
+                            onClick = { viewModel.setSelectedSiteFilter(null) }
                         )
                     }
                     items(sites) { site ->
                         val isSiteSelected = selectedSiteFilterId == site.id
-                        FilterChip(
-                            selected = isSiteSelected,
-                            onClick = { viewModel.setSelectedSiteFilter(site.id) },
-                            label = {
-                                Text(
-                                    text = site.name,
-                                    fontWeight = if (isSiteSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 12.sp
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSiteSelected,
-                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                selectedBorderColor = MaterialTheme.colorScheme.primary
-                            )
+                        val siteWorkersCount = workers.count { it.currentSiteId == site.id }
+                        WorkerSiteFilterChip(
+                            title = site.name,
+                            workerCount = siteWorkersCount,
+                            isSelected = isSiteSelected,
+                            onClick = { viewModel.setSelectedSiteFilter(site.id) }
                         )
                     }
                 }
@@ -267,6 +235,48 @@ fun WorkersScreen(
                         Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun WorkerSiteFilterChip(
+    title: String,
+    workerCount: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        tonalElevation = if (isSelected) 3.dp else 1.dp,
+        modifier = Modifier.defaultMinSize(minHeight = 44.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            val countText = if (workerCount == 1) "1 Worker" else "$workerCount Workers"
+            Text(
+                text = countText,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
             )
         }
     }

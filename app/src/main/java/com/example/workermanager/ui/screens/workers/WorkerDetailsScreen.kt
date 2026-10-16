@@ -3,11 +3,17 @@ package com.example.workermanager.ui.screens.workers
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -26,6 +32,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +42,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import com.example.workermanager.data.entity.*
@@ -70,10 +82,73 @@ fun WorkerDetailsScreen(
     var showTransferDialog by remember { mutableStateOf(false) }
     var paymentDialogType by remember { mutableStateOf<PaymentType?>(null) }
     var showShareReportDialog by remember { mutableStateOf(false) }
+    var showPhotoOptionsDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(WorkerHistoryTab.ATTENDANCE) }
 
     var paymentToEdit by remember { mutableStateOf<PaymentEntity?>(null) }
     var paymentToDelete by remember { mutableStateOf<PaymentEntity?>(null) }
+
+    val scope = rememberCoroutineScope()
+
+    var tempCameraFilePath by remember { mutableStateOf<String?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success && !tempCameraFilePath.isNullOrBlank()) {
+            val capturedFile = File(tempCameraFilePath!!)
+            if (capturedFile.exists() && capturedFile.length() > 0) {
+                viewModel.updateWorkerPhoto(workerId, capturedFile.absolutePath)
+                Toast.makeText(context, "Photo captured successfully!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val launchCamera = {
+        try {
+            val photoDir = File(context.filesDir, "worker_photos").apply { if (!exists()) mkdirs() }
+            val photoFile = File(photoDir, "worker_${workerId}_${System.currentTimeMillis()}.jpg")
+            tempCameraFilePath = photoFile.absolutePath
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                photoFile
+            )
+            cameraLauncher.launch(uri)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Could not launch camera: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val photoDir = File(context.filesDir, "worker_photos").apply { if (!exists()) mkdirs() }
+                    val photoFile = File(photoDir, "worker_${workerId}_${System.currentTimeMillis()}.jpg")
+
+                    context.contentResolver.openInputStream(selectedUri)?.use { input ->
+                        photoFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    if (photoFile.exists() && photoFile.length() > 0) {
+                        viewModel.updateWorkerPhoto(workerId, photoFile.absolutePath)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Photo updated successfully!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Failed to save photo: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -118,7 +193,13 @@ fun WorkerDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    WorkerProfileHeader(worker!!, sites)
+                    WorkerProfileHeader(
+                        worker = worker!!,
+                        sites = sites,
+                        onPickPhoto = {
+                            showPhotoOptionsDialog = true
+                        }
+                    )
                 }
                 
                 item {
@@ -326,11 +407,106 @@ fun WorkerDetailsScreen(
                 onDismiss = { showShareReportDialog = false }
             )
         }
+
+        if (showPhotoOptionsDialog && worker != null) {
+            AlertDialog(
+                onDismissRequest = { showPhotoOptionsDialog = false },
+                title = { Text("Select Worker Photo", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(
+                        modifier = Modifier.padding(top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            onClick = {
+                                showPhotoOptionsDialog = false
+                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Gallery Se Photo Select Karein", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Surface(
+                            onClick = {
+                                showPhotoOptionsDialog = false
+                                launchCamera()
+                            },
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Camera Se Photo Lein", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        if (!worker!!.photoPath.isNullOrBlank()) {
+                            Surface(
+                                onClick = {
+                                    showPhotoOptionsDialog = false
+                                    viewModel.updateWorkerPhoto(workerId, null)
+                                    Toast.makeText(context, "Photo removed.", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text("Remove Photo", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showPhotoOptionsDialog = false }) {
+                        Text("Cancel", fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
+fun WorkerProfileHeader(
+    worker: WorkerEntity,
+    sites: List<SiteEntity>,
+    onPickPhoto: () -> Unit
+) {
     val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
 
     Card(
@@ -346,19 +522,31 @@ fun WorkerProfileHeader(worker: WorkerEntity, sites: List<SiteEntity>) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left Section: Circular Avatar
-            Surface(
-                modifier = Modifier.size(52.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            // Left Section: Circular Avatar with Camera Badge
+            Box(
+                contentAlignment = Alignment.BottomEnd,
+                modifier = Modifier.clickable { onPickPhoto() }
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = worker.name.trim().take(1).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                WorkerAvatar(
+                    photoPath = worker.photoPath,
+                    name = worker.name,
+                    modifier = Modifier.size(56.dp),
+                    textStyle = MaterialTheme.typography.titleLarge
+                )
+                Surface(
+                    modifier = Modifier.size(20.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    border = BorderStroke(1.dp, Color.White)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Edit Photo",
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
 

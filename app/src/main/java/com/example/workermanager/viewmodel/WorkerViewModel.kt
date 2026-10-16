@@ -79,6 +79,15 @@ class WorkerViewModel(
         }
     }
 
+    fun updateWorkerPhoto(workerId: Long, photoPath: String?) {
+        viewModelScope.launch {
+            val worker = repository.getWorkerById(workerId).firstOrNull()
+            if (worker != null) {
+                repository.updateWorker(worker.copy(photoPath = photoPath))
+            }
+        }
+    }
+
     fun deleteWorker(worker: WorkerEntity) {
         viewModelScope.launch {
             repository.deleteWorker(worker)

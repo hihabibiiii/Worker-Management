@@ -3,6 +3,7 @@ package com.example.workermanager.ui.screens.workers
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
@@ -10,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,6 +34,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,6 +47,7 @@ import com.example.workermanager.data.entity.WorkerEntity
 import com.example.workermanager.data.entity.WorkerType
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.SiteViewModel
+import java.io.File
 import com.example.workermanager.viewmodel.WorkerViewModel
 import java.time.LocalDate
 
@@ -283,6 +288,63 @@ fun WorkerSiteFilterChip(
 }
 
 @Composable
+fun WorkerAvatar(
+    photoPath: String?,
+    name: String,
+    modifier: Modifier = Modifier,
+    textStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleMedium
+) {
+    val bitmap = remember(photoPath) {
+        if (!photoPath.isNullOrBlank()) {
+            val file = File(photoPath)
+            if (file.exists() && file.length() > 0) {
+                try {
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    BitmapFactory.decodeFile(photoPath, options)
+                    var sampleSize = 1
+                    while (options.outWidth / sampleSize > 300 || options.outHeight / sampleSize > 300) {
+                        sampleSize *= 2
+                    }
+                    val decodeOptions = BitmapFactory.Options().apply {
+                        inSampleSize = sampleSize
+                    }
+                    BitmapFactory.decodeFile(photoPath, decodeOptions)
+                } catch (e: Exception) {
+                    null
+                }
+            } else null
+        } else null
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = name.trim().take(1).uppercase(),
+                    style = textStyle,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun WorkerCard(
     worker: WorkerEntity,
     siteName: String,
@@ -307,21 +369,31 @@ fun WorkerCard(
                 .fillMaxWidth()
                 .padding(14.dp)
         ) {
-            // Row 1: Worker Name & Three-Dot Menu
+            // Row 1: Worker Avatar, Name & Three-Dot Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = worker.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    WorkerAvatar(
+                        photoPath = worker.photoPath,
+                        name = worker.name,
+                        modifier = Modifier.size(38.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = worker.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 Box {
                     IconButton(

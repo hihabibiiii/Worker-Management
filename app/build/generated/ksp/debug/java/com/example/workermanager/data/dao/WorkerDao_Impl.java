@@ -61,7 +61,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `workers` (`id`,`name`,`phone`,`workerType`,`dailyRate`,`overtimeRate`,`joiningDate`,`currentSiteId`,`isActive`,`notes`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `workers` (`id`,`name`,`phone`,`workerType`,`dailyRate`,`overtimeRate`,`joiningDate`,`currentSiteId`,`isActive`,`notes`,`photoPath`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -88,12 +88,17 @@ public final class WorkerDao_Impl implements WorkerDao {
         final int _tmp_2 = entity.isActive() ? 1 : 0;
         statement.bindLong(9, _tmp_2);
         statement.bindString(10, entity.getNotes());
-        final int _tmp_3 = entity.isDeleted() ? 1 : 0;
-        statement.bindLong(11, _tmp_3);
-        if (entity.getDeletedAt() == null) {
-          statement.bindNull(12);
+        if (entity.getPhotoPath() == null) {
+          statement.bindNull(11);
         } else {
-          statement.bindLong(12, entity.getDeletedAt());
+          statement.bindString(11, entity.getPhotoPath());
+        }
+        final int _tmp_3 = entity.isDeleted() ? 1 : 0;
+        statement.bindLong(12, _tmp_3);
+        if (entity.getDeletedAt() == null) {
+          statement.bindNull(13);
+        } else {
+          statement.bindLong(13, entity.getDeletedAt());
         }
       }
     };
@@ -114,7 +119,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `workers` SET `id` = ?,`name` = ?,`phone` = ?,`workerType` = ?,`dailyRate` = ?,`overtimeRate` = ?,`joiningDate` = ?,`currentSiteId` = ?,`isActive` = ?,`notes` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `workers` SET `id` = ?,`name` = ?,`phone` = ?,`workerType` = ?,`dailyRate` = ?,`overtimeRate` = ?,`joiningDate` = ?,`currentSiteId` = ?,`isActive` = ?,`notes` = ?,`photoPath` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -141,14 +146,19 @@ public final class WorkerDao_Impl implements WorkerDao {
         final int _tmp_2 = entity.isActive() ? 1 : 0;
         statement.bindLong(9, _tmp_2);
         statement.bindString(10, entity.getNotes());
-        final int _tmp_3 = entity.isDeleted() ? 1 : 0;
-        statement.bindLong(11, _tmp_3);
-        if (entity.getDeletedAt() == null) {
-          statement.bindNull(12);
+        if (entity.getPhotoPath() == null) {
+          statement.bindNull(11);
         } else {
-          statement.bindLong(12, entity.getDeletedAt());
+          statement.bindString(11, entity.getPhotoPath());
         }
-        statement.bindLong(13, entity.getId());
+        final int _tmp_3 = entity.isDeleted() ? 1 : 0;
+        statement.bindLong(12, _tmp_3);
+        if (entity.getDeletedAt() == null) {
+          statement.bindNull(13);
+        } else {
+          statement.bindLong(13, entity.getDeletedAt());
+        }
+        statement.bindLong(14, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeleteWorker = new SharedSQLiteStatement(__db) {
@@ -364,6 +374,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -408,6 +419,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -418,7 +435,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;
@@ -455,6 +472,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -499,6 +517,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -509,7 +533,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;
@@ -543,6 +567,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final WorkerEntity _result;
@@ -586,6 +611,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -596,7 +627,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _result = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _result = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
           } else {
             _result = null;
           }
@@ -635,6 +666,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -679,6 +711,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -689,7 +727,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;
@@ -725,6 +763,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -769,6 +808,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -779,7 +824,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;
@@ -819,6 +864,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -863,6 +909,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -873,7 +925,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;
@@ -909,6 +961,7 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
           final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
           final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
@@ -953,6 +1006,12 @@ public final class WorkerDao_Impl implements WorkerDao {
             _tmpIsActive = _tmp_3 != 0;
             final String _tmpNotes;
             _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
             final boolean _tmpIsDeleted;
             final int _tmp_4;
             _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
@@ -963,7 +1022,7 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpIsDeleted,_tmpDeletedAt);
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
             _result.add(_item);
           }
           return _result;

@@ -20,6 +20,7 @@ data class WorkerEntity(
     val currentSiteId: Long? = null,
     val isActive: Boolean = true,
     val notes: String = "",
+    val photoPath: String? = null,
     val isDeleted: Boolean = false,
     val deletedAt: Long? = null
 )

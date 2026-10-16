@@ -212,6 +212,7 @@ class MainActivity : ComponentActivity() {
                                 siteViewModel = siteViewModel,
                                 workerViewModel = workerViewModel,
                                 contractViewModel = contractViewModel,
+                                siteExpenseViewModel = siteExpenseViewModel,
                                 onAddWorker = { navigateToTab(Screen.Workers.route) },
                                 onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
                                 onNavigateToRecycleBin = { navController.navigate(Screen.RecycleBin.route) },

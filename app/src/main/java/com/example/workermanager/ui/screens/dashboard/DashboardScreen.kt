@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -43,6 +44,7 @@ fun DashboardScreen(
     siteViewModel: SiteViewModel,
     workerViewModel: WorkerViewModel,
     contractViewModel: ContractViewModel? = null,
+    siteExpenseViewModel: com.example.workermanager.viewmodel.SiteExpenseViewModel? = null,
     onAddWorker: () -> Unit = {},
     onMarkAttendance: () -> Unit,
     onMakePayment: () -> Unit = {},
@@ -62,6 +64,7 @@ fun DashboardScreen(
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
     var showAddContractDialog by remember { mutableStateOf(false) }
+    var showAddExpenseDialog by remember { mutableStateOf(false) }
     var existingAutoBackup by remember { mutableStateOf<com.example.workermanager.util.BackupPayload?>(null) }
 
     val selectBackupFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -312,7 +315,7 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Expense Summary",
+                            "Sites Expense Summary",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -412,7 +415,7 @@ fun DashboardScreen(
                 ) {
                     ActionCard("Add Contract", Icons.AutoMirrored.Filled.Assignment, { showAddContractDialog = true }, Modifier.weight(1f))
                     ActionCard("Reports", Icons.Default.Assessment, onNavigateToReports, Modifier.weight(1f))
-                    ActionCard("Recycle Bin", Icons.Default.DeleteSweep, onNavigateToRecycleBin, Modifier.weight(1f))
+                    ActionCard("Site Expense", Icons.AutoMirrored.Filled.ReceiptLong, { showAddExpenseDialog = true }, Modifier.weight(1f))
 
                 }
             }
@@ -455,6 +458,19 @@ fun DashboardScreen(
                 onConfirm = { name, mobile, siteId, amount, date, notes ->
                     contractViewModel.addContract(name, mobile, siteId, amount, date, notes)
                     showAddContractDialog = false
+                }
+            )
+        }
+
+        if (showAddExpenseDialog && siteExpenseViewModel != null) {
+            com.example.workermanager.ui.screens.expenses.AddExpenseDialog(
+                sites = sites,
+                initialSiteId = selectedSiteId,
+                onDismiss = { showAddExpenseDialog = false },
+                onConfirm = { siteId, date, cat, desc, qty, rate, amt, paidBy, method, notes, receiptPath, initialPaid ->
+                    siteExpenseViewModel.addExpense(siteId, date, cat, desc, qty, rate, amt, paidBy, method, notes, receiptPath, initialPaid)
+                    showAddExpenseDialog = false
+                    android.widget.Toast.makeText(context, "Expense recorded successfully!", android.widget.Toast.LENGTH_SHORT).show()
                 }
             )
         }

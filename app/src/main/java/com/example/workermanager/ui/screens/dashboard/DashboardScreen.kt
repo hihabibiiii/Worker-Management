@@ -206,89 +206,120 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Financial Summary
+            // Worker Payment Summary (Expandable dropdown card)
+            var isWorkerSummaryExpanded by remember { mutableStateOf(false) }
+
             Card(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(modifier = Modifier.padding(10.dp)) {
-                    Text(
-                        "Worker Payment Summary",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
-                    Spacer(modifier = Modifier.height(6.dp))
-                    SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
-                    Spacer(modifier = Modifier.height(6.dp))
-                    SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                    SummaryRow(
-                        label = "Pending Balance",
-                        value = Utils.formatCurrency(stats.totalPending),
-                        isBold = true,
-                        valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
-                    )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isWorkerSummaryExpanded = !isWorkerSummaryExpanded },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Worker Payment Summary",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Icon(
+                            imageVector = if (isWorkerSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isWorkerSummaryExpanded) "Collapse Worker Summary" else "Expand Worker Summary",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isWorkerSummaryExpanded) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                            )
+                            SummaryRow(
+                                label = "Pending Balance",
+                                value = Utils.formatCurrency(stats.totalPending),
+                                isBold = true,
+                                valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                            )
+                        }
+                    }
                 }
             }
 
-            // Client Payments Summary (Expandable dropdown card, visible when contracts exist)
-            if (stats.totalContracts > 0) {
-                var isClientSummaryExpanded by remember { mutableStateOf(false) }
+            // Client Payments Summary (Always visible)
+            var isClientSummaryExpanded by remember { mutableStateOf(false) }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isClientSummaryExpanded = !isClientSummaryExpanded },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Client Payments Summary",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Icon(
-                                imageVector = if (isClientSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isClientSummaryExpanded) "Collapse Summary" else "Expand Summary",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isClientSummaryExpanded = !isClientSummaryExpanded },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Client Payments Summary",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Icon(
+                            imageVector = if (isClientSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isClientSummaryExpanded) "Collapse Summary" else "Expand Summary",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
 
-                        AnimatedVisibility(visible = isClientSummaryExpanded) {
-                            Column {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                SummaryRow("Total Contracts", stats.totalContracts.toString())
-                                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
-                                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 12.dp),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                                )
-                                SummaryRow(
-                                    label = "Total Remaining",
-                                    value = Utils.formatCurrency(stats.totalContractRemaining),
-                                    isBold = true,
-                                    valueColor = MaterialTheme.colorScheme.error
+                    AnimatedVisibility(visible = isClientSummaryExpanded) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            if (stats.totalContracts == 0) {
+                                Text(
+                                    "No clients or contracts added yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
                             }
+                            SummaryRow("Total Contracts", stats.totalContracts.toString())
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                            )
+                            SummaryRow(
+                                label = "Total Remaining",
+                                value = Utils.formatCurrency(stats.totalContractRemaining),
+                                isBold = true,
+                                valueColor = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 }

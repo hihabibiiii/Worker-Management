@@ -488,10 +488,23 @@ fun AddPaymentDialog(
                 Text("Payment Type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     PaymentType.entries.forEach { type ->
+                        val isTypeSelected = selectedType == type
                         FilterChip(
-                            selected = selectedType == type,
+                            selected = isTypeSelected,
                             onClick = { selectedType = type },
-                            label = { Text(type.name, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                            label = { Text(type.name, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isTypeSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }
@@ -499,10 +512,23 @@ fun AddPaymentDialog(
                 Text("Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaymentMethod.entries.forEach { method ->
+                        val isMethodSelected = selectedMethod == method
                         FilterChip(
-                            selected = selectedMethod == method,
+                            selected = isMethodSelected,
                             onClick = { selectedMethod = method },
-                            label = { Text(method.name, fontWeight = FontWeight.Bold) }
+                            label = { Text(method.name, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isMethodSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }
@@ -623,10 +649,23 @@ fun EditPaymentDialog(
                 Text("Payment Type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     PaymentType.entries.forEach { type ->
+                        val isTypeSelected = selectedType == type
                         FilterChip(
-                            selected = selectedType == type,
+                            selected = isTypeSelected,
                             onClick = { selectedType = type },
-                            label = { Text(type.name, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                            label = { Text(type.name, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isTypeSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }
@@ -634,10 +673,23 @@ fun EditPaymentDialog(
                 Text("Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaymentMethod.entries.forEach { method ->
+                        val isMethodSelected = selectedMethod == method
                         FilterChip(
-                            selected = selectedMethod == method,
+                            selected = isMethodSelected,
                             onClick = { selectedMethod = method },
-                            label = { Text(method.name, fontWeight = FontWeight.Bold) }
+                            label = { Text(method.name, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isMethodSelected,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                selectedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }

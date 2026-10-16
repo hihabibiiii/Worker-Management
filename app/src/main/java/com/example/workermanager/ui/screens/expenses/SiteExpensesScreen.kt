@@ -423,6 +423,9 @@ fun ExpenseCard(
                     Text(model.expense.description, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("${model.expense.category.displayName} • ${model.siteName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     Text(Utils.formatDate(model.expense.expenseDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (model.expense.paidBy.isNotBlank() && model.status != ExpensePaymentStatus.UNPAID) {
+                        Text("Paid By: ${model.expense.paidBy}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                    }
                 }
                 StatusBadge(model.status)
             }
@@ -492,6 +495,7 @@ fun AddExpenseDialog(
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedCategory by remember { mutableStateOf(ExpenseCategory.NASHTA) }
     var amountStr by remember { mutableStateOf("") }
+    var paidBy by remember { mutableStateOf("") }
     var selectedPaymentMode by remember { mutableStateOf(PaymentModeOption.PAID) }
     var partialAmountStr by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf(ExpensePaymentMethod.CASH) }
@@ -568,12 +572,12 @@ fun AddExpenseDialog(
                 Text("Payment Status*", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ExpenseChip(
-                        label = "PAID (Full)",
+                        label = "PAID",
                         isSelected = selectedPaymentMode == PaymentModeOption.PAID,
                         onClick = { selectedPaymentMode = PaymentModeOption.PAID }
                     )
                     ExpenseChip(
-                        label = "UDHAAR (Unpaid)",
+                        label = "Unpaid",
                         isSelected = selectedPaymentMode == PaymentModeOption.UDHAAR,
                         onClick = { selectedPaymentMode = PaymentModeOption.UDHAAR }
                     )
@@ -594,8 +598,17 @@ fun AddExpenseDialog(
                     )
                 }
 
-                // Payment Method
+                // Payment Method & Paid By
                 if (selectedPaymentMode != PaymentModeOption.UDHAAR) {
+                    OutlinedTextField(
+                        value = paidBy,
+                        onValueChange = { paidBy = it },
+                        label = { Text("Paid By (Kisne Payment Kiya?)*") },
+                        placeholder = { Text("e.g. Habibullah, Manager, Self") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
                     Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ExpensePaymentMethod.entries.forEach { method ->
@@ -640,6 +653,7 @@ fun AddExpenseDialog(
                         PaymentModeOption.UDHAAR -> 0.0
                         PaymentModeOption.PARTIAL -> (partialAmountStr.toDoubleOrNull() ?: 0.0).coerceAtMost(amt)
                     }
+                    val finalPaidBy = if (selectedPaymentMode == PaymentModeOption.UDHAAR) "" else paidBy.trim()
 
                     if (selectedSiteIdState != null && amt > 0) {
                         onConfirm(
@@ -650,7 +664,7 @@ fun AddExpenseDialog(
                             null,
                             null,
                             amt,
-                            "",
+                            finalPaidBy,
                             selectedMethod,
                             notes.trim(),
                             null,
@@ -658,7 +672,9 @@ fun AddExpenseDialog(
                         )
                     }
                 },
-                enabled = selectedSiteIdState != null && (amountStr.toDoubleOrNull() ?: 0.0) > 0 &&
+                enabled = selectedSiteIdState != null &&
+                        (amountStr.toDoubleOrNull() ?: 0.0) > 0 &&
+                        (selectedPaymentMode == PaymentModeOption.UDHAAR || paidBy.trim().isNotBlank()) &&
                         (selectedPaymentMode != PaymentModeOption.PARTIAL || (partialAmountStr.toDoubleOrNull() ?: 0.0) > 0)
             ) {
                 Text("Save Expense", fontWeight = FontWeight.Bold)
@@ -807,8 +823,10 @@ fun RecordExpensePaymentDialog(
                 OutlinedTextField(
                     value = paidBy,
                     onValueChange = { paidBy = it },
-                    label = { Text("Paid By") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Paid By (Kisne Payment Kiya?)*") },
+                    placeholder = { Text("e.g. Habibullah, Manager") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
 
                 OutlinedTextField(
@@ -829,7 +847,7 @@ fun RecordExpensePaymentDialog(
                         Toast.makeText(context, "Payment amount cannot exceed pending amount ₹${model.pendingAmount}", Toast.LENGTH_SHORT).show()
                     }
                 },
-                enabled = (amountStr.toDoubleOrNull() ?: 0.0) > 0
+                enabled = (amountStr.toDoubleOrNull() ?: 0.0) > 0 && paidBy.trim().isNotBlank()
             ) {
                 Text("Save Payment", fontWeight = FontWeight.Bold)
             }

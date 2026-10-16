@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                     factory = PaymentViewModelFactory(app.paymentRepository, app.workerRepository, app.siteRepository)
                 )
                 val dashboardViewModel: DashboardViewModel = viewModel(
-                    factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
+                    factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository, app.siteExpenseRepository)
                 )
                 val reportViewModel: ReportViewModel = viewModel(
                     factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)

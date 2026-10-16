@@ -9,6 +9,7 @@ import com.example.workermanager.data.repository.AttendanceRepository
 import com.example.workermanager.data.repository.ClientPaymentRepository
 import com.example.workermanager.data.repository.ContractRepository
 import com.example.workermanager.data.repository.PaymentRepository
+import com.example.workermanager.data.repository.SiteExpenseRepository
 import com.example.workermanager.data.repository.WorkerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,7 +35,12 @@ data class DashboardStats(
     val totalContracts: Int = 0,
     val totalContractReceivable: Double = 0.0,
     val totalContractReceived: Double = 0.0,
-    val totalContractRemaining: Double = 0.0
+    val totalContractRemaining: Double = 0.0,
+    // Site Expense Stats
+    val todayExpense: Double = 0.0,
+    val totalExpense: Double = 0.0,
+    val totalExpensePaid: Double = 0.0,
+    val totalExpenseRemain: Double = 0.0
 )
 
 class DashboardViewModel(
@@ -42,7 +48,8 @@ class DashboardViewModel(
     private val attendanceRepository: AttendanceRepository,
     private val paymentRepository: PaymentRepository,
     private val contractRepository: ContractRepository,
-    private val clientPaymentRepository: ClientPaymentRepository
+    private val clientPaymentRepository: ClientPaymentRepository,
+    private val siteExpenseRepository: SiteExpenseRepository
 ) : ViewModel() {
 
     private val _selectedSiteId = MutableStateFlow<Long?>(null)
@@ -62,6 +69,11 @@ class DashboardViewModel(
         val contractsFlow = if (siteId == null) contractRepository.allContracts
                            else contractRepository.getContractsBySite(siteId)
 
+        val siteExpensesFlow = if (siteId == null) siteExpenseRepository.allExpenses
+                              else siteExpenseRepository.getExpensesBySite(siteId)
+
+        val siteExpensePaymentsFlow = siteExpenseRepository.allPayments
+
         val contractReceivedFlow = contractsFlow.flatMapLatest { contracts ->
             if (contracts.isEmpty()) flowOf(0.0)
             else {
@@ -75,12 +87,38 @@ class DashboardViewModel(
             workerPaymentsFlow,
             historyAttendanceFlow,
             contractsFlow,
-            contractReceivedFlow
-        ) { attendance, allPayments, historyAttendance, contracts, receivedAmt ->
+            contractReceivedFlow,
+            siteExpensesFlow,
+            siteExpensePaymentsFlow
+        ) { flowsArray ->
+            @Suppress("UNCHECKED_CAST")
+            val attendance = flowsArray[0] as List<com.example.workermanager.data.entity.AttendanceEntity>
+            @Suppress("UNCHECKED_CAST")
+            val allPayments = flowsArray[1] as List<com.example.workermanager.data.entity.PaymentEntity>
+            @Suppress("UNCHECKED_CAST")
+            val historyAttendance = flowsArray[2] as List<com.example.workermanager.data.entity.AttendanceEntity>
+            @Suppress("UNCHECKED_CAST")
+            val contracts = flowsArray[3] as List<com.example.workermanager.data.entity.ContractEntity>
+            val receivedAmt = flowsArray[4] as Double
+            @Suppress("UNCHECKED_CAST")
+            val siteExpenses = flowsArray[5] as List<com.example.workermanager.data.entity.SiteExpenseEntity>
+            @Suppress("UNCHECKED_CAST")
+            val siteExpensePayments = flowsArray[6] as List<com.example.workermanager.data.entity.SiteExpensePaymentEntity>
+
+            val today = LocalDate.now()
             val earned = historyAttendance.sumOf { it.amount }
             val paid = allPayments.sumOf { it.amount }
             val totalContractsAmt = contracts.sumOf { it.totalAmount }
-            
+
+            // Expense calculations
+            val activeExpIds = siteExpenses.map { it.id }.toSet()
+            val linkedPayments = siteExpensePayments.filter { activeExpIds.contains(it.expenseId) }
+
+            val todayExp = siteExpenses.filter { it.expenseDate == today }.sumOf { it.amount }
+            val totalExp = siteExpenses.sumOf { it.amount }
+            val totalExpPaid = linkedPayments.sumOf { it.amount }
+            val totalExpRemain = (totalExp - totalExpPaid).coerceAtLeast(0.0)
+
             DashboardStats(
                 presentWorkers = attendance.count { it.status == AttendanceStatus.PRESENT },
                 halfDayWorkers = attendance.count { it.status == AttendanceStatus.HALF_DAY },
@@ -94,7 +132,11 @@ class DashboardViewModel(
                 totalContracts = contracts.size,
                 totalContractReceivable = totalContractsAmt,
                 totalContractReceived = receivedAmt,
-                totalContractRemaining = totalContractsAmt - receivedAmt
+                totalContractRemaining = totalContractsAmt - receivedAmt,
+                todayExpense = todayExp,
+                totalExpense = totalExp,
+                totalExpensePaid = totalExpPaid,
+                totalExpenseRemain = totalExpRemain
             )
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, DashboardStats())
@@ -114,12 +156,20 @@ class DashboardViewModelFactory(
     private val attendanceRepository: AttendanceRepository,
     private val paymentRepository: PaymentRepository,
     private val contractRepository: ContractRepository,
-    private val clientPaymentRepository: ClientPaymentRepository
+    private val clientPaymentRepository: ClientPaymentRepository,
+    private val siteExpenseRepository: SiteExpenseRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(DashboardViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(workerRepository, attendanceRepository, paymentRepository, contractRepository, clientPaymentRepository) as T
+            return DashboardViewModel(
+                workerRepository,
+                attendanceRepository,
+                paymentRepository,
+                contractRepository,
+                clientPaymentRepository,
+                siteExpenseRepository
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

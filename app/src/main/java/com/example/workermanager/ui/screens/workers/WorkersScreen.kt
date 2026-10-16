@@ -254,10 +254,10 @@ fun WorkerSiteFilterChip(
         contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = if (isSelected) 3.dp else 1.dp,
-        modifier = Modifier.defaultMinSize(minHeight = 44.dp)
+        modifier = Modifier.defaultMinSize(minHeight = 53.dp)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -265,7 +265,7 @@ fun WorkerSiteFilterChip(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontSize = 13.sp,
                 maxLines = 1
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -273,7 +273,7 @@ fun WorkerSiteFilterChip(
             Text(
                 text = countText,
                 style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Normal,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1

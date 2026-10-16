@@ -291,6 +291,62 @@ fun DashboardScreen(
                 }
             }
 
+            // Expense Summary (Collapsible dropdown card)
+            var isExpenseSummaryExpanded by remember { mutableStateOf(false) }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isExpenseSummaryExpanded = !isExpenseSummaryExpanded },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Expense Summary",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Icon(
+                            imageVector = if (isExpenseSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isExpenseSummaryExpanded) "Collapse Expense Summary" else "Expand Expense Summary",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isExpenseSummaryExpanded) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid))
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                            )
+                            SummaryRow(
+                                label = "Total Remain",
+                                value = Utils.formatCurrency(stats.totalExpenseRemain),
+                                isBold = true,
+                                valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(5.dp))
 
             // Find Existing Backup Prompt (Visible when database is empty)

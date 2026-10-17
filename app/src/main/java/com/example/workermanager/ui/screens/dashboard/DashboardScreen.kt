@@ -440,7 +440,7 @@ fun DashboardScreen(
                     ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
                     ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -448,7 +448,7 @@ fun DashboardScreen(
                 ) {
                     ActionCard("Add Contract", Icons.AutoMirrored.Filled.Assignment, { showAddContractDialog = true }, Modifier.weight(1f))
                     ActionCard("Reports", Icons.Default.Assessment, onNavigateToReports, Modifier.weight(1f))
-                    ActionCard("Site Expense", Icons.AutoMirrored.Filled.ReceiptLong, { showAddExpenseDialog = true }, Modifier.weight(1f))
+                    ActionCard("Add Site Expense", Icons.AutoMirrored.Filled.ReceiptLong, { showAddExpenseDialog = true }, Modifier.weight(1f))
 
                 }
             }

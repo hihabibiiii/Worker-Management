@@ -21,7 +21,7 @@ enum class ExpenseCategory(val displayName: String) {
 enum class ExpensePaymentMethod(val displayName: String) {
     CASH("Cash"),
     UPI("UPI"),
-    BANK_TRANSFER("Bank Transfer"),
+    ONLINE("Bank"),
     OTHER("Other")
 }
 

@@ -361,22 +361,29 @@ fun ExpenseStatBox(label: String, value: String, valueColor: Color, modifier: Mo
 }
 
 @Composable
-fun ExpenseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+fun ExpenseChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = 2.dp,
-        modifier = Modifier.height(32.dp)
+        modifier = modifier.height(32.dp)
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
             Text(
                 text = label,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
         }
     }
@@ -466,7 +473,7 @@ enum class PaymentModeOption {
     PAID, UDHAAR, PARTIAL
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddExpenseDialog(
     sites: List<SiteEntity>,
@@ -474,9 +481,9 @@ fun AddExpenseDialog(
     onDismiss: () -> Unit,
     onConfirm: (Long, LocalDate, ExpenseCategory, String, Double?, Double?, Double, String, ExpensePaymentMethod, String, String?, Double) -> Unit
 ) {
-    var selectedSiteIdState by remember { mutableStateOf<Long?>(initialSiteId ?: sites.firstOrNull()?.id) }
+    var selectedSiteIdState by remember { mutableStateOf<Long?>(initialSiteId) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedCategoryState by remember { mutableStateOf<ExpenseCategory?>(ExpenseCategory.NASHTA) }
+    var selectedCategoryState by remember { mutableStateOf<ExpenseCategory?>(null) }
     var amountStr by remember { mutableStateOf("") }
     var paidBy by remember { mutableStateOf("") }
     var selectedPaymentMode by remember { mutableStateOf(PaymentModeOption.PAID) }
@@ -616,21 +623,27 @@ fun AddExpenseDialog(
 
                 // Payment Status Options (PAID, UDHAAR, PARTIAL)
                 Text("Payment Status*", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     ExpenseChip(
                         label = "PAID",
                         isSelected = selectedPaymentMode == PaymentModeOption.PAID,
-                        onClick = { selectedPaymentMode = PaymentModeOption.PAID }
+                        onClick = { selectedPaymentMode = PaymentModeOption.PAID },
+                        modifier = Modifier.weight(1f)
                     )
                     ExpenseChip(
-                        label = "Unpaid",
+                        label = "UNPAID",
                         isSelected = selectedPaymentMode == PaymentModeOption.UDHAAR,
-                        onClick = { selectedPaymentMode = PaymentModeOption.UDHAAR }
+                        onClick = { selectedPaymentMode = PaymentModeOption.UDHAAR },
+                        modifier = Modifier.weight(1f)
                     )
                     ExpenseChip(
                         label = "PARTIAL",
                         isSelected = selectedPaymentMode == PaymentModeOption.PARTIAL,
-                        onClick = { selectedPaymentMode = PaymentModeOption.PARTIAL }
+                        onClick = { selectedPaymentMode = PaymentModeOption.PARTIAL },
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
@@ -650,18 +663,21 @@ fun AddExpenseDialog(
                         value = paidBy,
                         onValueChange = { paidBy = it },
                         label = { Text("Paid By (Kisne Payment Kiya?)*") },
-                        placeholder = { Text("e.g. Habibullah, Manager, Self") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
 
                     Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         ExpensePaymentMethod.entries.forEach { method ->
                             ExpenseChip(
                                 label = method.displayName,
                                 isSelected = selectedMethod == method,
-                                onClick = { selectedMethod = method }
+                                onClick = { selectedMethod = method },
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -871,7 +887,6 @@ fun RecordExpensePaymentDialog(
                     value = paidBy,
                     onValueChange = { paidBy = it },
                     label = { Text("Paid By (Kisne Payment Kiya?)*") },
-                    placeholder = { Text("e.g. Habibullah, Manager") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )

@@ -1,5 +1,6 @@
 package com.example.workermanager.ui.screens.reports
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -87,46 +88,87 @@ fun ReportsScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                val isWeeklySelected = selectedReportType == ReportType.WEEKLY
                 FilterChip(
-                    selected = selectedReportType == ReportType.WEEKLY,
+                    selected = isWeeklySelected,
                     onClick = { viewModel.updateReportType(ReportType.WEEKLY) },
                     label = {
                         Text(
                             text = "Weekly",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isWeeklySelected,
+                        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                    ),
                     modifier = Modifier.weight(1f)
                 )
+
+                val isMonthlySelected = selectedReportType == ReportType.MONTHLY
                 FilterChip(
-                    selected = selectedReportType == ReportType.MONTHLY,
+                    selected = isMonthlySelected,
                     onClick = { viewModel.updateReportType(ReportType.MONTHLY) },
                     label = {
                         Text(
                             text = "Monthly",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isMonthlySelected,
+                        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                    ),
                     modifier = Modifier.weight(1f)
                 )
+
+                val isYearlySelected = selectedReportType == ReportType.YEARLY
                 FilterChip(
-                    selected = selectedReportType == ReportType.YEARLY,
+                    selected = isYearlySelected,
                     onClick = { viewModel.updateReportType(ReportType.YEARLY) },
                     label = {
                         Text(
                             text = "Yearly",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isYearlySelected,
+                        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                    ),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -355,6 +397,7 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {

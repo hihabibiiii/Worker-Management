@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -59,22 +60,14 @@ fun SiteExpensesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = selectedSiteName ?: "Site Expenses",
+                        text = if (selectedSiteName != null) "Expenses: $selectedSiteName" else "Site Expenses",
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (selectedSiteId != null) {
-                                viewModel.setSelectedSite(null)
-                            } else {
-                                onBack()
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -102,123 +95,122 @@ fun SiteExpensesScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (selectedSiteId == null) {
-                // MAIN SCREEN: SITE SEARCH & SITE LIST
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.setSearchQuery(it) },
-                        placeholder = { Text("Search site name...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+            // Top Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.setSearchQuery(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Search site, expense or payer...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+            // Horizontal Site Selection Chips / Buttons
+            if (sites.isNotEmpty()) {
+                val filteredSites = if (searchQuery.isBlank()) {
+                    sites
+                } else {
+                    sites.filter {
+                        it.name.lowercase().contains(searchQuery.trim().lowercase()) ||
+                        it.address.lowercase().contains(searchQuery.trim().lowercase())
+                    }
+                }
 
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    item {
+                        val isAllSelected = selectedSiteId == null
+                        val totalExpCount = uiModels.size
+                        ExpenseSiteFilterChip(
+                            title = "All Sites",
+                            expenseCount = totalExpCount,
+                            isSelected = isAllSelected,
+                            onClick = { viewModel.setSelectedSite(null) }
+                        )
+                    }
+                    items(filteredSites) { site ->
+                        val isSiteSelected = selectedSiteId == site.id
+                        val siteExpCount = uiModels.count { it.expense.siteId == site.id }
+                        ExpenseSiteFilterChip(
+                            title = site.name,
+                            expenseCount = siteExpCount,
+                            isSelected = isSiteSelected,
+                            onClick = { viewModel.setSelectedSite(site.id) }
+                        )
+                    }
+                }
+            }
+
+            // Main Content: Summary Cards & Site Expense History List
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 4 Summary Cards Grid
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ExpenseStatBox("Today Expense", Utils.formatCurrency(stats.todayExpense), Color(0xFFEF6C00), Modifier.weight(1f))
+                            ExpenseStatBox("Total Expense", Utils.formatCurrency(stats.totalExpense), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ExpenseStatBox("Total Paid", Utils.formatCurrency(stats.totalPaid), Color(0xFF2E7D32), Modifier.weight(1f))
+                            ExpenseStatBox("Total Remain", Utils.formatCurrency(stats.totalPending), if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32), Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                // Site History Heading
+                item {
                     Text(
-                        "Select a Site to View Expenses",
+                        text = if (selectedSiteName != null) "Site Expense History ($selectedSiteName)" else "Site Expense History",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val filteredSites = if (searchQuery.isBlank()) {
-                        sites
-                    } else {
-                        sites.filter {
-                            it.name.lowercase().contains(searchQuery.trim().lowercase()) ||
-                            it.address.lowercase().contains(searchQuery.trim().lowercase())
-                        }
-                    }
-
-                    if (filteredSites.isEmpty()) {
+                if (uiModels.isEmpty()) {
+                    item {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "No project sites found.",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = if (selectedSiteId != null) "Is site ke liye abhi koi expense record nahi hai." else "No expense records found.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center
                             )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(filteredSites) { site ->
-                                SiteExpenseSelectCard(
-                                    site = site,
-                                    onClick = { viewModel.setSelectedSite(site.id) }
-                                )
-                            }
-                        }
                     }
-                }
-            } else {
-                // SELECTED SITE DETAILS & EXPENSE HISTORY VIEW
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Selected Site 4-Item Summary Cards
-                    item {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ExpenseStatBox("Today Expense", Utils.formatCurrency(stats.todayExpense), Color(0xFFEF6C00), Modifier.weight(1f))
-                                ExpenseStatBox("Total Expense", Utils.formatCurrency(stats.totalExpense), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ExpenseStatBox("Total Paid", Utils.formatCurrency(stats.totalPaid), Color(0xFF2E7D32), Modifier.weight(1f))
-                                ExpenseStatBox("Total Remain", Utils.formatCurrency(stats.totalPending), if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32), Modifier.weight(1f))
-                            }
-                        }
-                    }
-
-                    // Site History Heading
-                    item {
-                        Text(
-                            "Site History (${uiModels.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                } else {
+                    items(uiModels) { model ->
+                        ExpenseCard(
+                            model = model,
+                            onClick = { selectedUiModelDetails = model },
+                            onRecordPayment = { expenseToRecordPayment = model },
+                            onEdit = { expenseToEdit = model.expense },
+                            onDelete = { expenseToDelete = model.expense }
                         )
-                    }
-
-                    if (uiModels.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Is site ke liye abhi koi expense record nahi hai.",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    } else {
-                        items(uiModels) { model ->
-                            ExpenseCard(
-                                model = model,
-                                onClick = { selectedUiModelDetails = model },
-                                onRecordPayment = { expenseToRecordPayment = model },
-                                onEdit = { expenseToEdit = model.expense },
-                                onDelete = { expenseToDelete = model.expense }
-                            )
-                        }
                     }
                 }
             }
@@ -307,52 +299,43 @@ fun SiteExpensesScreen(
 }
 
 @Composable
-fun SiteExpenseSelectCard(site: SiteEntity, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun ExpenseSiteFilterChip(
+    title: String,
+    expenseCount: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        tonalElevation = if (isSelected) 3.dp else 1.dp,
+        modifier = Modifier.defaultMinSize(minHeight = 53.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = site.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (site.address.isNotEmpty()) {
-                    Text(
-                        text = site.address,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                Text(
-                    text = "Manager: ${site.manager.ifEmpty { "N/A" }}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "View Expenses",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.height(2.dp))
+            val countText = if (expenseCount == 1) "1 Expense" else "$expenseCount Expenses"
+            Text(
+                text = countText,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
             )
         }
     }

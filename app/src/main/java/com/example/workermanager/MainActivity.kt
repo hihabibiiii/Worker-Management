@@ -103,6 +103,9 @@ class MainActivity : ComponentActivity() {
                 val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
                     factory = SiteExpenseViewModelFactory(app.siteExpenseRepository, app.siteRepository)
                 )
+                val materialViewModel: MaterialViewModel = viewModel(
+                    factory = MaterialViewModelFactory(app.materialRepository, app.siteRepository, app.siteExpenseRepository)
+                )
                 val contractorMaterialViewModel: ContractorMaterialViewModel = viewModel(
                     factory = ContractorMaterialViewModelFactory(app.contractorMaterialRepository, app.siteRepository)
                 )
@@ -118,6 +121,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Sites,
                     Screen.Contracts,
                     Screen.SiteExpenses,
+                    Screen.SiteMaterials,
                     Screen.MaterialManagement,
                     Screen.Reports,
                     Screen.RecycleBin,
@@ -302,6 +306,13 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.SiteExpenses.route) {
                             com.example.workermanager.ui.screens.expenses.SiteExpensesScreen(
                                 viewModel = siteExpenseViewModel,
+                                siteViewModel = siteViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable(Screen.SiteMaterials.route) {
+                            com.example.workermanager.ui.screens.materials.SiteMaterialsScreen(
+                                viewModel = materialViewModel,
                                 siteViewModel = siteViewModel,
                                 onBack = { navController.popBackStack() }
                             )

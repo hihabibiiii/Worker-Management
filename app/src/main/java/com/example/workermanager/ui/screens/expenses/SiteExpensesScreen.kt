@@ -510,41 +510,34 @@ fun AddExpenseDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Site Picker
-                Box(modifier = Modifier.fillMaxWidth()) {
+                ExposedDropdownMenuBox(
+                    expanded = siteExpanded,
+                    onExpandedChange = { siteExpanded = !siteExpanded }
+                ) {
                     OutlinedTextField(
                         value = sites.find { it.id == selectedSiteIdState }?.name ?: "Select Site*",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Site*") },
-                        trailingIcon = {
-                            IconButton(onClick = { siteExpanded = true }) {
-                                Icon(
-                                    imageVector = if (siteExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                    contentDescription = "Select Site"
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { siteExpanded = true }
-                    )
-                    DropdownMenu(
+                    ExposedDropdownMenu(
                         expanded = siteExpanded,
-                        onDismissRequest = { siteExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.85f)
+                        onDismissRequest = { siteExpanded = false }
                     ) {
                         if (sites.isEmpty()) {
                             DropdownMenuItem(
                                 text = { Text("No sites available", color = MaterialTheme.colorScheme.error) },
-                                onClick = { siteExpanded = false }
+                                onClick = { siteExpanded = false },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                             )
                         } else {
                             sites.forEach { site ->
@@ -557,7 +550,11 @@ fun AddExpenseDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                     },
-                                    onClick = { selectedSiteIdState = site.id; siteExpanded = false }
+                                    onClick = {
+                                        selectedSiteIdState = site.id
+                                        siteExpanded = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
                             }
                         }
@@ -565,36 +562,28 @@ fun AddExpenseDialog(
                 }
 
                 // Category Picker
-                Box(modifier = Modifier.fillMaxWidth()) {
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded }
+                ) {
                     OutlinedTextField(
                         value = selectedCategoryState?.displayName ?: "Select Category*",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Category*") },
-                        trailingIcon = {
-                            IconButton(onClick = { categoryExpanded = true }) {
-                                Icon(
-                                    imageVector = if (categoryExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                    contentDescription = "Select Category"
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { categoryExpanded = true }
-                    )
-                    DropdownMenu(
+                    ExposedDropdownMenu(
                         expanded = categoryExpanded,
-                        onDismissRequest = { categoryExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.85f)
+                        onDismissRequest = { categoryExpanded = false }
                     ) {
                         ExpenseCategory.entries.forEach { cat ->
                             DropdownMenuItem(
@@ -606,7 +595,11 @@ fun AddExpenseDialog(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 },
-                                onClick = { selectedCategoryState = cat; categoryExpanded = false }
+                                onClick = {
+                                    selectedCategoryState = cat
+                                    categoryExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                             )
                         }
                     }

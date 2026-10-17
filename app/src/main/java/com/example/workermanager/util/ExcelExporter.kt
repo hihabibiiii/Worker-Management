@@ -172,4 +172,108 @@ object ExcelExporter {
             throw e
         }
     }
+
+    fun generateContractorMaterialFileName(): String {
+        val current = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
+        return "WorkCraft_Material_Report_${current.format(formatter)}.xlsx"
+    }
+
+    fun exportContractorMaterials(
+        inventory: List<com.example.workermanager.viewmodel.ContractorMaterialStockModel>,
+        siteStocks: List<com.example.workermanager.viewmodel.SiteMaterialStockModel>,
+        transactions: List<com.example.workermanager.viewmodel.ContractorMaterialTxUiModel>,
+        outputStream: OutputStream
+    ) {
+        try {
+            XSSFWorkbook().use { workbook ->
+                val headerStyle = workbook.createCellStyle().apply {
+                    val font = workbook.createFont().apply {
+                        bold = true
+                        color = IndexedColors.WHITE.index
+                        fontHeightInPoints = 11
+                    }
+                    setFont(font)
+                    fillForegroundColor = IndexedColors.DARK_BLUE.index
+                    fillPattern = FillPatternType.SOLID_FOREGROUND
+                }
+
+                // SHEET 1: INVENTORY SUMMARY
+                val invSheet = workbook.createSheet("Complete Inventory")
+                val invHeaders = listOf("Material Name", "Category", "Unit", "Total Added", "Available (Central)", "At Sites", "Broken Qty", "Lost Qty")
+                val invHeaderRow = invSheet.createRow(0)
+                invHeaders.forEachIndexed { index, title ->
+                    val cell = invHeaderRow.createCell(index)
+                    cell.setCellValue(title)
+                    cell.setCellStyle(headerStyle)
+                }
+
+                inventory.forEachIndexed { index, item ->
+                    val row = invSheet.createRow(index + 1)
+                    row.createCell(0).setCellValue(item.material.name)
+                    row.createCell(1).setCellValue(item.material.category.displayName)
+                    row.createCell(2).setCellValue(item.material.unit.displayName)
+                    row.createCell(3).setCellValue(item.totalAddedQuantity)
+                    row.createCell(4).setCellValue(item.availableQuantity)
+                    row.createCell(5).setCellValue(item.quantityAtSites)
+                    row.createCell(6).setCellValue(item.brokenQuantity)
+                    row.createCell(7).setCellValue(item.lostQuantity)
+                }
+                (0..7).forEach { invSheet.setColumnWidth(it, 20 * 256) }
+                invSheet.createFreezePane(0, 1)
+
+                // SHEET 2: SITE-WISE MATERIAL STOCK
+                val siteSheet = workbook.createSheet("Site-wise Report")
+                val siteHeaders = listOf("Site Name", "Material Name", "Unit", "Total Sent", "Total Returned", "Broken at Site", "Lost at Site", "Current Site Qty")
+                val siteHeaderRow = siteSheet.createRow(0)
+                siteHeaders.forEachIndexed { index, title ->
+                    val cell = siteHeaderRow.createCell(index)
+                    cell.setCellValue(title)
+                    cell.setCellStyle(headerStyle)
+                }
+
+                siteStocks.forEachIndexed { index, item ->
+                    val row = siteSheet.createRow(index + 1)
+                    row.createCell(0).setCellValue(item.siteName)
+                    row.createCell(1).setCellValue(item.materialName)
+                    row.createCell(2).setCellValue(item.unit)
+                    row.createCell(3).setCellValue(item.totalSent)
+                    row.createCell(4).setCellValue(item.totalReturned)
+                    row.createCell(5).setCellValue(item.brokenAtSite)
+                    row.createCell(6).setCellValue(item.lostAtSite)
+                    row.createCell(7).setCellValue(item.currentSiteQuantity)
+                }
+                (0..7).forEach { siteSheet.setColumnWidth(it, 20 * 256) }
+                siteSheet.createFreezePane(0, 1)
+
+                // SHEET 3: TRANSACTION HISTORY
+                val txSheet = workbook.createSheet("Transaction History")
+                val txHeaders = listOf("Date", "Material Name", "Transaction Type", "Site Name", "Quantity", "Notes")
+                val txHeaderRow = txSheet.createRow(0)
+                txHeaders.forEachIndexed { index, title ->
+                    val cell = txHeaderRow.createCell(index)
+                    cell.setCellValue(title)
+                    cell.setCellStyle(headerStyle)
+                }
+
+                transactions.forEachIndexed { index, item ->
+                    val row = txSheet.createRow(index + 1)
+                    row.createCell(0).setCellValue(Utils.formatDate(item.transaction.transactionDate))
+                    row.createCell(1).setCellValue(item.materialName)
+                    row.createCell(2).setCellValue(item.transaction.transactionType.displayName)
+                    row.createCell(3).setCellValue(item.siteName ?: "Central / N/A")
+                    row.createCell(4).setCellValue("${item.transaction.quantity} ${item.transaction.unit}")
+                    row.createCell(5).setCellValue(item.transaction.reasonOrNotes)
+                }
+                (0..5).forEach { txSheet.setColumnWidth(it, 22 * 256) }
+                txSheet.createFreezePane(0, 1)
+
+                workbook.write(outputStream)
+                outputStream.flush()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error exporting Contractor Material Excel Report", e)
+            throw e
+        }
+    }
 }

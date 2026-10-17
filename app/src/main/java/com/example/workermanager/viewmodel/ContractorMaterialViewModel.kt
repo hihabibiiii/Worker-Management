@@ -1,0 +1,436 @@
+package com.example.workermanager.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.workermanager.data.entity.*
+import com.example.workermanager.data.repository.ContractorMaterialRepository
+import com.example.workermanager.data.repository.SiteRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+
+data class ContractorMaterialStockModel(
+    val material: ContractorMaterialEntity,
+    val totalAddedQuantity: Double,
+    val availableQuantity: Double,
+    val quantityAtSites: Double,
+    val brokenQuantity: Double,
+    val lostQuantity: Double,
+    val isLowStock: Boolean
+)
+
+data class SiteMaterialStockModel(
+    val siteId: Long,
+    val siteName: String,
+    val materialId: Long,
+    val materialName: String,
+    val unit: String,
+    val totalSent: Double,
+    val totalReturned: Double,
+    val brokenAtSite: Double,
+    val lostAtSite: Double,
+    val currentSiteQuantity: Double
+)
+
+data class ContractorMaterialSummary(
+    val totalMaterialTypes: Int = 0,
+    val totalQuantity: Double = 0.0,
+    val availableQuantity: Double = 0.0,
+    val quantityAtSites: Double = 0.0,
+    val totalBrokenLostQuantity: Double = 0.0
+)
+
+data class ContractorMaterialTxUiModel(
+    val transaction: ContractorMaterialTransactionEntity,
+    val materialName: String,
+    val siteName: String?
+)
+
+class ContractorMaterialViewModel(
+    private val repository: ContractorMaterialRepository,
+    private val siteRepository: SiteRepository
+) : ViewModel() {
+
+    private val _selectedSiteId = MutableStateFlow<Long?>(null)
+    val selectedSiteId: StateFlow<Long?> = _selectedSiteId
+
+    private val _selectedCategory = MutableStateFlow<ContractorMaterialCategory?>(null)
+    val selectedCategory: StateFlow<ContractorMaterialCategory?> = _selectedCategory
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    val allSites: Flow<List<SiteEntity>> = siteRepository.allSites
+    val allMaterials: Flow<List<ContractorMaterialEntity>> = repository.allMaterials
+
+    val stockModels: StateFlow<List<ContractorMaterialStockModel>> = combine(
+        repository.allMaterials,
+        repository.allTransactions,
+        _selectedCategory,
+        _searchQuery
+    ) { flows ->
+        @Suppress("UNCHECKED_CAST")
+        val materials = flows[0] as List<ContractorMaterialEntity>
+        @Suppress("UNCHECKED_CAST")
+        val transactions = flows[1] as List<ContractorMaterialTransactionEntity>
+        val categoryFilter = flows[2] as ContractorMaterialCategory?
+        val query = (flows[3] as String).trim().lowercase()
+
+        val filtered = materials.filter { mat ->
+            mat.isActive &&
+            (categoryFilter == null || mat.category == categoryFilter) &&
+            (query.isBlank() || mat.name.lowercase().contains(query))
+        }
+
+        filtered.map { mat ->
+            val matTxs = transactions.filter { it.materialId == mat.id }
+
+            val totalAdded = matTxs.filter {
+                it.transactionType == ContractorMaterialTransactionType.ADDED ||
+                it.transactionType == ContractorMaterialTransactionType.ADJUSTMENT
+            }.sumOf { it.quantity }
+
+            val sent = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.SENT }.sumOf { it.quantity }
+            val returned = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.RETURNED }.sumOf { it.quantity }
+
+            val brokenCentral = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN && it.siteId == null }.sumOf { it.quantity }
+            val lostCentral = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST && it.siteId == null }.sumOf { it.quantity }
+
+            val brokenSite = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN && it.siteId != null }.sumOf { it.quantity }
+            val lostSite = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST && it.siteId != null }.sumOf { it.quantity }
+
+            val avail = (totalAdded - sent + returned - brokenCentral - lostCentral).coerceAtLeast(0.0)
+            val atSites = (sent - returned - brokenSite - lostSite).coerceAtLeast(0.0)
+            val totalBroken = brokenCentral + brokenSite
+            val totalLost = lostCentral + lostSite
+
+            ContractorMaterialStockModel(
+                material = mat,
+                totalAddedQuantity = totalAdded,
+                availableQuantity = avail,
+                quantityAtSites = atSites,
+                brokenQuantity = totalBroken,
+                lostQuantity = totalLost,
+                isLowStock = mat.minStockLevel > 0 && avail <= mat.minStockLevel
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val dashboardSummary: StateFlow<ContractorMaterialSummary> = combine(
+        stockModels
+    ) { flows ->
+        @Suppress("UNCHECKED_CAST")
+        val stocks = flows[0] as List<ContractorMaterialStockModel>
+
+        ContractorMaterialSummary(
+            totalMaterialTypes = stocks.size,
+            totalQuantity = stocks.sumOf { it.totalAddedQuantity },
+            availableQuantity = stocks.sumOf { it.availableQuantity },
+            quantityAtSites = stocks.sumOf { it.quantityAtSites },
+            totalBrokenLostQuantity = stocks.sumOf { it.brokenQuantity + it.lostQuantity }
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ContractorMaterialSummary())
+
+    val siteStockModels: StateFlow<List<SiteMaterialStockModel>> = combine(
+        repository.allMaterials,
+        repository.allTransactions,
+        siteRepository.allSites,
+        _selectedSiteId
+    ) { flows ->
+        @Suppress("UNCHECKED_CAST")
+        val materials = flows[0] as List<ContractorMaterialEntity>
+        @Suppress("UNCHECKED_CAST")
+        val transactions = flows[1] as List<ContractorMaterialTransactionEntity>
+        @Suppress("UNCHECKED_CAST")
+        val sites = flows[2] as List<SiteEntity>
+        val siteIdFilter = flows[3] as Long?
+
+        val activeSites = if (siteIdFilter != null) sites.filter { it.id == siteIdFilter } else sites
+        val list = mutableListOf<SiteMaterialStockModel>()
+
+        for (site in activeSites) {
+            val siteTxs = transactions.filter { it.siteId == site.id }
+
+            for (mat in materials) {
+                if (!mat.isActive) continue
+                val matSiteTxs = siteTxs.filter { it.materialId == mat.id }
+                if (matSiteTxs.isEmpty()) continue
+
+                val sent = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.SENT }.sumOf { it.quantity }
+                val returned = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.RETURNED }.sumOf { it.quantity }
+                val broken = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN }.sumOf { it.quantity }
+                val lost = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST }.sumOf { it.quantity }
+
+                val currentSiteQty = (sent - returned - broken - lost).coerceAtLeast(0.0)
+
+                if (sent > 0 || currentSiteQty > 0) {
+                    list.add(
+                        SiteMaterialStockModel(
+                            siteId = site.id,
+                            siteName = site.name,
+                            materialId = mat.id,
+                            materialName = mat.name,
+                            unit = mat.unit.displayName,
+                            totalSent = sent,
+                            totalReturned = returned,
+                            brokenAtSite = broken,
+                            lostAtSite = lost,
+                            currentSiteQuantity = currentSiteQty
+                        )
+                    )
+                }
+            }
+        }
+        list
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val transactionUiModels: StateFlow<List<ContractorMaterialTxUiModel>> = combine(
+        repository.allTransactions,
+        repository.allMaterials,
+        siteRepository.allSites,
+        _selectedSiteId,
+        _selectedCategory,
+        _searchQuery
+    ) { flows ->
+        @Suppress("UNCHECKED_CAST")
+        val transactions = flows[0] as List<ContractorMaterialTransactionEntity>
+        @Suppress("UNCHECKED_CAST")
+        val materials = flows[1] as List<ContractorMaterialEntity>
+        @Suppress("UNCHECKED_CAST")
+        val sites = flows[2] as List<SiteEntity>
+        val siteIdFilter = flows[3] as Long?
+        val categoryFilter = flows[4] as ContractorMaterialCategory?
+        val query = (flows[5] as String).trim().lowercase()
+
+        val filtered = transactions.filter { tx ->
+            val mat = materials.find { it.id == tx.materialId }
+            val siteName = sites.find { it.id == tx.siteId }?.name ?: ""
+
+            (siteIdFilter == null || tx.siteId == siteIdFilter) &&
+            (categoryFilter == null || mat?.category == categoryFilter) &&
+            (query.isBlank() || (mat?.name?.lowercase()?.contains(query) == true) ||
+                    siteName.lowercase().contains(query) ||
+                    tx.reasonOrNotes.lowercase().contains(query))
+        }
+
+        filtered.map { tx ->
+            val matName = materials.find { it.id == tx.materialId }?.name ?: "Unknown Material"
+            val siteName = tx.siteId?.let { sId -> sites.find { it.id == sId }?.name }
+
+            ContractorMaterialTxUiModel(
+                transaction = tx,
+                materialName = matName,
+                siteName = siteName
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setSelectedSite(siteId: Long?) { _selectedSiteId.value = siteId }
+    fun setSelectedCategory(cat: ContractorMaterialCategory?) { _selectedCategory.value = cat }
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
+
+    fun addMaterialToInventory(
+        name: String,
+        category: ContractorMaterialCategory,
+        unit: ContractorMaterialUnit,
+        initialQuantity: Double,
+        minStockLevel: Double,
+        notes: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val existing = repository.allMaterials.firstOrNull()?.find { it.name.equals(name.trim(), ignoreCase = true) && it.isActive }
+            val materialId = if (existing != null) {
+                existing.id
+            } else {
+                val mat = ContractorMaterialEntity(
+                    name = name.trim(),
+                    category = category,
+                    unit = unit,
+                    minStockLevel = minStockLevel,
+                    notes = notes.trim()
+                )
+                repository.insertMaterial(mat)
+            }
+
+            if (initialQuantity > 0.001) {
+                val mat = repository.allMaterials.firstOrNull()?.find { it.id == materialId }
+                val tx = ContractorMaterialTransactionEntity(
+                    materialId = materialId,
+                    siteId = null,
+                    transactionType = ContractorMaterialTransactionType.ADDED,
+                    transactionDate = LocalDate.now(),
+                    quantity = initialQuantity,
+                    unit = mat?.unit?.displayName ?: unit.displayName,
+                    reasonOrNotes = "Initial Stock Purchase / Added"
+                )
+                repository.insertTransaction(tx)
+            }
+            onSuccess()
+        }
+    }
+
+    fun sendMaterialToSite(
+        materialId: Long,
+        siteId: Long,
+        quantity: Double,
+        transactionDate: LocalDate,
+        notes: String,
+        onError: (String) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val stocks = stockModels.value
+            val currentStock = stocks.find { it.material.id == materialId }
+            val available = currentStock?.availableQuantity ?: 0.0
+
+            if (quantity > available + 0.001) {
+                onError("Cannot send more than available stock! Available stock: $available ${currentStock?.material?.unit?.displayName ?: ""}")
+                return@launch
+            }
+
+            val tx = ContractorMaterialTransactionEntity(
+                materialId = materialId,
+                siteId = siteId,
+                transactionType = ContractorMaterialTransactionType.SENT,
+                transactionDate = transactionDate,
+                quantity = quantity,
+                unit = currentStock?.material?.unit?.displayName ?: "Pcs",
+                reasonOrNotes = notes.trim()
+            )
+            repository.insertTransaction(tx)
+            onSuccess()
+        }
+    }
+
+    fun returnMaterialFromSite(
+        materialId: Long,
+        siteId: Long,
+        quantity: Double,
+        returnDate: LocalDate,
+        notes: String,
+        onError: (String) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val siteStocks = siteStockModels.value
+            val currentSiteQty = siteStocks.find { it.materialId == materialId && it.siteId == siteId }?.currentSiteQuantity ?: 0.0
+
+            if (quantity > currentSiteQty + 0.001) {
+                onError("Cannot return more than quantity assigned to this site! Current site quantity: $currentSiteQty")
+                return@launch
+            }
+
+            val mat = repository.allMaterials.firstOrNull()?.find { it.id == materialId }
+            val tx = ContractorMaterialTransactionEntity(
+                materialId = materialId,
+                siteId = siteId,
+                transactionType = ContractorMaterialTransactionType.RETURNED,
+                transactionDate = returnDate,
+                quantity = quantity,
+                unit = mat?.unit?.displayName ?: "Pcs",
+                reasonOrNotes = notes.trim()
+            )
+            repository.insertTransaction(tx)
+            onSuccess()
+        }
+    }
+
+    fun markMaterialBroken(
+        materialId: Long,
+        siteId: Long?,
+        quantity: Double,
+        date: LocalDate,
+        reason: String,
+        onError: (String) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val mat = repository.allMaterials.firstOrNull()?.find { it.id == materialId }
+            val availableAtLocation = if (siteId != null) {
+                siteStockModels.value.find { it.materialId == materialId && it.siteId == siteId }?.currentSiteQuantity ?: 0.0
+            } else {
+                stockModels.value.find { it.material.id == materialId }?.availableQuantity ?: 0.0
+            }
+
+            if (quantity > availableAtLocation + 0.001) {
+                onError("Cannot mark more than available quantity at this location! Available: $availableAtLocation")
+                return@launch
+            }
+
+            val tx = ContractorMaterialTransactionEntity(
+                materialId = materialId,
+                siteId = siteId,
+                transactionType = ContractorMaterialTransactionType.BROKEN,
+                transactionDate = date,
+                quantity = quantity,
+                unit = mat?.unit?.displayName ?: "Pcs",
+                reasonOrNotes = reason.trim()
+            )
+            repository.insertTransaction(tx)
+            onSuccess()
+        }
+    }
+
+    fun markMaterialLost(
+        materialId: Long,
+        siteId: Long?,
+        quantity: Double,
+        date: LocalDate,
+        reason: String,
+        onError: (String) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val mat = repository.allMaterials.firstOrNull()?.find { it.id == materialId }
+            val availableAtLocation = if (siteId != null) {
+                siteStockModels.value.find { it.materialId == materialId && it.siteId == siteId }?.currentSiteQuantity ?: 0.0
+            } else {
+                stockModels.value.find { it.material.id == materialId }?.availableQuantity ?: 0.0
+            }
+
+            if (quantity > availableAtLocation + 0.001) {
+                onError("Cannot mark more than available quantity at this location! Available: $availableAtLocation")
+                return@launch
+            }
+
+            val tx = ContractorMaterialTransactionEntity(
+                materialId = materialId,
+                siteId = siteId,
+                transactionType = ContractorMaterialTransactionType.LOST,
+                transactionDate = date,
+                quantity = quantity,
+                unit = mat?.unit?.displayName ?: "Pcs",
+                reasonOrNotes = reason.trim()
+            )
+            repository.insertTransaction(tx)
+            onSuccess()
+        }
+    }
+
+    fun deactivateMaterial(materialId: Long) {
+        viewModelScope.launch {
+            repository.deactivateMaterial(materialId)
+        }
+    }
+
+    fun deleteTransaction(txId: Long) {
+        viewModelScope.launch {
+            repository.deleteTransaction(txId)
+        }
+    }
+}
+
+class ContractorMaterialViewModelFactory(
+    private val repository: ContractorMaterialRepository,
+    private val siteRepository: SiteRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ContractorMaterialViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ContractorMaterialViewModel(repository, siteRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}

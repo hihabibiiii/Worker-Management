@@ -39,7 +39,9 @@ data class BackupPayload(
     var siteExpenses: List<SiteExpenseEntity> = emptyList(),
     var siteExpensePayments: List<SiteExpensePaymentEntity> = emptyList(),
     var materials: List<MaterialEntity> = emptyList(),
-    var materialTransactions: List<MaterialTransactionEntity> = emptyList()
+    var materialTransactions: List<MaterialTransactionEntity> = emptyList(),
+    var contractorMaterials: List<ContractorMaterialEntity> = emptyList(),
+    var contractorMaterialTransactions: List<ContractorMaterialTransactionEntity> = emptyList()
 )
 
 object BackupManager {
@@ -70,7 +72,9 @@ object BackupManager {
             siteExpenses = database.siteExpenseDao().getAllExpensesRaw(),
             siteExpensePayments = database.siteExpensePaymentDao().getAllPaymentsRaw(),
             materials = database.materialDao().getAllMaterialsRaw(),
-            materialTransactions = database.materialTransactionDao().getAllTransactionsRaw()
+            materialTransactions = database.materialTransactionDao().getAllTransactionsRaw(),
+            contractorMaterials = database.contractorMaterialDao().getAllMaterialsRaw(),
+            contractorMaterialTransactions = database.contractorMaterialTransactionDao().getAllTransactionsRaw()
         )
     }
 
@@ -410,6 +414,10 @@ object BackupManager {
             // 5. Insert Materials and Material Transactions
             payload.materials.forEach { database.materialDao().insertMaterial(it) }
             payload.materialTransactions.forEach { database.materialTransactionDao().insertTransaction(it) }
+
+            // 6. Insert Contractor Materials and Material Transactions
+            payload.contractorMaterials.forEach { database.contractorMaterialDao().insertMaterial(it) }
+            payload.contractorMaterialTransactions.forEach { database.contractorMaterialTransactionDao().insertTransaction(it) }
         }
     }
 }

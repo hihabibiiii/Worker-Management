@@ -23,9 +23,11 @@ import com.example.workermanager.data.entity.*
         SiteExpenseEntity::class,
         SiteExpensePaymentEntity::class,
         MaterialEntity::class,
-        MaterialTransactionEntity::class
+        MaterialTransactionEntity::class,
+        ContractorMaterialEntity::class,
+        ContractorMaterialTransactionEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -42,6 +44,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun siteExpensePaymentDao(): SiteExpensePaymentDao
     abstract fun materialDao(): MaterialDao
     abstract fun materialTransactionDao(): MaterialTransactionDao
+    abstract fun contractorMaterialDao(): ContractorMaterialDao
+    abstract fun contractorMaterialTransactionDao(): ContractorMaterialTransactionDao
 
     companion object {
         @Volatile
@@ -214,6 +218,41 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `contractor_materials` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`name` TEXT NOT NULL, " +
+                    "`category` TEXT NOT NULL, " +
+                    "`unit` TEXT NOT NULL, " +
+                    "`minStockLevel` REAL NOT NULL DEFAULT 0.0, " +
+                    "`notes` TEXT NOT NULL DEFAULT '', " +
+                    "`isActive` INTEGER NOT NULL DEFAULT 1, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "`updatedAt` INTEGER NOT NULL, " +
+                    "`isDeleted` INTEGER NOT NULL DEFAULT 0, " +
+                    "`deletedAt` INTEGER)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `contractor_material_transactions` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`materialId` INTEGER NOT NULL, " +
+                    "`siteId` INTEGER, " +
+                    "`transactionType` TEXT NOT NULL, " +
+                    "`transactionDate` TEXT NOT NULL, " +
+                    "`quantity` REAL NOT NULL, " +
+                    "`unit` TEXT NOT NULL, " +
+                    "`reasonOrNotes` TEXT NOT NULL DEFAULT '', " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "`isDeleted` INTEGER NOT NULL DEFAULT 0, " +
+                    "`deletedAt` INTEGER, " +
+                    "FOREIGN KEY(`materialId`) REFERENCES `contractor_materials`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                    "FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -229,7 +268,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_5_6,
                     MIGRATION_6_7,
                     MIGRATION_7_8,
-                    MIGRATION_8_9
+                    MIGRATION_8_9,
+                    MIGRATION_9_10
                 )
                 .build()
                 INSTANCE = instance

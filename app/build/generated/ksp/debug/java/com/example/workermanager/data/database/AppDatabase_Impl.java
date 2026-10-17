@@ -17,6 +17,10 @@ import com.example.workermanager.data.dao.ClientPaymentDao;
 import com.example.workermanager.data.dao.ClientPaymentDao_Impl;
 import com.example.workermanager.data.dao.ContractDao;
 import com.example.workermanager.data.dao.ContractDao_Impl;
+import com.example.workermanager.data.dao.ContractorMaterialDao;
+import com.example.workermanager.data.dao.ContractorMaterialDao_Impl;
+import com.example.workermanager.data.dao.ContractorMaterialTransactionDao;
+import com.example.workermanager.data.dao.ContractorMaterialTransactionDao_Impl;
 import com.example.workermanager.data.dao.MaterialDao;
 import com.example.workermanager.data.dao.MaterialDao_Impl;
 import com.example.workermanager.data.dao.MaterialTransactionDao;
@@ -75,10 +79,14 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile MaterialTransactionDao _materialTransactionDao;
 
+  private volatile ContractorMaterialDao _contractorMaterialDao;
+
+  private volatile ContractorMaterialTransactionDao _contractorMaterialTransactionDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(9) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(10) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL, `photoPath` TEXT, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
@@ -95,8 +103,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `site_expense_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `expenseId` INTEGER NOT NULL, `paymentDate` TEXT NOT NULL, `amount` REAL NOT NULL, `paidBy` TEXT NOT NULL, `paymentMethod` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`expenseId`) REFERENCES `site_expenses`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `materials` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `unit` TEXT NOT NULL, `minStockLevel` REAL NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `material_transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `materialId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `transactionType` TEXT NOT NULL, `transactionDate` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT NOT NULL, `ratePerUnit` REAL NOT NULL, `totalAmount` REAL NOT NULL, `supplierName` TEXT NOT NULL, `supplierPhone` TEXT NOT NULL, `invoiceNumber` TEXT NOT NULL, `workDescription` TEXT NOT NULL, `targetSiteId` INTEGER, `linkedExpenseId` INTEGER, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`materialId`) REFERENCES `materials`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `contractor_materials` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `unit` TEXT NOT NULL, `minStockLevel` REAL NOT NULL, `notes` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `contractor_material_transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `materialId` INTEGER NOT NULL, `siteId` INTEGER, `transactionType` TEXT NOT NULL, `transactionDate` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT NOT NULL, `reasonOrNotes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, FOREIGN KEY(`materialId`) REFERENCES `contractor_materials`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7148a00a5aa3cfec9adf49fd84ab2642')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '80e2abbbab1b1b8f3375136e9fa531e8')");
       }
 
       @Override
@@ -113,6 +123,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `site_expense_payments`");
         db.execSQL("DROP TABLE IF EXISTS `materials`");
         db.execSQL("DROP TABLE IF EXISTS `material_transactions`");
+        db.execSQL("DROP TABLE IF EXISTS `contractor_materials`");
+        db.execSQL("DROP TABLE IF EXISTS `contractor_material_transactions`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -416,9 +428,53 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoMaterialTransactions + "\n"
                   + " Found:\n" + _existingMaterialTransactions);
         }
+        final HashMap<String, TableInfo.Column> _columnsContractorMaterials = new HashMap<String, TableInfo.Column>(11);
+        _columnsContractorMaterials.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("category", new TableInfo.Column("category", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("unit", new TableInfo.Column("unit", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("minStockLevel", new TableInfo.Column("minStockLevel", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("notes", new TableInfo.Column("notes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("isActive", new TableInfo.Column("isActive", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("updatedAt", new TableInfo.Column("updatedAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterials.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysContractorMaterials = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesContractorMaterials = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoContractorMaterials = new TableInfo("contractor_materials", _columnsContractorMaterials, _foreignKeysContractorMaterials, _indicesContractorMaterials);
+        final TableInfo _existingContractorMaterials = TableInfo.read(db, "contractor_materials");
+        if (!_infoContractorMaterials.equals(_existingContractorMaterials)) {
+          return new RoomOpenHelper.ValidationResult(false, "contractor_materials(com.example.workermanager.data.entity.ContractorMaterialEntity).\n"
+                  + " Expected:\n" + _infoContractorMaterials + "\n"
+                  + " Found:\n" + _existingContractorMaterials);
+        }
+        final HashMap<String, TableInfo.Column> _columnsContractorMaterialTransactions = new HashMap<String, TableInfo.Column>(11);
+        _columnsContractorMaterialTransactions.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("materialId", new TableInfo.Column("materialId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("siteId", new TableInfo.Column("siteId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("transactionType", new TableInfo.Column("transactionType", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("transactionDate", new TableInfo.Column("transactionDate", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("quantity", new TableInfo.Column("quantity", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("unit", new TableInfo.Column("unit", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("reasonOrNotes", new TableInfo.Column("reasonOrNotes", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsContractorMaterialTransactions.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysContractorMaterialTransactions = new HashSet<TableInfo.ForeignKey>(2);
+        _foreignKeysContractorMaterialTransactions.add(new TableInfo.ForeignKey("contractor_materials", "CASCADE", "NO ACTION", Arrays.asList("materialId"), Arrays.asList("id")));
+        _foreignKeysContractorMaterialTransactions.add(new TableInfo.ForeignKey("sites", "SET NULL", "NO ACTION", Arrays.asList("siteId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesContractorMaterialTransactions = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoContractorMaterialTransactions = new TableInfo("contractor_material_transactions", _columnsContractorMaterialTransactions, _foreignKeysContractorMaterialTransactions, _indicesContractorMaterialTransactions);
+        final TableInfo _existingContractorMaterialTransactions = TableInfo.read(db, "contractor_material_transactions");
+        if (!_infoContractorMaterialTransactions.equals(_existingContractorMaterialTransactions)) {
+          return new RoomOpenHelper.ValidationResult(false, "contractor_material_transactions(com.example.workermanager.data.entity.ContractorMaterialTransactionEntity).\n"
+                  + " Expected:\n" + _infoContractorMaterialTransactions + "\n"
+                  + " Found:\n" + _existingContractorMaterialTransactions);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "7148a00a5aa3cfec9adf49fd84ab2642", "73567077e8a7666c6ba4396951a0b8a1");
+    }, "80e2abbbab1b1b8f3375136e9fa531e8", "ccc49036fe84666f16a5389b2ba11c17");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -429,7 +485,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments","site_attendance","site_expenses","site_expense_payments","materials","material_transactions");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "workers","attendance","payments","sites","worker_site_history","contracts","client_payments","site_attendance","site_expenses","site_expense_payments","materials","material_transactions","contractor_materials","contractor_material_transactions");
   }
 
   @Override
@@ -457,6 +513,8 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `site_expense_payments`");
       _db.execSQL("DELETE FROM `materials`");
       _db.execSQL("DELETE FROM `material_transactions`");
+      _db.execSQL("DELETE FROM `contractor_materials`");
+      _db.execSQL("DELETE FROM `contractor_material_transactions`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -486,6 +544,8 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(SiteExpensePaymentDao.class, SiteExpensePaymentDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(MaterialDao.class, MaterialDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(MaterialTransactionDao.class, MaterialTransactionDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(ContractorMaterialDao.class, ContractorMaterialDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(ContractorMaterialTransactionDao.class, ContractorMaterialTransactionDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -668,6 +728,34 @@ public final class AppDatabase_Impl extends AppDatabase {
           _materialTransactionDao = new MaterialTransactionDao_Impl(this);
         }
         return _materialTransactionDao;
+      }
+    }
+  }
+
+  @Override
+  public ContractorMaterialDao contractorMaterialDao() {
+    if (_contractorMaterialDao != null) {
+      return _contractorMaterialDao;
+    } else {
+      synchronized(this) {
+        if(_contractorMaterialDao == null) {
+          _contractorMaterialDao = new ContractorMaterialDao_Impl(this);
+        }
+        return _contractorMaterialDao;
+      }
+    }
+  }
+
+  @Override
+  public ContractorMaterialTransactionDao contractorMaterialTransactionDao() {
+    if (_contractorMaterialTransactionDao != null) {
+      return _contractorMaterialTransactionDao;
+    } else {
+      synchronized(this) {
+        if(_contractorMaterialTransactionDao == null) {
+          _contractorMaterialTransactionDao = new ContractorMaterialTransactionDao_Impl(this);
+        }
+        return _contractorMaterialTransactionDao;
       }
     }
   }

@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,9 +25,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.*
@@ -49,6 +54,11 @@ enum class ContractorMaterialTab(val title: String) {
     REPORTS("Reports")
 }
 
+val LightBlueBg = Color(0xFFF5F9FF)
+val PrimaryBlue = Color(0xFF0866E8)
+val DarkText = Color(0xFF0F172A)
+val SubtitleText = Color(0xFF64748B)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContractorMaterialScreen(
@@ -60,7 +70,6 @@ fun ContractorMaterialScreen(
     val scope = rememberCoroutineScope()
     val sites by siteViewModel.allSites.collectAsState(initial = emptyList())
     val materials by viewModel.allMaterials.collectAsState(initial = emptyList())
-    val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
@@ -103,129 +112,273 @@ fun ContractorMaterialScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = PrimaryBlue,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
                 )
             )
+        },
+        floatingActionButton = {
+            if (activeTab == ContractorMaterialTab.INVENTORY) {
+                ExtendedFloatingActionButton(
+                    onClick = { showAddMaterialDialog = true },
+                    containerColor = PrimaryBlue,
+                    contentColor = Color.White,
+                    icon = { Icon(Icons.Default.AddCircle, contentDescription = null) },
+                    text = { Text("Add Material", fontWeight = FontWeight.Bold) },
+                    shape = CircleShape
+                )
+            }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(LightBlueBg)
         ) {
-            // Dashboard Summary Cards (Quantities Only - NO Prices!)
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    QtySummaryBox("Total Material Types", summary.totalMaterialTypes.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                    QtySummaryBox("Total Added Qty", String.format("%.1f", summary.totalQuantity), Color(0xFF1565C0), Modifier.weight(1f))
-                    QtySummaryBox("Available Qty", String.format("%.1f", summary.availableQuantity), Color(0xFF2E7D32), Modifier.weight(1f))
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    QtySummaryBox("Quantity at Sites", String.format("%.1f", summary.quantityAtSites), Color(0xFFEF6C00), Modifier.weight(1f))
-                    QtySummaryBox("Total Broken/Lost Qty", String.format("%.1f", summary.totalBrokenLostQuantity), if (summary.totalBrokenLostQuantity > 0) Color(0xFFC62828) else Color(0xFF2E7D32), Modifier.weight(1f))
-                }
-            }
+            when (activeTab) {
+                ContractorMaterialTab.INVENTORY -> {
+                    // ONE CONTINUOUS LAZYCOLUMN SCROLLING THE ENTIRE PAGE TOGETHER
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // 1. SEARCH BAR AT THE VERY TOP
+                        item {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White,
+                                border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.2f)),
+                                shadowElevation = 2.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    BasicTextField(
+                                        value = searchQuery,
+                                        onValueChange = { viewModel.setSearchQuery(it) },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = DarkText),
+                                        decorationBox = { innerTextField ->
+                                            if (searchQuery.isEmpty()) {
+                                                Text("Search material name...", style = MaterialTheme.typography.bodyMedium, color = SubtitleText)
+                                            }
+                                            innerTextField()
+                                        }
+                                    )
+                                    IconButton(onClick = { viewModel.setSearchQuery("") }, modifier = Modifier.size(28.dp)) {
+                                        Icon(
+                                            imageVector = if (searchQuery.isNotEmpty()) Icons.Default.Close else Icons.Default.FilterList,
+                                            contentDescription = "Filter",
+                                            tint = PrimaryBlue,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-            // Tab Selection Header
-            ScrollableTabRow(
-                selectedTabIndex = activeTab.ordinal,
-                edgePadding = 16.dp,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary
-            ) {
-                ContractorMaterialTab.entries.forEach { tab ->
-                    Tab(
-                        selected = activeTab == tab,
-                        onClick = { activeTab = tab },
-                        text = { Text(tab.title, fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                        // 2. TOP 5 SUMMARY CARDS
+                        item {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                item { ModernSummaryCard("Total Types", summary.totalMaterialTypes.toString(), Icons.Default.Inventory2, Color(0xFFD6ECFF), PrimaryBlue) }
+                                item { ModernSummaryCard("Added", String.format("%.0f", summary.totalQuantity), Icons.Default.AddCircle, Color(0xFFE8DFFF), Color(0xFF6A1B9A)) }
+                                item { ModernSummaryCard("Available", String.format("%.0f", summary.availableQuantity), Icons.Default.CheckCircle, Color(0xFFD7FBE0), Color(0xFF2E7D32)) }
+                                item { ModernSummaryCard("At Sites", String.format("%.0f", summary.quantityAtSites), Icons.Default.LocationOn, Color(0xFFFFE8CC), Color(0xFFEF6C00)) }
+                                item { ModernSummaryCard("Broken/Lost", String.format("%.0f", summary.totalBrokenLostQuantity), Icons.Default.LinkOff, Color(0xFFFFDCE4), Color(0xFFC62828)) }
+                            }
+                        }
+
+                        // 3. CORE ACTION CHIPS (MATCHING "ALL CATEGORIES" CHIP STYLE EXACTLY)
+                        item {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Inventory",
+                                        icon = Icons.Default.Inventory2,
+                                        isSelected = activeTab == ContractorMaterialTab.INVENTORY,
+                                        onClick = { activeTab = ContractorMaterialTab.INVENTORY }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Send to Site",
+                                        icon = Icons.Default.Send,
+                                        isSelected = activeTab == ContractorMaterialTab.SEND,
+                                        onClick = { activeTab = ContractorMaterialTab.SEND }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Return from Site",
+                                        icon = Icons.Default.Reply,
+                                        isSelected = activeTab == ContractorMaterialTab.RETURN,
+                                        onClick = { activeTab = ContractorMaterialTab.RETURN }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Add Material",
+                                        icon = Icons.Default.AddCircle,
+                                        isSelected = showAddMaterialDialog,
+                                        onClick = { showAddMaterialDialog = true }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Broken / Lost",
+                                        icon = Icons.Default.LinkOff,
+                                        isSelected = activeTab == ContractorMaterialTab.BROKEN_LOST,
+                                        onClick = { activeTab = ContractorMaterialTab.BROKEN_LOST }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "History Ledger",
+                                        icon = Icons.Default.History,
+                                        isSelected = activeTab == ContractorMaterialTab.HISTORY,
+                                        onClick = { activeTab = ContractorMaterialTab.HISTORY }
+                                    )
+                                }
+                                item {
+                                    CategoryFilterChip(
+                                        label = "Site Reports",
+                                        icon = Icons.Default.Assessment,
+                                        isSelected = activeTab == ContractorMaterialTab.REPORTS,
+                                        onClick = { activeTab = ContractorMaterialTab.REPORTS }
+                                    )
+                                }
+                            }
+                        }
+
+                        // 4. HORIZONTAL CATEGORY CHIPS
+                        item {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                item {
+                                    CategoryFilterChip("All Categories", Icons.Default.GridView, selectedCategory == null, { viewModel.setSelectedCategory(null) })
+                                }
+                                items(ContractorMaterialCategory.entries) { cat ->
+                                    val catIcon = when (cat) {
+                                        ContractorMaterialCategory.SHUTTERING_ROOF_CASTING -> Icons.Default.Layers
+                                        ContractorMaterialCategory.CONSTRUCTION_TOOLS_MATERIALS -> Icons.Default.Build
+                                        ContractorMaterialCategory.MASON_TOOLS -> Icons.Default.Construction
+                                        ContractorMaterialCategory.OTHER_SITE_EQUIPMENT -> Icons.Default.PrecisionManufacturing
+                                        ContractorMaterialCategory.OTHER -> Icons.Default.Category
+                                    }
+                                    CategoryFilterChip(cat.displayName, catIcon, selectedCategory == cat, { viewModel.setSelectedCategory(cat) })
+                                }
+                            }
+                        }
+
+                        // 5. CONTRACTOR INVENTORY SECTION HEADING
+                        item {
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Inventory2, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Contractor Inventory (${stockModels.size})",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = DarkText
+                                        )
+                                    }
+                                    Icon(Icons.Default.Tune, contentDescription = "Decor", tint = PrimaryBlue.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                                }
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Box(modifier = Modifier.width(60.dp).height(3.dp).background(PrimaryBlue, shape = RoundedCornerShape(2.dp)))
+                            }
+                        }
+
+                        // 6. MATERIAL INVENTORY CARDS
+                        if (stockModels.isEmpty()) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text("No material inventory records found.", color = SubtitleText)
+                                }
+                            }
+                        } else {
+                            items(stockModels) { item ->
+                                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                    MaterialInventoryCard(item = item)
+                                }
+                            }
+                        }
+                    }
+                }
+                ContractorMaterialTab.SEND -> {
+                    SendMaterialTab(
+                        sites = sites,
+                        materials = materials.filter { it.isActive },
+                        viewModel = viewModel,
+                        onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
                     )
                 }
-            }
-
-            // Search and Category Filters
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.setSearchQuery(it) },
-                    placeholder = { Text("Search material name...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = selectedCategory == null,
-                            onClick = { viewModel.setSelectedCategory(null) },
-                            label = { Text("All Categories", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
-                        )
-                    }
-                    items(ContractorMaterialCategory.entries) { cat ->
-                        FilterChip(
-                            selected = selectedCategory == cat,
-                            onClick = { viewModel.setSelectedCategory(cat) },
-                            label = { Text(cat.displayName, fontSize = 11.sp) }
-                        )
-                    }
+                ContractorMaterialTab.RETURN -> {
+                    ReturnMaterialTab(
+                        sites = sites,
+                        materials = materials.filter { it.isActive },
+                        siteStocks = siteStockModels,
+                        viewModel = viewModel,
+                        onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
+                    )
                 }
-            }
-
-            // Tab Content Body
-            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
-                when (activeTab) {
-                    ContractorMaterialTab.INVENTORY -> {
-                        MaterialInventoryTab(
-                            stocks = stockModels,
-                            onAddMaterialClick = { showAddMaterialDialog = true },
-                            onDeactivate = { id -> viewModel.deactivateMaterial(id) }
-                        )
-                    }
-                    ContractorMaterialTab.SEND -> {
-                        SendMaterialTab(
-                            sites = sites,
-                            materials = materials.filter { it.isActive },
-                            viewModel = viewModel,
-                            onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
-                        )
-                    }
-                    ContractorMaterialTab.RETURN -> {
-                        ReturnMaterialTab(
-                            sites = sites,
-                            materials = materials.filter { it.isActive },
-                            siteStocks = siteStockModels,
-                            viewModel = viewModel,
-                            onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
-                        )
-                    }
-                    ContractorMaterialTab.BROKEN_LOST -> {
-                        BrokenLostMaterialTab(
-                            sites = sites,
-                            materials = materials.filter { it.isActive },
-                            viewModel = viewModel,
-                            onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
-                        )
-                    }
-                    ContractorMaterialTab.HISTORY -> {
-                        MaterialHistoryLedgerTab(
-                            transactions = transactions,
-                            onDelete = { txId -> viewModel.deleteTransaction(txId) }
-                        )
-                    }
-                    ContractorMaterialTab.REPORTS -> {
-                        SiteWiseReportTab(
-                            sites = sites,
-                            siteStocks = siteStockModels,
-                            inventory = stockModels,
-                            onExportExcel = {
-                                excelExportLauncher.launch(ExcelExporter.generateContractorMaterialFileName())
-                            }
-                        )
-                    }
+                ContractorMaterialTab.BROKEN_LOST -> {
+                    BrokenLostMaterialTab(
+                        sites = sites,
+                        materials = materials.filter { it.isActive },
+                        viewModel = viewModel,
+                        onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
+                    )
+                }
+                ContractorMaterialTab.HISTORY -> {
+                    MaterialHistoryLedgerTab(
+                        transactions = transactions,
+                        onDelete = { txId -> viewModel.deleteTransaction(txId) }
+                    )
+                }
+                ContractorMaterialTab.REPORTS -> {
+                    SiteWiseReportTab(
+                        sites = sites,
+                        siteStocks = siteStockModels,
+                        inventory = stockModels,
+                        onExportExcel = {
+                            excelExportLauncher.launch(ExcelExporter.generateContractorMaterialFileName())
+                        }
+                    )
                 }
             }
         }
@@ -245,86 +398,267 @@ fun ContractorMaterialScreen(
 }
 
 @Composable
-fun QtySummaryBox(label: String, value: String, valueColor: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun ModernSummaryCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+        modifier = Modifier.width(105.dp).height(60.dp),
+        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(label, style = MaterialTheme.typography.bodySmall, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.height(2.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = valueColor, maxLines = 1)
+            Text(title, style = MaterialTheme.typography.bodySmall, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = DarkText, maxLines = 1)
+            Spacer(modifier = Modifier.height(1.dp))
+            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = contentColor, maxLines = 1)
         }
     }
 }
 
 @Composable
-fun MaterialInventoryTab(
-    stocks: List<ContractorMaterialStockModel>,
-    onAddMaterialClick: () -> Unit,
-    onDeactivate: (Long) -> Unit
+fun ModernNavActionButton(
+    title: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) PrimaryBlue else Color.White,
+        contentColor = if (isSelected) Color.White else DarkText,
+        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
+        modifier = modifier.height(36.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) Color.White else PrimaryBlue,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun CategoryFilterChip(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) PrimaryBlue else Color.White,
+        contentColor = if (isSelected) Color.White else DarkText,
+        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
+        modifier = Modifier.height(32.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Contractor Inventory (${stocks.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Button(onClick = onAddMaterialClick, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("+ Add Material", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) Color.White else PrimaryBlue,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                maxLines = 1
+            )
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(8.dp))
+@Composable
+fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, if (item.isLowStock) Color(0xFFC62828).copy(alpha = 0.4f) else PrimaryBlue.copy(alpha = 0.15f)),
+        shadowElevation = 2.dp
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            // Left Thin Accent Line
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .fillMaxHeight()
+                    .background(if (item.isLowStock) Color(0xFFC62828) else PrimaryBlue)
+            )
 
-        if (stocks.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material inventory records found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(stocks) { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, if (item.isLowStock) Color(0xFFC62828) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            Column(modifier = Modifier.padding(12.dp).weight(1f)) {
+                // TOP ROW: Avatar, Name, Category, Availability Badge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column {
-                                    Text(item.material.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text("Category: ${item.material.category.displayName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                }
-                                if (item.isLowStock) {
-                                    Surface(color = Color(0xFFC62828).copy(alpha = 0.15f), shape = MaterialTheme.shapes.extraSmall) {
-                                        Text("LOW STOCK", color = Color(0xFFC62828), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(4.dp))
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Total Added: ${item.totalAddedQuantity} ${item.material.unit.displayName}", fontSize = 11.sp)
-                                Text("Available: ${item.availableQuantity} ${item.material.unit.displayName}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), fontSize = 12.sp)
-                                Text("At Sites: ${item.quantityAtSites} ${item.material.unit.displayName}", fontWeight = FontWeight.Bold, color = Color(0xFFEF6C00), fontSize = 12.sp)
-                            }
-
-                            if (item.brokenQuantity > 0 || item.lostQuantity > 0) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Broken: ${item.brokenQuantity} | Lost: ${item.lostQuantity}", fontSize = 11.sp, color = Color(0xFFC62828))
+                        // Category Icon Circle
+                        Surface(
+                            modifier = Modifier.size(42.dp),
+                            shape = CircleShape,
+                            color = PrimaryBlue.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = when (item.material.category) {
+                                        ContractorMaterialCategory.SHUTTERING_ROOF_CASTING -> Icons.Default.Layers
+                                        ContractorMaterialCategory.CONSTRUCTION_TOOLS_MATERIALS -> Icons.Default.Build
+                                        ContractorMaterialCategory.MASON_TOOLS -> Icons.Default.Construction
+                                        ContractorMaterialCategory.OTHER_SITE_EQUIPMENT -> Icons.Default.PrecisionManufacturing
+                                        ContractorMaterialCategory.OTHER -> Icons.Default.Category
+                                    },
+                                    contentDescription = null,
+                                    tint = PrimaryBlue,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = item.material.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkText,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = item.material.category.displayName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Availability Badge
+                    Surface(
+                        color = Color(0xFFD7FBE0),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
+                    ) {
+                        Text(
+                            text = "✓ ${String.format("%.0f", item.availableQuantity)} ${item.material.unit.displayName} Avail.",
+                            color = Color(0xFF2E7D32),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // MIDDLE/BOTTOM ROW: 3 Balanced Columns (Total, At Sites, Lost/Broken)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Column 1: Total
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Total Added", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${String.format("%.0f", item.totalAddedQuantity)} ${item.material.unit.displayName}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = PrimaryBlue
+                        )
+                    }
+
+                    VerticalDivider(modifier = Modifier.height(24.dp), color = Color(0xFFE2E8F0))
+
+                    // Column 2: At Sites
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("At Sites", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${String.format("%.0f", item.quantityAtSites)} ${item.material.unit.displayName}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color(0xFFEF6C00)
+                        )
+                    }
+
+                    VerticalDivider(modifier = Modifier.height(24.dp), color = Color(0xFFE2E8F0))
+
+                    // Column 3: Lost/Broken
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Lost / Broken", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        val totalLostBroken = item.brokenQuantity + item.lostQuantity
+                        Text(
+                            text = "${String.format("%.0f", totalLostBroken)} ${item.material.unit.displayName}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (totalLostBroken > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Details",
+                        tint = SubtitleText,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -359,7 +693,7 @@ fun SendMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Send Material to Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Send Material to Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
 
         // Site Selection
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -396,10 +730,10 @@ fun SendMaterialTab(
         }
 
         // Available Central Stock Box
-        Surface(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), shape = MaterialTheme.shapes.small) {
+        Surface(color = Color(0xFFD7FBE0), shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))) {
             Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Available Stock (Central):", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                Text("$availStock ${selectedMaterial?.unit?.displayName ?: ""}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, color = if (availStock > 0) Color(0xFF2E7D32) else Color(0xFFC62828))
+                Text("Available Stock (Central):", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                Text("${String.format("%.0f", availStock)} ${selectedMaterial?.unit?.displayName ?: ""}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, color = if (availStock > 0) Color(0xFF2E7D32) else Color(0xFFC62828))
             }
         }
 
@@ -446,7 +780,8 @@ fun SendMaterialTab(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = selectedSiteId != null && selectedMaterialId != null && (quantityStr.toDoubleOrNull() ?: 0.0) > 0
+            enabled = selectedSiteId != null && selectedMaterialId != null && (quantityStr.toDoubleOrNull() ?: 0.0) > 0,
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
         ) {
             Text("Send Material", fontWeight = FontWeight.Bold)
         }
@@ -481,7 +816,7 @@ fun ReturnMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Return Material From Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Return Material From Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
 
         // Site Selection
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -518,10 +853,10 @@ fun ReturnMaterialTab(
         }
 
         // Current Site Quantity Indicator
-        Surface(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), shape = MaterialTheme.shapes.small) {
+        Surface(color = Color(0xFFFFE8CC), shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, Color(0xFFEF6C00).copy(alpha = 0.3f))) {
             Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Quantity currently at this site:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                Text("$siteQty ${selectedMaterial?.unit?.displayName ?: ""}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, color = if (siteQty > 0) Color(0xFF2E7D32) else Color(0xFFC62828))
+                Text("Quantity currently at this site:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                Text("${String.format("%.0f", siteQty)} ${selectedMaterial?.unit?.displayName ?: ""}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, color = if (siteQty > 0) Color(0xFFEF6C00) else Color(0xFFC62828))
             }
         }
 
@@ -568,7 +903,8 @@ fun ReturnMaterialTab(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = selectedSiteId != null && selectedMaterialId != null && (quantityStr.toDoubleOrNull() ?: 0.0) > 0
+            enabled = selectedSiteId != null && selectedMaterialId != null && (quantityStr.toDoubleOrNull() ?: 0.0) > 0,
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
         ) {
             Text("Return Material", fontWeight = FontWeight.Bold)
         }
@@ -603,7 +939,7 @@ fun BrokenLostMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Mark Material Broken / Lost", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Mark Material Broken / Lost", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
@@ -716,7 +1052,7 @@ fun BrokenLostMaterialTab(
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = selectedMaterialId != null && (quantityStr.toDoubleOrNull() ?: 0.0) > 0,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
         ) {
             Text(if (isBrokenAction) "Confirm Mark Broken" else "Confirm Mark Lost", fontWeight = FontWeight.Bold)
         }
@@ -729,13 +1065,13 @@ fun MaterialHistoryLedgerTab(
     onDelete: (Long) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Material Transaction History (${transactions.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Material Transaction History (${transactions.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         if (transactions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material transactions recorded.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("No material transactions recorded.", color = SubtitleText)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -743,16 +1079,16 @@ fun MaterialHistoryLedgerTab(
                     val tx = model.transaction
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(model.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text("Site: ${model.siteName ?: "Central Inventory"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                    Text(Utils.formatDate(tx.transactionDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(model.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                                    Text("Site: ${model.siteName ?: "Central Inventory"}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                                    Text(Utils.formatDate(tx.transactionDate), style = MaterialTheme.typography.bodySmall, color = SubtitleText)
                                 }
 
                                 ContractorTxBadge(tx.transactionType)
@@ -760,10 +1096,10 @@ fun MaterialHistoryLedgerTab(
 
                             Spacer(modifier = Modifier.height(6.dp))
 
-                            Text("Quantity: ${tx.quantity} ${tx.unit}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Quantity: ${tx.quantity} ${tx.unit}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = DarkText)
 
                             if (tx.reasonOrNotes.isNotBlank()) {
-                                Text("Notes: ${tx.reasonOrNotes}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Notes: ${tx.reasonOrNotes}", style = MaterialTheme.typography.bodySmall, color = SubtitleText)
                             }
                         }
                     }
@@ -817,8 +1153,8 @@ fun SiteWiseReportTab(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Site-wise Material Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Button(onClick = onExportExcel, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+            Text("Site-wise Material Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+            Button(onClick = onExportExcel, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
                 Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Export Excel", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -845,20 +1181,20 @@ fun SiteWiseReportTab(
 
         if (filteredSiteStocks.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material assignments for this site.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("No material assignments for this site.", color = SubtitleText)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filteredSiteStocks) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Site: ${item.siteName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                            Text("Site: ${item.siteName}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
 
                             Spacer(modifier = Modifier.height(6.dp))
 
@@ -981,7 +1317,8 @@ fun AddMaterialDialog(
                         )
                     }
                 },
-                enabled = name.isNotBlank()
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
                 Text("Save Material", fontWeight = FontWeight.Bold)
             }

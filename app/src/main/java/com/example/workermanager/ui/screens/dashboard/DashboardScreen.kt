@@ -2,31 +2,33 @@ package com.example.workermanager.ui.screens.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.R
@@ -36,6 +38,12 @@ import com.example.workermanager.viewmodel.ContractViewModel
 import com.example.workermanager.viewmodel.DashboardViewModel
 import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerViewModel
+import kotlinx.coroutines.launch
+
+val DashBg = Color(0xFFF7F9FE)
+val DashPrimary = Color(0xFF0866E8)
+val DarkText = Color(0xFF0F172A)
+val SubtitleText = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,42 +106,66 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-
-                    ) {
+            // REDESIGNED HEADER BANNER WITH BLUE GRADIENT
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(Color(0xFF0756C9), Color(0xFF0789F5))
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.dashlogo),
                             contentDescription = "WorkCraft Logo",
                             contentScale = ContentScale.Fit,
                             modifier = Modifier
-                                .size(50.dp)
+                                .size(46.dp)
                                 .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(horizontalAlignment = Alignment.Start) {
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Work", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.White)
-                                Text("Craft", fontWeight = FontWeight.Bold,fontSize = 24.sp, color = Color.White)
+                                Text("Work", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                                Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFFFFD54F))
                             }
                             Text(
-                                "Smart Work Management",
+                                "Smart Workforce Management",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 10.sp,
-                                color = Color.White
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
-            )
+
+                    // Notification Bell / Settings Icon with Badge
+                    IconButton(onClick = onSettingsClick) {
+                        BadgedBox(
+                            badge = {
+                                Badge(containerColor = Color(0xFFFFD54F)) {
+                                    Text("•", color = Color.Black)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -141,18 +173,18 @@ fun DashboardScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .background(MaterialTheme.colorScheme.background)
+                .background(DashBg)
         ) {
-            // Site Selector Section
-            Column(modifier = Modifier.padding(16.dp)) {
+            Spacer(modifier = Modifier.height(12.dp))
 
-
+            // SECTION 1: SITE SELECTOR CARDS (Horizontally Scrollable)
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     item {
-                        SiteChip(
+                        SiteSelectorCard(
                             name = "All Sites",
                             isSelected = selectedSiteId == null,
                             onClick = { viewModel.updateSelectedSite(null) },
@@ -161,7 +193,7 @@ fun DashboardScreen(
                     }
                     items(sites) { site ->
                         val workDays by viewModel.getSiteWorkingDays(site.id).collectAsState(initial = 0)
-                        SiteChip(
+                        SiteSelectorCard(
                             name = site.name,
                             isSelected = selectedSiteId == site.id,
                             onClick = { viewModel.updateSelectedSite(site.id) },
@@ -171,244 +203,171 @@ fun DashboardScreen(
                 }
             }
 
-            // Stats Grid
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                StatBox(
-                    label = "Present",
-                    value = stats.presentWorkers.toString(),
-                    color = Color(0xFF2E7D32), // Darker Green
-                    modifier = Modifier.weight(1f)
-                )
-                StatBox(
-                    label = "Absent",
-                    value = stats.absentWorkers.toString(),
-                    color = Color(0xFFC62828), // Darker Red
-                    modifier = Modifier.weight(1f)
-                )
-                StatBox(
-                    label = "Half Day",
-                    value = stats.halfDayWorkers.toString(),
-                    color = Color(0xFFEF6C00), // Darker Orange
-                    modifier = Modifier.weight(1f)
-                )
-                StatBox(
-                    label = "Overtime",
-                    value = stats.overtimeWorkers.toString(),
-                    color = Color(0xFF1565C0), // Darker Blue
-                    modifier = Modifier.weight(1f)
-                )
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // SECTION 2: ATTENDANCE SUMMARY CARDS (4 Equal Grid Boxes)
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AttendanceStatCard(
+                        label = "Present",
+                        value = stats.presentWorkers.toString(),
+                        icon = Icons.Default.CheckCircle,
+                        bgColor = Color(0xFFDFF8EC),
+                        iconColor = Color(0xFF0AA65B),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AttendanceStatCard(
+                        label = "Absent",
+                        value = stats.absentWorkers.toString(),
+                        icon = Icons.Default.Cancel,
+                        bgColor = Color(0xFFFDE8EC),
+                        iconColor = Color(0xFFE63946),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AttendanceStatCard(
+                        label = "Half Day",
+                        value = stats.halfDayWorkers.toString(),
+                        icon = Icons.Default.AccessTime,
+                        bgColor = Color(0xFFFFF3DB),
+                        iconColor = Color(0xFFF28C00),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AttendanceStatCard(
+                        label = "Overtime",
+                        value = stats.overtimeWorkers.toString(),
+                        icon = Icons.Default.MoreTime,
+                        bgColor = Color(0xFFF0E9FF),
+                        iconColor = Color(0xFF6938E8),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Worker Payment Summary (Expandable dropdown card)
+            // SECTION 3: EXPANDABLE SUMMARY SECTIONS (Worker, Client, Site Expense)
             var isWorkerSummaryExpanded by remember { mutableStateOf(false) }
-
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isWorkerSummaryExpanded = !isWorkerSummaryExpanded },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Worker Payment Summary",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Icon(
-                            imageVector = if (isWorkerSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isWorkerSummaryExpanded) "Collapse Worker Summary" else "Expand Worker Summary",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-
-                    AnimatedVisibility(visible = isWorkerSummaryExpanded) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                            )
-                            SummaryRow(
-                                label = "Pending Balance",
-                                value = Utils.formatCurrency(stats.totalPending),
-                                isBold = true,
-                                valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Client Payments Summary (Always visible)
             var isClientSummaryExpanded by remember { mutableStateOf(false) }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isClientSummaryExpanded = !isClientSummaryExpanded },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Client Payments Summary",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Icon(
-                            imageVector = if (isClientSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isClientSummaryExpanded) "Collapse Summary" else "Expand Summary",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-
-                    AnimatedVisibility(visible = isClientSummaryExpanded) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            if (stats.totalContracts == 0) {
-                                Text(
-                                    "No clients or contracts added yet.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                            }
-                            SummaryRow("Total Contracts", stats.totalContracts.toString())
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                            )
-                            SummaryRow(
-                                label = "Total Remaining",
-                                value = Utils.formatCurrency(stats.totalContractRemaining),
-                                isBold = true,
-                                valueColor = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Expense Summary (Collapsible dropdown card)
             var isExpenseSummaryExpanded by remember { mutableStateOf(false) }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            // 1. Worker Payment Summary
+            ExpandableSummaryCard(
+                title = "Worker Payment Summary",
+                subtitle = "View worker wise payment details",
+                icon = Icons.Default.AccountBalanceWallet,
+                cardBg = Color(0xFFE2F0FF),
+                accentColor = Color(0xFF0866E8),
+                isExpanded = isWorkerSummaryExpanded,
+                onToggle = { isWorkerSummaryExpanded = !isWorkerSummaryExpanded }
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isExpenseSummaryExpanded = !isExpenseSummaryExpanded },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Sites Expense Summary",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Icon(
-                            imageVector = if (isExpenseSummaryExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isExpenseSummaryExpanded) "Collapse Expense Summary" else "Expand Expense Summary",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-
-                    AnimatedVisibility(visible = isExpenseSummaryExpanded) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense))
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense))
-                            Spacer(modifier = Modifier.height(6.dp))
-                            SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid))
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                            )
-                            SummaryRow(
-                                label = "Total Remain",
-                                value = Utils.formatCurrency(stats.totalExpenseRemain),
-                                isBold = true,
-                                valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
-                            )
-                        }
-                    }
-                }
+                Spacer(modifier = Modifier.height(12.dp))
+                SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF0866E8).copy(alpha = 0.2f))
+                SummaryRow(
+                    label = "Pending Balance",
+                    value = Utils.formatCurrency(stats.totalPending),
+                    isBold = true,
+                    valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                )
             }
 
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 2. Client Payments Summary
+            ExpandableSummaryCard(
+                title = "Client Payments Summary",
+                subtitle = "View client wise payment details",
+                icon = Icons.Default.Person,
+                cardBg = Color(0xFFDDF8F1),
+                accentColor = Color(0xFF0BAA75),
+                isExpanded = isClientSummaryExpanded,
+                onToggle = { isClientSummaryExpanded = !isClientSummaryExpanded }
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+                if (stats.totalContracts == 0) {
+                    Text(
+                        "No clients or contracts added yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DarkText.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                SummaryRow("Total Contracts", stats.totalContracts.toString())
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF0BAA75).copy(alpha = 0.2f))
+                SummaryRow(
+                    label = "Total Remaining",
+                    value = Utils.formatCurrency(stats.totalContractRemaining),
+                    isBold = true,
+                    valueColor = Color(0xFFC62828)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 3. Sites Expense Summary
+            ExpandableSummaryCard(
+                title = "Sites Expense Summary",
+                subtitle = "View site wise expenses details",
+                icon = Icons.Default.CurrencyRupee,
+                cardBg = Color(0xFFEEE8FF),
+                accentColor = Color(0xFF6938E8),
+                isExpanded = isExpenseSummaryExpanded,
+                onToggle = { isExpenseSummaryExpanded = !isExpenseSummaryExpanded }
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+                SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense))
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense))
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF6938E8).copy(alpha = 0.2f))
+                SummaryRow(
+                    label = "Total Remain",
+                    value = Utils.formatCurrency(stats.totalExpenseRemain),
+                    isBold = true,
+                    valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Find Existing Backup Prompt (Visible when database is empty)
             if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {
-                Card(
+                Surface(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, DashPrimary.copy(alpha = 0.2f)),
+                    shadowElevation = 2.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Backup, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.Backup, contentDescription = null, tint = DashPrimary)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             "If you backed up your WorkCraft data on this device previously, locate your backup file in Documents/WorkCraftBackups to restore your records.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = SubtitleText
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedButton(
-                            onClick = {
-                                selectBackupFileLauncher.launch(arrayOf("application/json", "*/*"))
-                            },
+                            onClick = { selectBackupFileLauncher.launch(arrayOf("application/json", "*/*")) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -417,45 +376,100 @@ fun DashboardScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
-            // Quick Actions
-            Text(
-                "Quick Actions",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // SECTION 4: QUICK ACTIONS SECTION (3x2 GRID)
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.FlashOn, contentDescription = null, tint = DashPrimary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                    }
+
+                    TextButton(onClick = onNavigateToReports) {
+                        Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DashPrimary)
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = DashPrimary, modifier = Modifier.size(16.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Row 1 (Add Worker, Attendance, Add Site)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ActionCard("Add New Worker", Icons.Default.PersonAdd, { showAddWorkerDialog = true }, Modifier.weight(1f))
-                    ActionCard("Attendance", Icons.Default.EventAvailable, onMarkAttendance, Modifier.weight(1f))
-                    ActionCard("Add New Site", Icons.Default.AddLocation, { showAddSiteDialog = true }, Modifier.weight(1f))
+                    QuickActionGridCard(
+                        label = "Add New Worker",
+                        icon = Icons.Default.PersonAdd,
+                        cardBg = Color(0xFFE2EEFF),
+                        iconColor = Color(0xFF0866E8),
+                        onClick = { showAddWorkerDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionGridCard(
+                        label = "Attendance",
+                        icon = Icons.Default.EventAvailable,
+                        cardBg = Color(0xFFDFF8EC),
+                        iconColor = Color(0xFF0B9650),
+                        onClick = onMarkAttendance,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionGridCard(
+                        label = "Add New Site",
+                        icon = Icons.Default.AddLocationAlt,
+                        cardBg = Color(0xFFF0E9FF),
+                        iconColor = Color(0xFF6938E8),
+                        onClick = { showAddSiteDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Row 2 (Add Contract, Reports, Add Expense)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ActionCard("Add Contract", Icons.AutoMirrored.Filled.Assignment, { showAddContractDialog = true }, Modifier.weight(1f))
-                    ActionCard("Reports", Icons.Default.Assessment, onNavigateToReports, Modifier.weight(1f))
-                    ActionCard("Add Site Expense", Icons.AutoMirrored.Filled.ReceiptLong, { showAddExpenseDialog = true }, Modifier.weight(1f))
-
+                    QuickActionGridCard(
+                        label = "Add Contract",
+                        icon = Icons.AutoMirrored.Filled.Assignment,
+                        cardBg = Color(0xFFFFF0D9),
+                        iconColor = Color(0xFFEF8500),
+                        onClick = { showAddContractDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionGridCard(
+                        label = "Reports",
+                        icon = Icons.Default.BarChart,
+                        cardBg = Color(0xFFDFF5FC),
+                        iconColor = Color(0xFF08A3C7),
+                        onClick = onNavigateToReports,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionGridCard(
+                        label = "Add Expense",
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                        cardBg = Color(0xFFFCE5EB),
+                        iconColor = Color(0xFFD83D65),
+                        onClick = { showAddExpenseDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
 
+        // Dialogs & Prompts
         if (showAddWorkerDialog) {
             com.example.workermanager.ui.screens.workers.WorkerDialog(
                 worker = null,
@@ -518,7 +532,7 @@ fun DashboardScreen(
                         Text(
                             "We found a previous WorkCraft backup containing ${payload.workers.size} workers and ${payload.sites.size} sites. Would you like to restore your records?",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = DarkText
                         )
                     }
                 },
@@ -536,14 +550,15 @@ fun DashboardScreen(
                                     android.widget.Toast.makeText(context, "Restoration failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                                 }
                             }
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DashPrimary)
                     ) {
                         Text("Restore Data", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { existingAutoBackup = null }) {
-                        Text("Start Fresh", color = MaterialTheme.colorScheme.onSurface)
+                        Text("Start Fresh", color = DarkText)
                     }
                 }
             )
@@ -552,79 +567,220 @@ fun DashboardScreen(
 }
 
 @Composable
-fun SiteChip(
-    name: String, 
-    isSelected: Boolean, 
+fun SiteSelectorCard(
+    name: String,
+    isSelected: Boolean,
     onClick: () -> Unit,
     workDays: Int? = null
 ) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        tonalElevation = 2.dp,
-        modifier = Modifier.defaultMinSize(minHeight = if (workDays != null) 48.dp else 40.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) Color(0xFF1677F2) else Color.White,
+        contentColor = if (isSelected) Color.White else DarkText,
+        border = BorderStroke(1.dp, if (isSelected) Color(0xFF1677F2) else Color(0xFFCBD5E1)),
+        shadowElevation = if (isSelected) 3.dp else 1.dp,
+        modifier = Modifier.defaultMinSize(minHeight = 52.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = name,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                softWrap = true,
-                maxLines = 2
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = null,
+                tint = if (isSelected) Color.White else Color(0xFF1677F2),
+                modifier = Modifier.size(18.dp)
             )
-            if (workDays != null) {
-                Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
                 Text(
-                    text = "Work : $workDays Days",
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Center,
-                    softWrap = true,
-                    maxLines = 2
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (workDays != null) {
+                    Text(
+                        text = "Work : $workDays Days",
+                        color = if (isSelected) Color.White.copy(alpha = 0.85f) else SubtitleText,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun StatBox(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun AttendanceStatCard(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    bgColor: Color,
+    iconColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(60.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.2f)),
+        shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
+            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = color,
-                maxLines = 1
+            Text(label, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText, maxLines = 1)
+            Spacer(modifier = Modifier.height(1.dp))
+            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = iconColor, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+fun ExpandableSummaryCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    cardBg: Color,
+    accentColor: Color,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f)),
+        shadowElevation = 2.dp
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            // Colored Vertical Accent on the Left
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .fillMaxHeight()
+                    .background(accentColor)
             )
+
+            Column(modifier = Modifier.padding(14.dp).weight(1f)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onToggle() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(38.dp),
+                            shape = CircleShape,
+                            color = cardBg
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Column {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkText,
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SubtitleText,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = DarkText,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                AnimatedVisibility(visible = isExpanded) {
+                    Column {
+                        content()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickActionGridCard(
+    label: String,
+    icon: ImageVector,
+    cardBg: Color,
+    iconColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(72.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = cardBg,
+        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.2f)),
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkText,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = iconColor, modifier = Modifier.size(12.dp))
+            }
         }
     }
 }
@@ -636,49 +792,15 @@ fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            label, 
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = DarkText
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface
+            color = valueColor ?: DarkText
         )
-    }
-}
-
-@Composable
-fun ActionCard(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon, 
-                contentDescription = null, 
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = label, 
-                fontSize = 10.sp, 
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
-        }
     }
 }

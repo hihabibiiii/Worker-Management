@@ -153,10 +153,11 @@ class MainActivity : ComponentActivity() {
                         if (allNavItems.any { it.route == currentDestination?.route }) {
                             NavigationBar(
                                 modifier = Modifier.height(66.dp),
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 3.dp
+                                containerColor = androidx.compose.ui.graphics.Color.White,
+                                tonalElevation = 4.dp
                             ) {
                                 primaryNavItems.forEach { screen ->
+                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                                     NavigationBarItem(
                                         icon = {
                                             screen.icon?.let {
@@ -173,10 +174,17 @@ class MainActivity : ComponentActivity() {
                                                 maxLines = 1,
                                                 softWrap = false,
                                                 fontSize = 10.sp,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.Bold
                                             ) 
                                         },
-                                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                        selected = isSelected,
+                                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                            selectedIconColor = androidx.compose.ui.graphics.Color(0xFF063DC5),
+                                            selectedTextColor = androidx.compose.ui.graphics.Color(0xFF063DC5),
+                                            unselectedIconColor = androidx.compose.ui.graphics.Color(0xFF64748B),
+                                            unselectedTextColor = androidx.compose.ui.graphics.Color(0xFF64748B),
+                                            indicatorColor = androidx.compose.ui.graphics.Color(0xFF0866E8).copy(alpha = 0.12f)
+                                        ),
                                         onClick = {
                                             navigateToTab(screen.route)
                                         }

@@ -206,7 +206,7 @@ fun ContractorMaterialScreen(
                             }
                         }
 
-                        // 3. CORE ACTION CHIPS (MATCHING "ALL CATEGORIES" CHIP STYLE EXACTLY)
+                        // 3. CORE ACTION CHIPS (STYLED WITH A 5% PROPORTIONAL SIZE INCREASE)
                         item {
                             LazyRow(
                                 modifier = Modifier
@@ -216,7 +216,7 @@ fun ContractorMaterialScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Inventory",
                                         icon = Icons.Default.Inventory2,
                                         isSelected = activeTab == ContractorMaterialTab.INVENTORY,
@@ -224,7 +224,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Send to Site",
                                         icon = Icons.Default.Send,
                                         isSelected = activeTab == ContractorMaterialTab.SEND,
@@ -232,7 +232,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Return from Site",
                                         icon = Icons.Default.Reply,
                                         isSelected = activeTab == ContractorMaterialTab.RETURN,
@@ -240,7 +240,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Add Material",
                                         icon = Icons.Default.AddCircle,
                                         isSelected = showAddMaterialDialog,
@@ -248,7 +248,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Broken / Lost",
                                         icon = Icons.Default.LinkOff,
                                         isSelected = activeTab == ContractorMaterialTab.BROKEN_LOST,
@@ -256,7 +256,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "History Ledger",
                                         icon = Icons.Default.History,
                                         isSelected = activeTab == ContractorMaterialTab.HISTORY,
@@ -264,7 +264,7 @@ fun ContractorMaterialScreen(
                                     )
                                 }
                                 item {
-                                    CategoryFilterChip(
+                                    CoreActionChip(
                                         label = "Site Reports",
                                         icon = Icons.Default.Assessment,
                                         isSelected = activeTab == ContractorMaterialTab.REPORTS,
@@ -426,8 +426,8 @@ fun ModernSummaryCard(
 }
 
 @Composable
-fun ModernNavActionButton(
-    title: String,
+fun CoreActionChip(
+    label: String,
     icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -439,10 +439,10 @@ fun ModernNavActionButton(
         color = if (isSelected) PrimaryBlue else Color.White,
         contentColor = if (isSelected) Color.White else DarkText,
         border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
-        modifier = modifier.height(36.dp)
+        modifier = modifier.height(40.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp),
+            modifier = Modifier.padding(horizontal = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -454,8 +454,8 @@ fun ModernNavActionButton(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = title,
-                fontSize = 11.sp,
+                text = label,
+                fontSize = 11.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -477,7 +477,7 @@ fun CategoryFilterChip(
         color = if (isSelected) PrimaryBlue else Color.White,
         contentColor = if (isSelected) Color.White else DarkText,
         border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
-        modifier = Modifier.height(32.dp)
+        modifier = Modifier.height(40.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),

@@ -15,7 +15,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -151,7 +151,7 @@ fun WorkerDetailsScreen(
         }
     }
 
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val screenBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF1F6FD)
 
     Scaffold(
@@ -562,7 +562,7 @@ fun WorkerProfileCard(
     sites: List<SiteEntity>,
     onPickPhoto: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
     val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
@@ -742,7 +742,7 @@ fun WorkerAvatarLarge(
 
 @Composable
 fun ActiveStatusBadge(isActive: Boolean) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val bgColor = if (isActive) {
         if (isDark) Color(0xFF0F3818) else Color(0xFFDDFBE7)
     } else {
@@ -782,7 +782,7 @@ fun WorkerDetailChip(
     value: String,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD)
     val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
     val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
@@ -889,7 +889,7 @@ fun AttendanceSummaryCard(
     borderColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val background = if (isDark) darkBgColor else bgColor
     val border = if (isDark) contentColor.copy(alpha = 0.3f) else borderColor
     val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
@@ -943,7 +943,7 @@ fun AttendanceSummaryCard(
 // -----------------------------------------------------------------------------
 @Composable
 fun FinancialSummaryCard(stats: WorkerStats) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) Color(0xFF1B2735) else Color(0xFFEDF5FF)
     val borderColor = if (isDark) Color(0xFF2C3E55) else Color(0xFFC9DDFB)
     val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
@@ -1144,7 +1144,7 @@ fun HistoryTabsContainer(
     selectedTab: WorkerHistoryTab,
     onTabSelected: (WorkerHistoryTab) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val containerBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val border = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
     val unselectedBg = if (isDark) Color(0xFF2A2D3A) else Color(0xFFE8E6F1)
@@ -1201,7 +1201,7 @@ fun AttendanceHistoryCard(
     attendance: AttendanceEntity,
     siteName: String
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
     val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
@@ -1266,7 +1266,7 @@ fun AttendanceHistoryCard(
 
 @Composable
 fun AttendanceStatusBadge(status: AttendanceStatus) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val (bgColor, textColor) = when (status) {
         AttendanceStatus.PRESENT -> Pair(if (isDark) Color(0xFF0F3818) else Color(0xFFDDFBE7), Color(0xFF087A2D))
         AttendanceStatus.HALF_DAY -> Pair(if (isDark) Color(0xFF382C0F) else Color(0xFFFFF1D2), Color(0xFFD99000))
@@ -1293,7 +1293,7 @@ fun SiteHistoryCard(
     history: WorkerSiteHistoryEntity,
     siteName: String
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
     val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
@@ -1366,7 +1366,7 @@ fun PaymentHistoryCard(
     onDelete: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
     val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)

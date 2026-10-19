@@ -14,7 +14,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -88,7 +87,7 @@ fun WorkersScreen(
     var workerToEdit by remember { mutableStateOf<WorkerEntity?>(null) }
     var workerToDelete by remember { mutableStateOf<WorkerEntity?>(null) }
 
-    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val screenBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF1F6FD)
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color(0xFFFFFFFF)
     val textPrimary = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF17243A)
@@ -663,12 +662,30 @@ fun WorkerDialog(
     var newSiteAddress by remember { mutableStateOf("") }
     var newSiteManager by remember { mutableStateOf("") }
 
-    val isDark = isSystemInDarkTheme()
-    val dialogBg = if (isDark) Color(0xFF1E2A38) else Color(0xFFE6F2FF)
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val dialogBg = if (isDark) MaterialTheme.colorScheme.surface else Color(0xFFE6F2FF)
     val fieldContainerBg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color.White
     val titleTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
     val secondaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
     val primaryColor = Color(0xFF1976ED)
+
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = fieldContainerBg,
+        unfocusedContainerColor = fieldContainerBg,
+        disabledContainerColor = fieldContainerBg,
+        errorContainerColor = fieldContainerBg,
+        focusedTextColor = primaryTextColor,
+        unfocusedTextColor = primaryTextColor,
+        focusedLabelColor = primaryColor,
+        unfocusedLabelColor = secondaryTextColor,
+        focusedLeadingIconColor = primaryColor,
+        unfocusedLeadingIconColor = primaryColor,
+        focusedTrailingIconColor = primaryColor,
+        unfocusedTrailingIconColor = primaryColor,
+        focusedBorderColor = primaryColor,
+        unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
+    )
 
     val context = LocalContext.current
 
@@ -768,14 +785,7 @@ fun WorkerDialog(
                         supportingText = nameError?.let { { Text(it) } },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = fieldContainerBg,
-                            unfocusedContainerColor = fieldContainerBg,
-                            disabledContainerColor = fieldContainerBg,
-                            errorContainerColor = fieldContainerBg,
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                        ),
+                        colors = textFieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -794,12 +804,7 @@ fun WorkerDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = fieldContainerBg,
-                            unfocusedContainerColor = fieldContainerBg,
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                        ),
+                        colors = textFieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -824,12 +829,7 @@ fun WorkerDialog(
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = fieldContainerBg,
-                                unfocusedContainerColor = fieldContainerBg,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                            ),
+                            colors = textFieldColors,
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -842,7 +842,13 @@ fun WorkerDialog(
                         ) {
                             WorkerType.entries.forEach { wType ->
                                 DropdownMenuItem(
-                                    text = { Text(wType.name.lowercase().replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Medium) },
+                                    text = {
+                                        Text(
+                                            text = wType.name.lowercase().replaceFirstChar { it.uppercase() },
+                                            fontWeight = FontWeight.Medium,
+                                            color = primaryTextColor
+                                        )
+                                    },
                                     onClick = {
                                         type = wType
                                         typeExpanded = false
@@ -873,12 +879,7 @@ fun WorkerDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = fieldContainerBg,
-                                unfocusedContainerColor = fieldContainerBg,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                            ),
+                            colors = textFieldColors,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -898,12 +899,7 @@ fun WorkerDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = fieldContainerBg,
-                                unfocusedContainerColor = fieldContainerBg,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                            ),
+                            colors = textFieldColors,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -930,12 +926,7 @@ fun WorkerDialog(
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = fieldContainerBg,
-                                unfocusedContainerColor = fieldContainerBg,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                            ),
+                            colors = textFieldColors,
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -947,7 +938,13 @@ fun WorkerDialog(
                             modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("No Site Assigned", fontWeight = FontWeight.Normal) },
+                                text = {
+                                    Text(
+                                        text = "No Site Assigned",
+                                        fontWeight = FontWeight.Normal,
+                                        color = primaryTextColor
+                                    )
+                                },
                                 onClick = {
                                     siteId = null
                                     siteExpanded = false
@@ -955,7 +952,13 @@ fun WorkerDialog(
                             )
                             sites.forEach { site ->
                                 DropdownMenuItem(
-                                    text = { Text(site.name, fontWeight = FontWeight.Medium) },
+                                    text = {
+                                        Text(
+                                            text = site.name,
+                                            fontWeight = FontWeight.Medium,
+                                            color = primaryTextColor
+                                        )
+                                    },
                                     onClick = {
                                         siteId = site.id
                                         siteExpanded = false
@@ -997,12 +1000,7 @@ fun WorkerDialog(
                             )
                         },
                         shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = fieldContainerBg,
-                            unfocusedContainerColor = fieldContainerBg,
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-                        ),
+                        colors = textFieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 

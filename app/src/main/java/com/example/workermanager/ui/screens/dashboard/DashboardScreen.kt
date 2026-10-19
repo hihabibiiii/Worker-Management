@@ -600,7 +600,7 @@ fun AttendanceStatCard(
                 tint = iconColor,
                 modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.width(3.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start

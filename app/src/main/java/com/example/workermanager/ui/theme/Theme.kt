@@ -41,22 +41,23 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = BusinessBlue,
+    primary = Color(0xFF0866E8),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE8F0FE),
-    onPrimaryContainer = Color(0xFF174EA6),
-    secondary = PurpleGrey40,
+    primaryContainer = Color(0xFFE2F0FF),
+    onPrimaryContainer = Color(0xFF0F172A),
+    secondary = Color(0xFF1677F2),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFF1F3F4),
-    onSecondaryContainer = Color(0xFF1F1F1F),
-    tertiary = Pink40,
+    secondaryContainer = Color(0xFFF1F5F9),
+    onSecondaryContainer = Color(0xFF0F172A),
+    tertiary = Color(0xFF6938E8),
     onTertiary = Color.White,
-    background = Color(0xFFF5F7FA),
-    onBackground = Color(0xFF1A1A1A),
+    background = Color(0xFFF7F9FE),
+    onBackground = Color(0xFF0F172A),
     surface = Color.White,
-    onSurface = Color(0xFF1A1A1A),
-    onSurfaceVariant = Color(0xFF4A4A4A),
-    outline = Color(0xFF757575)
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF64748B),
+    outline = Color(0xFFCBD5E1)
 )
 
 @Composable
@@ -87,7 +88,7 @@ fun WorkerManagerTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = false
+            insetsController.isAppearanceLightStatusBars = !useDarkTheme
         }
     }
 

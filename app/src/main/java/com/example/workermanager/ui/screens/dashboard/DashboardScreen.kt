@@ -2,9 +2,9 @@ package com.example.workermanager.ui.screens.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -20,18 +20,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.workermanager.R
 import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.ContractViewModel
@@ -39,11 +35,6 @@ import com.example.workermanager.viewmodel.DashboardViewModel
 import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerViewModel
 import kotlinx.coroutines.launch
-
-val DashBg = Color(0xFFF7F9FE)
-val DashPrimary = Color(0xFF0866E8)
-val DarkText = Color(0xFF0F172A)
-val SubtitleText = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +59,12 @@ fun DashboardScreen(
     val sites by siteViewModel.allSites.collectAsState()
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val totalSiteWorkingDays by viewModel.totalSiteWorkingDays.collectAsState()
+
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val dashBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF7F9FE)
+    val dashPrimary = MaterialTheme.colorScheme.primary
+    val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A)
+    val subtitleText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B)
 
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
@@ -118,7 +115,7 @@ fun DashboardScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .background(DashBg)
+                .background(dashBg)
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -133,7 +130,8 @@ fun DashboardScreen(
                             name = "All Sites",
                             isSelected = selectedSiteId == null,
                             onClick = { viewModel.updateSelectedSite(null) },
-                            workDays = totalSiteWorkingDays
+                            workDays = totalSiteWorkingDays,
+                            isDark = isDark
                         )
                     }
                     items(sites) { site ->
@@ -142,7 +140,8 @@ fun DashboardScreen(
                             name = site.name,
                             isSelected = selectedSiteId == site.id,
                             onClick = { viewModel.updateSelectedSite(site.id) },
-                            workDays = workDays
+                            workDays = workDays,
+                            isDark = isDark
                         )
                     }
                 }
@@ -160,32 +159,32 @@ fun DashboardScreen(
                         label = "Present",
                         value = stats.presentWorkers.toString(),
                         icon = Icons.Default.CheckCircle,
-                        bgColor = Color(0xFFDFF8EC),
-                        iconColor = Color(0xFF0AA65B),
+                        bgColor = if (isDark) Color(0xFF1B382B) else Color(0xFFDFF8EC),
+                        iconColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0AA65B),
                         modifier = Modifier.weight(1f)
                     )
                     AttendanceStatCard(
                         label = "Absent",
                         value = stats.absentWorkers.toString(),
                         icon = Icons.Default.Cancel,
-                        bgColor = Color(0xFFFDE8EC),
-                        iconColor = Color(0xFFE63946),
+                        bgColor = if (isDark) Color(0xFF3E1F24) else Color(0xFFFDE8EC),
+                        iconColor = if (isDark) Color(0xFFFF5252) else Color(0xFFE63946),
                         modifier = Modifier.weight(1f)
                     )
                     AttendanceStatCard(
                         label = "Half Day",
                         value = stats.halfDayWorkers.toString(),
                         icon = Icons.Default.AccessTime,
-                        bgColor = Color(0xFFFFF3DB),
-                        iconColor = Color(0xFFF28C00),
+                        bgColor = if (isDark) Color(0xFF3B2E19) else Color(0xFFFFF3DB),
+                        iconColor = if (isDark) Color(0xFFFFA726) else Color(0xFFF28C00),
                         modifier = Modifier.weight(1f)
                     )
                     AttendanceStatCard(
                         label = "Overtime",
                         value = stats.overtimeWorkers.toString(),
                         icon = Icons.Default.MoreTime,
-                        bgColor = Color(0xFFF0E9FF),
-                        iconColor = Color(0xFF6938E8),
+                        bgColor = if (isDark) Color(0xFF2B1F47) else Color(0xFFF0E9FF),
+                        iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -203,23 +202,25 @@ fun DashboardScreen(
                 title = "Worker Payment Summary",
                 subtitle = "View worker wise payment details",
                 icon = Icons.Default.AccountBalanceWallet,
-                cardBg = Color(0xFFE2F0FF),
-                accentColor = Color(0xFF0866E8),
+                cardBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFE2F0FF),
+                accentColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E8),
                 isExpanded = isWorkerSummaryExpanded,
+                isDark = isDark,
                 onToggle = { isWorkerSummaryExpanded = !isWorkerSummaryExpanded }
             ) {
                 Spacer(modifier = Modifier.height(12.dp))
-                SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned))
+                SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned))
+                SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF0866E8).copy(alpha = 0.2f))
+                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid), darkText = darkText)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = dashPrimary.copy(alpha = 0.2f))
                 SummaryRow(
                     label = "Pending Balance",
                     value = Utils.formatCurrency(stats.totalPending),
                     isBold = true,
-                    valueColor = if (stats.totalPending > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                    valueColor = if (stats.totalPending > 0) Color(0xFFFF5252) else Color(0xFF2ECC71),
+                    darkText = darkText
                 )
             }
 
@@ -230,9 +231,10 @@ fun DashboardScreen(
                 title = "Client Payments Summary",
                 subtitle = "View client wise payment details",
                 icon = Icons.Default.Person,
-                cardBg = Color(0xFFDDF8F1),
-                accentColor = Color(0xFF0BAA75),
+                cardBg = if (isDark) Color(0xFF1B382B) else Color(0xFFDDF8F1),
+                accentColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0BAA75),
                 isExpanded = isClientSummaryExpanded,
+                isDark = isDark,
                 onToggle = { isClientSummaryExpanded = !isClientSummaryExpanded }
             ) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -240,21 +242,22 @@ fun DashboardScreen(
                     Text(
                         "No clients or contracts added yet.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = DarkText.copy(alpha = 0.8f),
+                        color = darkText.copy(alpha = 0.8f),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
-                SummaryRow("Total Contracts", stats.totalContracts.toString())
+                SummaryRow("Total Contracts", stats.totalContracts.toString(), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable))
+                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived))
+                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived), darkText = darkText)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF0BAA75).copy(alpha = 0.2f))
                 SummaryRow(
                     label = "Total Remaining",
                     value = Utils.formatCurrency(stats.totalContractRemaining),
                     isBold = true,
-                    valueColor = Color(0xFFC62828)
+                    valueColor = Color(0xFFFF5252),
+                    darkText = darkText
                 )
             }
 
@@ -265,23 +268,25 @@ fun DashboardScreen(
                 title = "Sites Expense Summary",
                 subtitle = "View site wise expenses details",
                 icon = Icons.Default.CurrencyRupee,
-                cardBg = Color(0xFFEEE8FF),
-                accentColor = Color(0xFF6938E8),
+                cardBg = if (isDark) Color(0xFF2B1F47) else Color(0xFFEEE8FF),
+                accentColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
                 isExpanded = isExpenseSummaryExpanded,
+                isDark = isDark,
                 onToggle = { isExpenseSummaryExpanded = !isExpenseSummaryExpanded }
             ) {
                 Spacer(modifier = Modifier.height(12.dp))
-                SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense))
+                SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense))
+                SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense), darkText = darkText)
                 Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid))
+                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid), darkText = darkText)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF6938E8).copy(alpha = 0.2f))
                 SummaryRow(
                     label = "Total Remain",
                     value = Utils.formatCurrency(stats.totalExpenseRemain),
                     isBold = true,
-                    valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                    valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFFF5252) else Color(0xFF2ECC71),
+                    darkText = darkText
                 )
             }
 
@@ -294,21 +299,21 @@ fun DashboardScreen(
                         .padding(horizontal = 16.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.dp, DashPrimary.copy(alpha = 0.2f)),
+                    color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
+                    border = BorderStroke(1.dp, dashPrimary.copy(alpha = 0.2f)),
                     shadowElevation = 2.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Backup, contentDescription = null, tint = DashPrimary)
+                            Icon(Icons.Default.Backup, contentDescription = null, tint = dashPrimary)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             "If you backed up your WorkCraft data on this device previously, locate your backup file in Documents/WorkCraftBackups to restore your records.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SubtitleText
+                            color = subtitleText
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedButton(
@@ -332,15 +337,15 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.FlashOn, contentDescription = null, tint = DashPrimary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.FlashOn, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                     }
 
                     TextButton(onClick = onNavigateToReports) {
-                        Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DashPrimary)
+                        Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = dashPrimary)
                         Spacer(modifier = Modifier.width(2.dp))
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = DashPrimary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(16.dp))
                     }
                 }
 
@@ -354,24 +359,27 @@ fun DashboardScreen(
                     QuickActionGridCard(
                         label = "Add New Worker",
                         icon = Icons.Default.PersonAdd,
-                        cardBg = Color(0xFFE2EEFF),
-                        iconColor = Color(0xFF0866E8),
+                        cardBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFE2EEFF),
+                        iconColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E8),
+                        darkText = darkText,
                         onClick = { showAddWorkerDialog = true },
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
                         label = "Attendance",
                         icon = Icons.Default.EventAvailable,
-                        cardBg = Color(0xFFDFF8EC),
-                        iconColor = Color(0xFF0B9650),
+                        cardBg = if (isDark) Color(0xFF1B382B) else Color(0xFFDFF8EC),
+                        iconColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0B9650),
+                        darkText = darkText,
                         onClick = onMarkAttendance,
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
                         label = "Add New Site",
                         icon = Icons.Default.AddLocationAlt,
-                        cardBg = Color(0xFFF0E9FF),
-                        iconColor = Color(0xFF6938E8),
+                        cardBg = if (isDark) Color(0xFF2B1F47) else Color(0xFFF0E9FF),
+                        iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                        darkText = darkText,
                         onClick = { showAddSiteDialog = true },
                         modifier = Modifier.weight(1f)
                     )
@@ -387,24 +395,27 @@ fun DashboardScreen(
                     QuickActionGridCard(
                         label = "Add Contract",
                         icon = Icons.AutoMirrored.Filled.Assignment,
-                        cardBg = Color(0xFFFFF0D9),
-                        iconColor = Color(0xFFEF8500),
+                        cardBg = if (isDark) Color(0xFF3E2C1B) else Color(0xFFFFF0D9),
+                        iconColor = if (isDark) Color(0xFFFFB74D) else Color(0xFFEF8500),
+                        darkText = darkText,
                         onClick = { showAddContractDialog = true },
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
                         label = "Reports",
                         icon = Icons.Default.BarChart,
-                        cardBg = Color(0xFFDFF5FC),
-                        iconColor = Color(0xFF08A3C7),
+                        cardBg = if (isDark) Color(0xFF1B323D) else Color(0xFFDFF5FC),
+                        iconColor = if (isDark) Color(0xFF4DD0E1) else Color(0xFF08A3C7),
+                        darkText = darkText,
                         onClick = onNavigateToReports,
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
                         label = "Add Expense",
                         icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                        cardBg = Color(0xFFFCE5EB),
-                        iconColor = Color(0xFFD83D65),
+                        cardBg = if (isDark) Color(0xFF3A1E27) else Color(0xFFFCE5EB),
+                        iconColor = if (isDark) Color(0xFFFF4081) else Color(0xFFD83D65),
+                        darkText = darkText,
                         onClick = { showAddExpenseDialog = true },
                         modifier = Modifier.weight(1f)
                     )
@@ -477,7 +488,7 @@ fun DashboardScreen(
                         Text(
                             "We found a previous WorkCraft backup containing ${payload.workers.size} workers and ${payload.sites.size} sites. Would you like to restore your records?",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = DarkText
+                            color = darkText
                         )
                     }
                 },
@@ -496,14 +507,14 @@ fun DashboardScreen(
                                 }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = DashPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = dashPrimary)
                     ) {
                         Text("Restore Data", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { existingAutoBackup = null }) {
-                        Text("Start Fresh", color = DarkText)
+                        Text("Start Fresh", color = darkText)
                     }
                 }
             )
@@ -516,14 +527,15 @@ fun SiteSelectorCard(
     name: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    workDays: Int? = null
+    workDays: Int? = null,
+    isDark: Boolean = false
 ) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        color = if (isSelected) Color(0xFF1677F2) else Color.White,
-        contentColor = if (isSelected) Color.White else DarkText,
-        border = BorderStroke(1.dp, if (isSelected) Color(0xFF1677F2) else Color(0xFFCBD5E1)),
+        color = if (isSelected) Color(0xFF1677F2) else (if (isDark) MaterialTheme.colorScheme.surface else Color.White),
+        contentColor = if (isSelected) Color.White else (if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A)),
+        border = BorderStroke(1.dp, if (isSelected) Color(0xFF1677F2) else (if (isDark) Color(0xFF333A45) else Color(0xFFCBD5E1))),
         shadowElevation = if (isSelected) 3.dp else 1.dp,
         modifier = Modifier.defaultMinSize(minHeight = 52.dp)
     ) {
@@ -549,7 +561,7 @@ fun SiteSelectorCard(
                 if (workDays != null) {
                     Text(
                         text = "Work : $workDays Days",
-                        color = if (isSelected) Color.White.copy(alpha = 0.85f) else SubtitleText,
+                        color = if (isSelected) Color.White.copy(alpha = 0.85f) else (if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B)),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -582,7 +594,7 @@ fun AttendanceStatCard(
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.height(2.dp))
-            Text(label, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = if (MaterialTheme.colorScheme.surface.luminance() < 0.4f) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B), maxLines = 1)
             Spacer(modifier = Modifier.height(1.dp))
             Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = iconColor, maxLines = 1)
         }
@@ -597,6 +609,7 @@ fun ExpandableSummaryCard(
     cardBg: Color,
     accentColor: Color,
     isExpanded: Boolean,
+    isDark: Boolean = false,
     onToggle: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -605,7 +618,7 @@ fun ExpandableSummaryCard(
             .padding(horizontal = 16.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
         border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f)),
         shadowElevation = 2.dp
     ) {
@@ -647,7 +660,7 @@ fun ExpandableSummaryCard(
                                 text = title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = DarkText,
+                                color = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A),
                                 fontSize = 15.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -655,7 +668,7 @@ fun ExpandableSummaryCard(
                             Text(
                                 text = subtitle,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = SubtitleText,
+                                color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B),
                                 fontSize = 10.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -666,7 +679,7 @@ fun ExpandableSummaryCard(
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = DarkText,
+                        tint = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -687,6 +700,7 @@ fun QuickActionGridCard(
     icon: ImageVector,
     cardBg: Color,
     iconColor: Color,
+    darkText: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -718,7 +732,7 @@ fun QuickActionGridCard(
                     text = label,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkText,
+                    color = darkText,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -731,7 +745,7 @@ fun QuickActionGridCard(
 }
 
 @Composable
-fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null) {
+fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null, darkText: Color = Color(0xFF0F172A)) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -739,13 +753,13 @@ fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor
         Text(
             label,
             style = MaterialTheme.typography.bodyMedium,
-            color = DarkText
+            color = darkText
         )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
-            color = valueColor ?: DarkText
+            color = valueColor ?: darkText
         )
     }
 }

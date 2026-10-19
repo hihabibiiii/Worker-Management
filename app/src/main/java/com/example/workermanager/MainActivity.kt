@@ -19,6 +19,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -151,9 +152,18 @@ class MainActivity : ComponentActivity() {
 
                         // Only show bottom bar for main screens
                         if (allNavItems.any { it.route == currentDestination?.route }) {
+                            val isMoreSelected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
+                            val navItemColors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+
                             NavigationBar(
                                 modifier = Modifier.height(66.dp),
-                                containerColor = androidx.compose.ui.graphics.Color.White,
+                                containerColor = MaterialTheme.colorScheme.surface,
                                 tonalElevation = 4.dp
                             ) {
                                 primaryNavItems.forEach { screen ->
@@ -178,13 +188,7 @@ class MainActivity : ComponentActivity() {
                                             ) 
                                         },
                                         selected = isSelected,
-                                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                                            selectedIconColor = androidx.compose.ui.graphics.Color(0xFF063DC5),
-                                            selectedTextColor = androidx.compose.ui.graphics.Color(0xFF063DC5),
-                                            unselectedIconColor = androidx.compose.ui.graphics.Color(0xFF64748B),
-                                            unselectedTextColor = androidx.compose.ui.graphics.Color(0xFF64748B),
-                                            indicatorColor = androidx.compose.ui.graphics.Color(0xFF0866E8).copy(alpha = 0.12f)
-                                        ),
+                                        colors = navItemColors,
                                         onClick = {
                                             navigateToTab(screen.route)
                                         }
@@ -204,10 +208,11 @@ class MainActivity : ComponentActivity() {
                                             maxLines = 1,
                                             softWrap = false,
                                             fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Bold
                                         )
                                     },
-                                    selected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true },
+                                    selected = isMoreSelected,
+                                    colors = navItemColors,
                                     onClick = {
                                         showMoreSheet = true
                                     }

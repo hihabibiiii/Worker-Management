@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -78,6 +79,11 @@ fun ContractorMaterialScreen(
     val siteStockModels by viewModel.siteStockModels.collectAsState()
     val transactions by viewModel.transactionUiModels.collectAsState()
 
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val screenBg = if (isDark) MaterialTheme.colorScheme.background else LightBlueBg
+    val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else DarkText
+    val subtitleText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else SubtitleText
+
     var activeTab by remember { mutableStateOf(ContractorMaterialTab.INVENTORY) }
     var showAddMaterialDialog by remember { mutableStateOf(false) }
 
@@ -127,11 +133,10 @@ fun ContractorMaterialScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(LightBlueBg)
+                .background(screenBg)
         ) {
             when (activeTab) {
                 ContractorMaterialTab.INVENTORY -> {
-                    // ONE CONTINUOUS LAZYCOLUMN SCROLLING THE ENTIRE PAGE TOGETHER
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp),
@@ -144,7 +149,7 @@ fun ContractorMaterialScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
                                 shape = RoundedCornerShape(12.dp),
-                                color = Color.White,
+                                color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
                                 border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.2f)),
                                 shadowElevation = 2.dp
                             ) {
@@ -161,10 +166,10 @@ fun ContractorMaterialScreen(
                                         onValueChange = { viewModel.setSearchQuery(it) },
                                         modifier = Modifier.weight(1f),
                                         singleLine = true,
-                                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = DarkText),
+                                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = darkText),
                                         decorationBox = { innerTextField ->
                                             if (searchQuery.isEmpty()) {
-                                                Text("Search material name...", style = MaterialTheme.typography.bodyMedium, color = SubtitleText)
+                                                Text("Search material name...", style = MaterialTheme.typography.bodyMedium, color = subtitleText)
                                             }
                                             innerTextField()
                                         }
@@ -187,13 +192,60 @@ fun ContractorMaterialScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                item { ModernSummaryCard("Total Types", summary.totalMaterialTypes.toString(), Icons.Default.Inventory2, Color(0xFFD6ECFF), PrimaryBlue) }
-                                item { ModernSummaryCard("Added", String.format("%.0f", summary.totalQuantity), Icons.Default.AddCircle, Color(0xFFE8DFFF), Color(0xFF6A1B9A)) }
-                                item { ModernSummaryCard("Available", String.format("%.0f", summary.availableQuantity), Icons.Default.CheckCircle, Color(0xFFD7FBE0), Color(0xFF2E7D32)) }
-                                item { ModernSummaryCard("At Sites", String.format("%.0f", summary.quantityAtSites), Icons.Default.LocationOn, Color(0xFFFFE8CC), Color(0xFFEF6C00)) }
-                                item { ModernSummaryCard("Broken/Lost", String.format("%.0f", summary.totalBrokenLostQuantity), Icons.Default.LinkOff, Color(0xFFFFDCE4), Color(0xFFC62828)) }
+                                item {
+                                    ModernSummaryCard(
+                                        title = "Total Types",
+                                        value = summary.totalMaterialTypes.toString(),
+                                        icon = Icons.Default.Inventory2,
+                                        containerColor = if (isDark) Color(0xFF1E2A3A) else Color(0xFFD6ECFF),
+                                        contentColor = if (isDark) Color(0xFF4285F4) else PrimaryBlue,
+                                        darkText = darkText,
+                                        modifier = Modifier.width(84.dp).height(64.dp)
+                                    )
+                                }
+                                item {
+                                    ModernSummaryCard(
+                                        title = "Added",
+                                        value = String.format("%.0f", summary.totalQuantity),
+                                        icon = Icons.Default.AddCircle,
+                                        containerColor = if (isDark) Color(0xFF2A1F3E) else Color(0xFFE8DFFF),
+                                        contentColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6A1B9A),
+                                        darkText = darkText
+                                    )
+                                }
+                                item {
+                                    ModernSummaryCard(
+                                        title = "Available",
+                                        value = String.format("%.0f", summary.availableQuantity),
+                                        icon = Icons.Default.CheckCircle,
+                                        containerColor = if (isDark) Color(0xFF1B382B) else Color(0xFFD7FBE0),
+                                        contentColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32),
+                                        darkText = darkText
+                                    )
+                                }
+                                item {
+                                    ModernSummaryCard(
+                                        title = "At Sites",
+                                        value = String.format("%.0f", summary.quantityAtSites),
+                                        icon = Icons.Default.LocationOn,
+                                        containerColor = if (isDark) Color(0xFF3E2C1B) else Color(0xFFFFE8CC),
+                                        contentColor = if (isDark) Color(0xFFFFB74D) else Color(0xFFEF6C00),
+                                        darkText = darkText
+                                    )
+                                }
+                                item {
+                                    ModernSummaryCard(
+                                        title = "Broken/Lost",
+                                        value = String.format("%.0f", summary.totalBrokenLostQuantity),
+                                        icon = Icons.Default.LinkOff,
+                                        containerColor = if (isDark) Color(0xFF3A1E27) else Color(0xFFFFDCE4),
+                                        contentColor = if (isDark) Color(0xFFFF5252) else Color(0xFFC62828),
+                                        darkText = darkText
+                                    )
+                                }
                             }
                         }
 
@@ -211,6 +263,8 @@ fun ContractorMaterialScreen(
                                         label = "Inventory",
                                         icon = Icons.Default.Inventory2,
                                         isSelected = activeTab == ContractorMaterialTab.INVENTORY,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.INVENTORY }
                                     )
                                 }
@@ -219,6 +273,8 @@ fun ContractorMaterialScreen(
                                         label = "Send to Site",
                                         icon = Icons.Default.Send,
                                         isSelected = activeTab == ContractorMaterialTab.SEND,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.SEND }
                                     )
                                 }
@@ -227,6 +283,8 @@ fun ContractorMaterialScreen(
                                         label = "Return from Site",
                                         icon = Icons.Default.Reply,
                                         isSelected = activeTab == ContractorMaterialTab.RETURN,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.RETURN }
                                     )
                                 }
@@ -235,6 +293,8 @@ fun ContractorMaterialScreen(
                                         label = "Add Material",
                                         icon = Icons.Default.AddCircle,
                                         isSelected = showAddMaterialDialog,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { showAddMaterialDialog = true }
                                     )
                                 }
@@ -243,6 +303,8 @@ fun ContractorMaterialScreen(
                                         label = "Broken / Lost",
                                         icon = Icons.Default.LinkOff,
                                         isSelected = activeTab == ContractorMaterialTab.BROKEN_LOST,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.BROKEN_LOST }
                                     )
                                 }
@@ -251,6 +313,8 @@ fun ContractorMaterialScreen(
                                         label = "History Ledger",
                                         icon = Icons.Default.History,
                                         isSelected = activeTab == ContractorMaterialTab.HISTORY,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.HISTORY }
                                     )
                                 }
@@ -259,6 +323,8 @@ fun ContractorMaterialScreen(
                                         label = "Site Reports",
                                         icon = Icons.Default.Assessment,
                                         isSelected = activeTab == ContractorMaterialTab.REPORTS,
+                                        isDark = isDark,
+                                        darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.REPORTS }
                                     )
                                 }
@@ -274,7 +340,7 @@ fun ContractorMaterialScreen(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 item {
-                                    CategoryFilterChip("All Categories", Icons.Default.GridView, selectedCategory == null, { viewModel.setSelectedCategory(null) })
+                                    CategoryFilterChip("All Categories", Icons.Default.GridView, selectedCategory == null, isDark, darkText, { viewModel.setSelectedCategory(null) })
                                 }
                                 items(ContractorMaterialCategory.entries) { cat ->
                                     val catIcon = when (cat) {
@@ -284,7 +350,7 @@ fun ContractorMaterialScreen(
                                         ContractorMaterialCategory.OTHER_SITE_EQUIPMENT -> Icons.Default.PrecisionManufacturing
                                         ContractorMaterialCategory.OTHER -> Icons.Default.Category
                                     }
-                                    CategoryFilterChip(cat.displayName, catIcon, selectedCategory == cat, { viewModel.setSelectedCategory(cat) })
+                                    CategoryFilterChip(cat.displayName, catIcon, selectedCategory == cat, isDark, darkText, { viewModel.setSelectedCategory(cat) })
                                 }
                             }
                         }
@@ -304,7 +370,7 @@ fun ContractorMaterialScreen(
                                             text = "Contractor Inventory (${stockModels.size})",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
-                                            color = DarkText
+                                            color = darkText
                                         )
                                     }
                                     Icon(Icons.Default.Tune, contentDescription = "Decor", tint = PrimaryBlue.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
@@ -318,13 +384,13 @@ fun ContractorMaterialScreen(
                         if (stockModels.isEmpty()) {
                             item {
                                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                    Text("No material inventory records found.", color = SubtitleText)
+                                    Text("No material inventory records found.", color = subtitleText)
                                 }
                             }
                         } else {
                             items(stockModels) { item ->
                                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    MaterialInventoryCard(item = item)
+                                    MaterialInventoryCard(item = item, isDark = isDark, darkText = darkText, subtitleText = subtitleText)
                                 }
                             }
                         }
@@ -335,6 +401,7 @@ fun ContractorMaterialScreen(
                         sites = sites,
                         materials = materials.filter { it.isActive },
                         viewModel = viewModel,
+                        darkText = darkText,
                         onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
                     )
                 }
@@ -344,6 +411,7 @@ fun ContractorMaterialScreen(
                         materials = materials.filter { it.isActive },
                         siteStocks = siteStockModels,
                         viewModel = viewModel,
+                        darkText = darkText,
                         onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
                     )
                 }
@@ -352,12 +420,15 @@ fun ContractorMaterialScreen(
                         sites = sites,
                         materials = materials.filter { it.isActive },
                         viewModel = viewModel,
+                        darkText = darkText,
                         onSuccess = { activeTab = ContractorMaterialTab.INVENTORY }
                     )
                 }
                 ContractorMaterialTab.HISTORY -> {
                     MaterialHistoryLedgerTab(
                         transactions = transactions,
+                        darkText = darkText,
+                        subtitleText = subtitleText,
                         onDelete = { txId -> viewModel.deleteTransaction(txId) }
                     )
                 }
@@ -366,6 +437,8 @@ fun ContractorMaterialScreen(
                         sites = sites,
                         siteStocks = siteStockModels,
                         inventory = stockModels,
+                        darkText = darkText,
+                        subtitleText = subtitleText,
                         onExportExcel = {
                             excelExportLauncher.launch(ExcelExporter.generateContractorMaterialFileName())
                         }
@@ -394,24 +467,26 @@ fun ModernSummaryCard(
     value: String,
     icon: ImageVector,
     containerColor: Color,
-    contentColor: Color
+    contentColor: Color,
+    darkText: Color = DarkText,
+    modifier: Modifier = Modifier.width(105.dp).height(68.dp)
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = containerColor,
-        modifier = Modifier.width(105.dp).height(60.dp),
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.2f))
+        modifier = modifier,
+        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.25f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(20.dp))
+            Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.height(2.dp))
-            Text(title, style = MaterialTheme.typography.bodySmall, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = DarkText, maxLines = 1)
+            Text(title, style = MaterialTheme.typography.bodySmall, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = darkText, maxLines = 1)
             Spacer(modifier = Modifier.height(1.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = contentColor, maxLines = 1)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = contentColor, maxLines = 1)
         }
     }
 }
@@ -421,16 +496,18 @@ fun CoreActionChip(
     label: String,
     icon: ImageVector,
     isSelected: Boolean,
+    isDark: Boolean = false,
+    darkText: Color = DarkText,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) PrimaryBlue else Color.White,
-        contentColor = if (isSelected) Color.White else DarkText,
-        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
-        modifier = modifier.height(40.dp)
+        color = if (isSelected) PrimaryBlue else (if (isDark) MaterialTheme.colorScheme.surface else Color.White),
+        contentColor = if (isSelected) Color.White else darkText,
+        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else (if (isDark) Color(0xFF333A45) else Color(0xFFCBD5E1))),
+        modifier = modifier.height(34.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 11.dp),
@@ -460,15 +537,17 @@ fun CategoryFilterChip(
     label: String,
     icon: ImageVector,
     isSelected: Boolean,
+    isDark: Boolean = false,
+    darkText: Color = DarkText,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) PrimaryBlue else Color.White,
-        contentColor = if (isSelected) Color.White else DarkText,
-        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else Color(0xFFCBD5E1)),
-        modifier = Modifier.height(40.dp)
+        color = if (isSelected) PrimaryBlue else (if (isDark) MaterialTheme.colorScheme.surface else Color.White),
+        contentColor = if (isSelected) Color.White else darkText,
+        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else (if (isDark) Color(0xFF333A45) else Color(0xFFCBD5E1))),
+        modifier = Modifier.height(32.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),
@@ -492,25 +571,28 @@ fun CategoryFilterChip(
 }
 
 @Composable
-fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
+fun MaterialInventoryCard(
+    item: ContractorMaterialStockModel,
+    isDark: Boolean = false,
+    darkText: Color = DarkText,
+    subtitleText: Color = SubtitleText
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, if (item.isLowStock) Color(0xFFC62828).copy(alpha = 0.4f) else PrimaryBlue.copy(alpha = 0.15f)),
+        color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
+        border = BorderStroke(1.dp, if (item.isLowStock) Color(0xFFFF5252).copy(alpha = 0.4f) else PrimaryBlue.copy(alpha = 0.15f)),
         shadowElevation = 2.dp
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            // Left Thin Accent Line
             Box(
                 modifier = Modifier
                     .width(5.dp)
                     .fillMaxHeight()
-                    .background(if (item.isLowStock) Color(0xFFC62828) else PrimaryBlue)
+                    .background(if (item.isLowStock) Color(0xFFFF5252) else PrimaryBlue)
             )
 
             Column(modifier = Modifier.padding(12.dp).weight(1f)) {
-                // TOP ROW: Avatar, Name, Category, Availability Badge
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -520,7 +602,6 @@ fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Category Icon Circle
                         Surface(
                             modifier = Modifier.size(42.dp),
                             shape = CircleShape,
@@ -549,14 +630,14 @@ fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
                                 text = item.material.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = DarkText,
+                                color = darkText,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = item.material.category.displayName,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = PrimaryBlue,
+                                color = if (isDark) Color(0xFF4285F4) else PrimaryBlue,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -566,15 +647,14 @@ fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    // Availability Badge
                     Surface(
-                        color = Color(0xFFD7FBE0),
+                        color = if (isDark) Color(0xFF1B382B) else Color(0xFFD7FBE0),
                         shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
+                        border = BorderStroke(1.dp, (if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32)).copy(alpha = 0.3f))
                     ) {
                         Text(
                             text = "✓ ${String.format("%.0f", item.availableQuantity)} ${item.material.unit.displayName} Avail.",
-                            color = Color(0xFF2E7D32),
+                            color = if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -584,70 +664,66 @@ fun MaterialInventoryCard(item: ContractorMaterialStockModel) {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                HorizontalDivider(color = Color(0xFFF1F5F9))
+                HorizontalDivider(color = if (isDark) Color(0xFF333A45) else Color(0xFFF1F5F9))
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // MIDDLE/BOTTOM ROW: 3 Balanced Columns (Total, At Sites, Lost/Broken)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Column 1: Total
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Total Added", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Text("Total Added", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = subtitleText)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "${String.format("%.0f", item.totalAddedQuantity)} ${item.material.unit.displayName}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = PrimaryBlue
+                            color = if (isDark) Color(0xFF4285F4) else PrimaryBlue
                         )
                     }
 
-                    VerticalDivider(modifier = Modifier.height(24.dp), color = Color(0xFFE2E8F0))
+                    VerticalDivider(modifier = Modifier.height(24.dp), color = if (isDark) Color(0xFF333A45) else Color(0xFFE2E8F0))
 
-                    // Column 2: At Sites
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("At Sites", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Text("At Sites", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = subtitleText)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "${String.format("%.0f", item.quantityAtSites)} ${item.material.unit.displayName}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = Color(0xFFEF6C00)
+                            color = if (isDark) Color(0xFFFFB74D) else Color(0xFFEF6C00)
                         )
                     }
 
-                    VerticalDivider(modifier = Modifier.height(24.dp), color = Color(0xFFE2E8F0))
+                    VerticalDivider(modifier = Modifier.height(24.dp), color = if (isDark) Color(0xFF333A45) else Color(0xFFE2E8F0))
 
-                    // Column 3: Lost/Broken
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Lost / Broken", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SubtitleText)
+                        Text("Lost / Broken", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = subtitleText)
                         Spacer(modifier = Modifier.height(2.dp))
                         val totalLostBroken = item.brokenQuantity + item.lostQuantity
                         Text(
                             text = "${String.format("%.0f", totalLostBroken)} ${item.material.unit.displayName}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = if (totalLostBroken > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
+                            color = if (totalLostBroken > 0) (if (isDark) Color(0xFFFF5252) else Color(0xFFC62828)) else (if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32))
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Details",
-                        tint = SubtitleText,
+                        tint = subtitleText,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -661,6 +737,7 @@ fun SendMaterialTab(
     sites: List<SiteEntity>,
     materials: List<ContractorMaterialEntity>,
     viewModel: ContractorMaterialViewModel,
+    darkText: Color = DarkText,
     onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
@@ -684,7 +761,7 @@ fun SendMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Send Material to Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+        Text("Send Material to Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
 
         // Site Selection
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -785,6 +862,7 @@ fun ReturnMaterialTab(
     materials: List<ContractorMaterialEntity>,
     siteStocks: List<SiteMaterialStockModel>,
     viewModel: ContractorMaterialViewModel,
+    darkText: Color = DarkText,
     onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
@@ -807,7 +885,7 @@ fun ReturnMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Return Material From Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+        Text("Return Material From Site", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
 
         // Site Selection
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -907,6 +985,7 @@ fun BrokenLostMaterialTab(
     sites: List<SiteEntity>,
     materials: List<ContractorMaterialEntity>,
     viewModel: ContractorMaterialViewModel,
+    darkText: Color = DarkText,
     onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
@@ -930,7 +1009,7 @@ fun BrokenLostMaterialTab(
     )
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Mark Material Broken / Lost", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+        Text("Mark Material Broken / Lost", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
@@ -1053,16 +1132,18 @@ fun BrokenLostMaterialTab(
 @Composable
 fun MaterialHistoryLedgerTab(
     transactions: List<ContractorMaterialTxUiModel>,
+    darkText: Color = DarkText,
+    subtitleText: Color = SubtitleText,
     onDelete: (Long) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Material Transaction History (${transactions.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+        Text("Material Transaction History (${transactions.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         if (transactions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material transactions recorded.", color = SubtitleText)
+                Text("No material transactions recorded.", color = subtitleText)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1070,16 +1151,16 @@ fun MaterialHistoryLedgerTab(
                     val tx = model.transaction
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(model.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                                    Text(model.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                                     Text("Site: ${model.siteName ?: "Central Inventory"}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
-                                    Text(Utils.formatDate(tx.transactionDate), style = MaterialTheme.typography.bodySmall, color = SubtitleText)
+                                    Text(Utils.formatDate(tx.transactionDate), style = MaterialTheme.typography.bodySmall, color = subtitleText)
                                 }
 
                                 ContractorTxBadge(tx.transactionType)
@@ -1087,10 +1168,10 @@ fun MaterialHistoryLedgerTab(
 
                             Spacer(modifier = Modifier.height(6.dp))
 
-                            Text("Quantity: ${tx.quantity} ${tx.unit}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = DarkText)
+                            Text("Quantity: ${tx.quantity} ${tx.unit}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = darkText)
 
                             if (tx.reasonOrNotes.isNotBlank()) {
-                                Text("Notes: ${tx.reasonOrNotes}", style = MaterialTheme.typography.bodySmall, color = SubtitleText)
+                                Text("Notes: ${tx.reasonOrNotes}", style = MaterialTheme.typography.bodySmall, color = subtitleText)
                             }
                         }
                     }
@@ -1131,6 +1212,8 @@ fun SiteWiseReportTab(
     sites: List<SiteEntity>,
     siteStocks: List<SiteMaterialStockModel>,
     inventory: List<ContractorMaterialStockModel>,
+    darkText: Color = DarkText,
+    subtitleText: Color = SubtitleText,
     onExportExcel: () -> Unit
 ) {
     var selectedReportSiteId by remember { mutableStateOf<Long?>(null) }
@@ -1144,7 +1227,7 @@ fun SiteWiseReportTab(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Site-wise Material Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+            Text("Site-wise Material Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
             Button(onClick = onExportExcel, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
                 Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -1172,19 +1255,19 @@ fun SiteWiseReportTab(
 
         if (filteredSiteStocks.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material assignments for this site.", color = SubtitleText)
+                Text("No material assignments for this site.", color = subtitleText)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filteredSiteStocks) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DarkText)
+                            Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                             Text("Site: ${item.siteName}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
 
                             Spacer(modifier = Modifier.height(6.dp))

@@ -1623,11 +1623,16 @@ fun RecordWorkerPaymentDialog(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                        val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
                         Text(
                             text = if (selectedType == PaymentType.ADVANCE) "Advance" else "Payment",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (selectedType == PaymentType.ADVANCE) Color(0xFFEF6C00) else Color(0xFF1565C0)
+                            color = if (selectedType == PaymentType.ADVANCE) {
+                                if (isDark) Color(0xFFFFB74D) else Color(0xFFEF6C00)
+                            } else {
+                                if (isDark) Color(0xFF90CAF9) else Color(0xFF1565C0)
+                            }
                         )
                     }
                 }

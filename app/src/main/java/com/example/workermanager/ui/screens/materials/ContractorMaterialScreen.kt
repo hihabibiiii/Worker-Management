@@ -203,7 +203,6 @@ fun ContractorMaterialScreen(
                                         containerColor = if (isDark) Color(0xFF1E2A3A) else Color(0xFFD6ECFF),
                                         contentColor = if (isDark) Color(0xFF4285F4) else PrimaryBlue,
                                         darkText = darkText,
-                                        modifier = Modifier.width(84.dp).height(64.dp)
                                     )
                                 }
                                 item {

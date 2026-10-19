@@ -153,20 +153,20 @@ fun DashboardScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     AttendanceStatCard(
                         label = "Present",
                         value = stats.presentWorkers.toString(),
-                        icon = Icons.Default.CheckCircle,
-                        bgColor = if (isDark) Color(0xFF1B382B) else Color(0xFFDFF8EC),
+                        icon = Icons.Default.Groups,
+                        bgColor = if (isDark) Color(0xFF1B382B) else Color(0xFFE8F8F0),
                         iconColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0AA65B),
                         modifier = Modifier.weight(1f)
                     )
                     AttendanceStatCard(
                         label = "Absent",
                         value = stats.absentWorkers.toString(),
-                        icon = Icons.Default.Cancel,
+                        icon = Icons.Default.PersonOff,
                         bgColor = if (isDark) Color(0xFF3E1F24) else Color(0xFFFDE8EC),
                         iconColor = if (isDark) Color(0xFFFF5252) else Color(0xFFE63946),
                         modifier = Modifier.weight(1f)
@@ -174,7 +174,7 @@ fun DashboardScreen(
                     AttendanceStatCard(
                         label = "Half Day",
                         value = stats.halfDayWorkers.toString(),
-                        icon = Icons.Default.AccessTime,
+                        icon = Icons.Default.Schedule,
                         bgColor = if (isDark) Color(0xFF3B2E19) else Color(0xFFFFF3DB),
                         iconColor = if (isDark) Color(0xFFFFA726) else Color(0xFFF28C00),
                         modifier = Modifier.weight(1f)
@@ -182,15 +182,15 @@ fun DashboardScreen(
                     AttendanceStatCard(
                         label = "Overtime",
                         value = stats.overtimeWorkers.toString(),
-                        icon = Icons.Default.MoreTime,
-                        bgColor = if (isDark) Color(0xFF2B1F47) else Color(0xFFF0E9FF),
-                        iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                        icon = Icons.Default.Timelapse,
+                        bgColor = if (isDark) Color(0xFF1E2A3A) else Color(0xFFE2EEFF),
+                        iconColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E8),
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // SECTION 3: EXPANDABLE SUMMARY SECTIONS (Worker, Client, Site Expense)
             var isWorkerSummaryExpanded by remember { mutableStateOf(false) }
@@ -224,7 +224,7 @@ fun DashboardScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 2. Client Payments Summary
             ExpandableSummaryCard(
@@ -261,7 +261,7 @@ fun DashboardScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 3. Sites Expense Summary
             ExpandableSummaryCard(
@@ -290,7 +290,7 @@ fun DashboardScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Find Existing Backup Prompt (Visible when database is empty)
             if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {
@@ -581,22 +581,50 @@ fun AttendanceStatCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.height(60.dp),
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.height(50.dp),
+        shape = RoundedCornerShape(14.dp),
         color = bgColor,
-        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.2f)),
+        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.35f)),
         shadowElevation = 1.dp
     ) {
-        Column(
-            modifier = Modifier.padding(6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(label, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = if (MaterialTheme.colorScheme.surface.luminance() < 0.4f) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B), maxLines = 1)
-            Spacer(modifier = Modifier.height(1.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = iconColor, maxLines = 1)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (MaterialTheme.colorScheme.surface.luminance() < 0.4f) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = iconColor,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -706,7 +734,7 @@ fun QuickActionGridCard(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(72.dp),
+        modifier = modifier.height(60.dp),
         shape = RoundedCornerShape(16.dp),
         color = cardBg,
         border = BorderStroke(1.dp, iconColor.copy(alpha = 0.2f)),

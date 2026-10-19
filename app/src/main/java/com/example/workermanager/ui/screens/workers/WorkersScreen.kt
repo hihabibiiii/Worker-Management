@@ -564,71 +564,60 @@ fun WorkerCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // BOTTOM ROW: COMPACT BALANCE BAR
-            val (balBg, balColor, balText) = when {
-                pendingBalance > 0.001 -> Triple(
-                    if (isDark) Color(0xFF3E1F24) else Color(0xFFFFF0F2),
+            // BOTTOM ROW: CLEAN BALANCE BAR (TRANSPARENT BACKGROUND, NO SEPARATE COLORED FILL)
+            val (balColor, balText) = when {
+                pendingBalance > 0.001 -> Pair(
                     if (isDark) Color(0xFFFF5252) else Color(0xFFD90016),
                     "${Utils.formatCurrency(pendingBalance)} Due"
                 )
-                pendingBalance < -0.001 -> Triple(
-                    if (isDark) Color(0xFF1B382B) else Color(0xFFE4F9EC),
+                pendingBalance < -0.001 -> Pair(
                     if (isDark) Color(0xFF2ECC71) else Color(0xFF078B35),
                     "${Utils.formatCurrency(-pendingBalance)} Advance"
                 )
-                else -> Triple(
-                    if (isDark) Color(0xFF252A32) else Color(0xFFF1F5F9),
-                    if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                else -> Pair(
+                    textSecondary,
                     "₹0.00"
                 )
             }
 
-            Surface(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(28.dp),
-                shape = RoundedCornerShape(9.dp),
-                color = balBg,
-                border = BorderStroke(1.dp, balColor.copy(alpha = 0.25f))
+                    .height(28.dp)
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = balColor,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Balance",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = balColor
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = balColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Balance",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textSecondary
+                    )
+                }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = balText,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = balColor
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = balColor,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = balText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = balColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = textSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
                 }
             }
         }

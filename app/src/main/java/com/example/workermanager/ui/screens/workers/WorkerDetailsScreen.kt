@@ -15,12 +15,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,10 +32,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,16 +44,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import com.example.workermanager.data.entity.*
 import com.example.workermanager.util.PdfReportGenerator
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.net.URLEncoder
 import java.time.LocalDate
 
@@ -89,7 +91,6 @@ fun WorkerDetailsScreen(
     var paymentToDelete by remember { mutableStateOf<PaymentEntity?>(null) }
 
     val scope = rememberCoroutineScope()
-
     var tempCameraFilePath by remember { mutableStateOf<String?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -150,122 +151,89 @@ fun WorkerDetailsScreen(
         }
     }
 
+    val isDark = isSystemInDarkTheme()
+    val screenBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF1F6FD)
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(worker?.name ?: "Worker Details", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    Button(
-                        onClick = { showTransferDialog = true },
-                        modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                    ) {
-                        Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Transfer", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+            WorkerDetailsHeader(
+                workerName = worker?.name ?: "Worker Details",
+                onBack = onBack,
+                onTransferClick = { showTransferDialog = true }
             )
-        }
+        },
+        containerColor = screenBg
     ) { padding ->
         if (worker == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color(0xFF1976ED))
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(screenBg),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // 1. WORKER PROFILE CARD
                 item {
-                    WorkerProfileHeader(
+                    WorkerProfileCard(
                         worker = worker!!,
                         sites = sites,
-                        onPickPhoto = {
-                            showPhotoOptionsDialog = true
-                        }
+                        onPickPhoto = { showPhotoOptionsDialog = true }
                     )
                 }
-                
+
+                // 2. ATTENDANCE SUMMARY CARDS
                 item {
-                    WorkerStatsSection(
-                        stats = stats,
+                    AttendanceSummaryRow(stats = stats)
+                }
+
+                // 3. FINANCIAL SUMMARY CARD
+                item {
+                    FinancialSummaryCard(stats = stats)
+                }
+
+                // 4. QUICK ACTION BUTTONS
+                item {
+                    QuickActionButtonsRow(
                         onAdvanceClick = { paymentDialogType = PaymentType.ADVANCE },
                         onPaymentClick = { paymentDialogType = PaymentType.PAYMENT },
-                        onWhatsAppReportClick = { showShareReportDialog = true }
+                        onWhatsAppClick = { showShareReportDialog = true }
                     )
                 }
 
+                // 5. HISTORY TABS
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        WorkerHistoryTab.entries.forEach { tab ->
-                            val isSelected = selectedTab == tab
-                            Surface(
-                                onClick = { selectedTab = tab },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(50.dp),
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-                                tonalElevation = if (isSelected) 4.dp else 1.dp
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center,
-                                        modifier = Modifier.horizontalScroll(rememberScrollState())
-                                    ) {
-                                        Text(
-                                            text = tab.title,
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            softWrap = false
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    HistoryTabsContainer(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it }
+                    )
                 }
 
+                // 6. HISTORY CONTENT ITEMS
                 if (selectedTab == WorkerHistoryTab.SITE) {
                     if (siteHistory.isEmpty()) {
                         item {
-                            Text(
-                                "No site history recorded.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No site history recorded.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+                                )
+                            }
                         }
                     } else {
                         items(siteHistory) { history ->
                             val siteName = sites.find { it.id == history.siteId }?.name ?: "Unknown Site"
-                            SiteHistoryItem(history, siteName)
+                            SiteHistoryCard(history = history, siteName = siteName)
                         }
                     }
                 }
@@ -273,17 +241,23 @@ fun WorkerDetailsScreen(
                 if (selectedTab == WorkerHistoryTab.ATTENDANCE) {
                     if (attendanceHistory.isEmpty()) {
                         item {
-                            Text(
-                                "No attendance history recorded.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No attendance history recorded.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+                                )
+                            }
                         }
                     } else {
                         items(attendanceHistory) { attendance ->
-                            val siteName = sites.find { it.id == attendance.siteId }?.name ?: "Unknown"
-                            AttendanceHistoryItem(attendance, siteName)
+                            val siteName = sites.find { it.id == attendance.siteId }?.name ?: "Unknown Site"
+                            AttendanceHistoryCard(attendance = attendance, siteName = siteName)
                         }
                     }
                 }
@@ -291,17 +265,23 @@ fun WorkerDetailsScreen(
                 if (selectedTab == WorkerHistoryTab.PAYMENT) {
                     if (paymentHistory.isEmpty()) {
                         item {
-                            Text(
-                                "No payment history recorded.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No payment history recorded.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+                                )
+                            }
                         }
                     } else {
                         items(paymentHistory) { payment ->
-                            val siteName = sites.find { it.id == payment.siteId }?.name ?: "Unknown"
-                            PaymentHistoryItem(
+                            val siteName = sites.find { it.id == payment.siteId }?.name ?: "Unknown Site"
+                            PaymentHistoryCard(
                                 payment = payment,
                                 siteName = siteName,
                                 onEdit = { paymentToEdit = payment },
@@ -313,6 +293,7 @@ fun WorkerDetailsScreen(
             }
         }
 
+        // DIALOGS
         if (showTransferDialog && worker != null) {
             TransferWorkerDialog(
                 worker = worker!!,
@@ -501,354 +482,875 @@ fun WorkerDetailsScreen(
     }
 }
 
+// -----------------------------------------------------------------------------
+// COMPONENT 1: HEADER
+// -----------------------------------------------------------------------------
 @Composable
-fun WorkerProfileHeader(
+fun WorkerDetailsHeader(
+    workerName: String,
+    onBack: () -> Unit,
+    onTransferClick: () -> Unit
+) {
+    Surface(
+        color = Color(0xFF1976ED),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
+
+            Text(
+                text = workerName,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            )
+
+            Surface(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onTransferClick() },
+                shape = CircleShape,
+                color = Color(0xFF3986E8),
+                contentColor = Color.White
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SwapHoriz,
+                        contentDescription = "Transfer",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Transfer",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 2: WORKER PROFILE CARD
+// -----------------------------------------------------------------------------
+@Composable
+fun WorkerProfileCard(
     worker: WorkerEntity,
     sites: List<SiteEntity>,
     onPickPhoto: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
     val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Avatar with camera badge
+            Box(
+                contentAlignment = Alignment.BottomEnd,
+                modifier = Modifier.clickable { onPickPhoto() }
+            ) {
+                WorkerAvatarLarge(
+                    photoPath = worker.photoPath,
+                    name = worker.name,
+                    modifier = Modifier.size(110.dp)
+                )
+
+                Surface(
+                    modifier = Modifier.size(34.dp),
+                    shape = CircleShape,
+                    color = Color(0xFF1976ED),
+                    contentColor = Color.White,
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(2.dp, cardBg)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Change Photo",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Worker Name & Active Status
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = worker.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryTextColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                ActiveStatusBadge(isActive = worker.isActive)
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Worker Info Grid (Type, Phone, Site, Daily Wage)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    WorkerDetailChip(
+                        icon = Icons.Default.Badge,
+                        label = "Type",
+                        value = worker.workerType.name.lowercase().replaceFirstChar { it.uppercase() },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    WorkerDetailChip(
+                        icon = Icons.Default.Phone,
+                        label = "Phone",
+                        value = if (worker.phone.isNotBlank()) worker.phone else "No Phone",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    WorkerDetailChip(
+                        icon = Icons.Default.LocationOn,
+                        label = "Current Site",
+                        value = currentSiteName,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    val wageText = if (worker.overtimeRate > 0) {
+                        "${Utils.formatCurrency(worker.dailyRate)}/day (${Utils.formatCurrency(worker.overtimeRate)}/h OT)"
+                    } else {
+                        "${Utils.formatCurrency(worker.dailyRate)}/day"
+                    }
+                    WorkerDetailChip(
+                        icon = Icons.Default.Payments,
+                        label = "Daily Wage",
+                        value = wageText,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WorkerAvatarLarge(
+    photoPath: String?,
+    name: String,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = remember(photoPath) {
+        if (!photoPath.isNullOrBlank()) {
+            val file = File(photoPath)
+            if (file.exists() && file.length() > 0) {
+                try {
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(photoPath, options)
+                    var sampleSize = 1
+                    while (options.outWidth / sampleSize > 400 || options.outHeight / sampleSize > 400) {
+                        sampleSize *= 2
+                    }
+                    val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                    BitmapFactory.decodeFile(photoPath, decodeOptions)
+                } catch (_: Exception) {
+                    null
+                }
+            } else null
+        } else null
+    }
+
+    Surface(
+        modifier = modifier.clip(CircleShape),
+        shape = CircleShape,
+        color = Color(0xFFDFEBFF),
+        contentColor = Color(0xFF1557C0),
+        border = BorderStroke(2.dp, Color(0xFF1557C0).copy(alpha = 0.2f))
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Text(
+                    text = name.trim().take(1).uppercase(),
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1557C0)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ActiveStatusBadge(isActive: Boolean) {
+    val isDark = isSystemInDarkTheme()
+    val bgColor = if (isActive) {
+        if (isDark) Color(0xFF0F3818) else Color(0xFFDDFBE7)
+    } else {
+        if (isDark) Color(0xFF381014) else Color(0xFFFFE3E7)
+    }
+    val textColor = if (isActive) Color(0xFF087A2D) else Color(0xFFD7192D)
+    val dotColor = if (isActive) Color(0xFF079B3B) else Color(0xFFD7192D)
+
+    Surface(
+        color = bgColor,
+        shape = CircleShape
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(dotColor, CircleShape)
+            )
+            Text(
+                text = if (isActive) "Active" else "Inactive",
+                color = textColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun WorkerDetailChip(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isSystemInDarkTheme()
+    val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD)
+    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+    val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = bg
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .background(Color(0xFF1976ED).copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = Color(0xFF1976ED),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    color = secondaryText,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = value,
+                    fontSize = 12.sp,
+                    color = primaryText,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 3: ATTENDANCE SUMMARY CARDS
+// -----------------------------------------------------------------------------
+@Composable
+fun AttendanceSummaryRow(stats: WorkerStats) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        AttendanceSummaryCard(
+            title = "Present",
+            count = stats.presentDays.toString(),
+            icon = Icons.Default.CheckCircle,
+            bgColor = Color(0xFFF4FCF8),
+            darkBgColor = Color(0xFF0F2618),
+            iconBgColor = Color(0xFFE4F9ED),
+            contentColor = Color(0xFF0A963D),
+            borderColor = Color(0xFFD9F0E4),
+            modifier = Modifier.weight(1f)
+        )
+
+        AttendanceSummaryCard(
+            title = "Half Day",
+            count = stats.halfDays.toString(),
+            icon = Icons.Default.Schedule,
+            bgColor = Color(0xFFFFFBF2),
+            darkBgColor = Color(0xFF28200F),
+            iconBgColor = Color(0xFFFFF1D2),
+            contentColor = Color(0xFFD99000),
+            borderColor = Color(0xFFF6EBD4),
+            modifier = Modifier.weight(1f)
+        )
+
+        AttendanceSummaryCard(
+            title = "Absent",
+            count = stats.absentDays.toString(),
+            icon = Icons.Default.Cancel,
+            bgColor = Color(0xFFFFF6F7),
+            darkBgColor = Color(0xFF2B1015),
+            iconBgColor = Color(0xFFFFE3E7),
+            contentColor = Color(0xFFD7192D),
+            borderColor = Color(0xFFF7DDE1),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun AttendanceSummaryCard(
+    title: String,
+    count: String,
+    icon: ImageVector,
+    bgColor: Color,
+    darkBgColor: Color,
+    iconBgColor: Color,
+    contentColor: Color,
+    borderColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isSystemInDarkTheme()
+    val background = if (isDark) darkBgColor else bgColor
+    val border = if (isDark) contentColor.copy(alpha = 0.3f) else borderColor
+    val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        color = background,
+        border = BorderStroke(1.dp, border)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(if (isDark) contentColor.copy(alpha = 0.2f) else iconBgColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = labelColor,
+                maxLines = 1
+            )
+
+            Text(
+                text = count,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = contentColor
+            )
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 4: FINANCIAL SUMMARY CARD
+// -----------------------------------------------------------------------------
+@Composable
+fun FinancialSummaryCard(stats: WorkerStats) {
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) Color(0xFF1B2735) else Color(0xFFEDF5FF)
+    val borderColor = if (isDark) Color(0xFF2C3E55) else Color(0xFFC9DDFB)
+    val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+    val valueColor = if (isDark) Color(0xFF90CAF9) else Color(0xFF1557C0)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            FinancialRow(
+                icon = Icons.Default.AccountBalanceWallet,
+                iconColor = Color(0xFF1976ED),
+                label = "Total Earned",
+                value = Utils.formatCurrency(stats.totalEarned),
+                labelColor = labelColor,
+                valueColor = valueColor
+            )
+
+            FinancialRow(
+                icon = Icons.Default.CreditCard,
+                iconColor = Color(0xFF0A963D),
+                label = "Total Paid",
+                value = Utils.formatCurrency(stats.totalPaid),
+                labelColor = labelColor,
+                valueColor = valueColor
+            )
+
+            FinancialRow(
+                icon = Icons.Default.Receipt,
+                iconColor = Color(0xFF8B36E8),
+                label = "Total Advance",
+                value = Utils.formatCurrency(stats.totalAdvance),
+                labelColor = labelColor,
+                valueColor = valueColor
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = if (isDark) Color(0xFF2C3E55) else Color(0xFFD7E5F8),
+                thickness = 1.dp
+            )
+
+            FinancialRow(
+                icon = Icons.Default.PieChart,
+                iconColor = Color(0xFFC91D2E),
+                label = "Pending Balance",
+                value = Utils.formatCurrency(stats.pendingBalance),
+                labelColor = Color(0xFFC91D2E),
+                valueColor = Color(0xFFC91D2E),
+                isBold = true
+            )
+        }
+    }
+}
+
+@Composable
+fun FinancialRow(
+    icon: ImageVector,
+    iconColor: Color,
+    label: String,
+    value: String,
+    labelColor: Color,
+    valueColor: Color,
+    isBold: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(iconColor.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = iconColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = if (isBold) FontWeight.Bold else FontWeight.Medium,
+                color = labelColor
+            )
+        }
+
+        Text(
+            text = value,
+            fontSize = 15.sp,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.SemiBold,
+            color = valueColor
+        )
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 5: QUICK ACTION BUTTONS
+// -----------------------------------------------------------------------------
+@Composable
+fun QuickActionButtonsRow(
+    onAdvanceClick: () -> Unit,
+    onPaymentClick: () -> Unit,
+    onWhatsAppClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        QuickActionButton(
+            label = "ADVANCE",
+            icon = Icons.Default.Payments,
+            bgColor = Color(0xFF1976ED),
+            onClick = onAdvanceClick,
+            modifier = Modifier.weight(1f)
+        )
+
+        QuickActionButton(
+            label = "PAYMENT",
+            icon = Icons.Default.AccountBalanceWallet,
+            bgColor = Color(0xFF1976ED),
+            onClick = onPaymentClick,
+            modifier = Modifier.weight(1f)
+        )
+
+        QuickActionButton(
+            label = "WHATSAPP",
+            icon = Icons.Default.Share,
+            bgColor = Color(0xFF514B63),
+            onClick = onWhatsAppClick,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun QuickActionButton(
+    label: String,
+    icon: ImageVector,
+    bgColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = bgColor, contentColor = Color.White),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 6: HISTORY TABS
+// -----------------------------------------------------------------------------
+@Composable
+fun HistoryTabsContainer(
+    selectedTab: WorkerHistoryTab,
+    onTabSelected: (WorkerHistoryTab) -> Unit
+) {
+    val isDark = isSystemInDarkTheme()
+    val containerBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val border = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
+    val unselectedBg = if (isDark) Color(0xFF2A2D3A) else Color(0xFFE8E6F1)
+    val unselectedText = if (isDark) Color(0xFFA0A5BD) else Color(0xFF565A70)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = containerBg,
+        border = BorderStroke(1.dp, border),
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            WorkerHistoryTab.entries.forEach { tab ->
+                val isSelected = selectedTab == tab
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(42.dp)
+                        .clip(CircleShape)
+                        .clickable { onTabSelected(tab) },
+                    shape = CircleShape,
+                    color = if (isSelected) Color(0xFF1976ED) else unselectedBg
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = tab.title,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else unselectedText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// COMPONENT 7: HISTORY CONTENT CARDS
+// -----------------------------------------------------------------------------
+@Composable
+fun AttendanceHistoryCard(
+    attendance: AttendanceEntity,
+    siteName: String
+) {
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
+    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left Section: Circular Avatar with Camera Badge
-            Box(
-                contentAlignment = Alignment.BottomEnd,
-                modifier = Modifier.clickable { onPickPhoto() }
-            ) {
-                WorkerAvatar(
-                    photoPath = worker.photoPath,
-                    name = worker.name,
-                    modifier = Modifier.size(56.dp),
-                    textStyle = MaterialTheme.typography.titleLarge
-                )
-                Surface(
-                    modifier = Modifier.size(20.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    border = BorderStroke(1.dp, Color.White)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Edit Photo",
-                            modifier = Modifier.size(12.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Center Section: Worker Info
-            Column(modifier = Modifier.weight(1f)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = worker.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = 22.sp,
+                    text = Utils.formatDate(attendance.date),
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = primaryText
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val formattedType = worker.workerType.name.lowercase().replaceFirstChar { it.uppercase() }
-                    Surface(
-                        shape = MaterialTheme.shapes.extraSmall
-                    ) {
-                        Text(
-                            text = formattedType,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-
-                    if (worker.phone.isNotBlank()) {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall
-                        ) {
-                            Text(
-                                text = worker.phone,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Site",
+                        tint = Color(0xFF1976ED),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = siteName,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF1976ED)
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                val rateInfo = if (worker.overtimeRate > 0) {
-                    "$currentSiteName · ${Utils.formatCurrency(worker.dailyRate)}/day (OT: ${Utils.formatCurrency(worker.overtimeRate)}/h)"
-                } else {
-                    "$currentSiteName · ${Utils.formatCurrency(worker.dailyRate)}/day"
-                }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                AttendanceStatusBadge(status = attendance.status)
 
                 Text(
-                    text = rateInfo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = Utils.formatCurrency(attendance.amount),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryText
                 )
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Right Section: Status Chip
-            StatusChip(isActive = worker.isActive)
         }
     }
 }
 
 @Composable
-fun StatusChip(isActive: Boolean) {
-    val color = if (isActive) Color(0xFF2E7D32) else Color(0xFFC62828)
+fun AttendanceStatusBadge(status: AttendanceStatus) {
+    val isDark = isSystemInDarkTheme()
+    val (bgColor, textColor) = when (status) {
+        AttendanceStatus.PRESENT -> Pair(if (isDark) Color(0xFF0F3818) else Color(0xFFDDFBE7), Color(0xFF087A2D))
+        AttendanceStatus.HALF_DAY -> Pair(if (isDark) Color(0xFF382C0F) else Color(0xFFFFF1D2), Color(0xFFD99000))
+        AttendanceStatus.ABSENT -> Pair(if (isDark) Color(0xFF381014) else Color(0xFFFFE3E7), Color(0xFFD7192D))
+        AttendanceStatus.OVERTIME -> Pair(if (isDark) Color(0xFF0F2638) else Color(0xFFE3F2FD), Color(0xFF1565C0))
+    }
+
     Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.small
+        color = bgColor,
+        shape = CircleShape
     ) {
         Text(
-            text = if (isActive) "Active" else "Inactive",
-            color = color,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            text = status.name.replace("_", " "),
+            color = textColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
         )
     }
 }
 
 @Composable
-fun WorkerStatsSection(
-    stats: WorkerStats,
-    onAdvanceClick: () -> Unit,
-    onPaymentClick: () -> Unit,
-    onWhatsAppReportClick: () -> Unit
+fun SiteHistoryCard(
+    history: WorkerSiteHistoryEntity,
+    siteName: String
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatItem("Present", stats.presentDays.toString(), Modifier.weight(1f))
-            StatItem("Half Day", stats.halfDays.toString(), Modifier.weight(1f))
-            StatItem("Absent", stats.absentDays.toString(), Modifier.weight(1f))
-        }
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
+    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+    val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                SummaryStatRow("Total Earned", Utils.formatCurrency(stats.totalEarned))
-                SummaryStatRow("Total Paid", Utils.formatCurrency(stats.totalPaid))
-                SummaryStatRow("Total Advance", Utils.formatCurrency(stats.totalAdvance))
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                )
-                SummaryStatRow(
-                    label = "Pending Balance",
-                    value = Utils.formatCurrency(stats.pendingBalance),
-                    isBold = true,
-                    valueColor = if (stats.pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
-                )
-            }
-        }
-
-        // Action Buttons (Advance, Payment, WhatsApp - Positioned directly above History Buttons)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = onAdvanceClick,
-                modifier = Modifier.weight(1f).height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Advance", fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = TextAlign.Center)
-                }
-            }
-            Button(
-                onClick = onPaymentClick,
-                modifier = Modifier.weight(1f).height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Payment", fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = TextAlign.Center)
-                }
-            }
-            Button(
-                onClick = onWhatsAppReportClick,
-                modifier = Modifier.weight(1f).height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
-                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = TextAlign.Center)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                label, 
-                style = MaterialTheme.typography.bodySmall, 
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                value, 
-                style = MaterialTheme.typography.titleMedium, 
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-fun SummaryStatRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            label, 
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Medium,
-            color = valueColor ?: MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    }
-}
-
-@Composable
-fun SiteHistoryItem(history: WorkerSiteHistoryEntity, siteName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                siteName, 
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            val period = if (history.endDate == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = Color(0xFF1976ED),
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = siteName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryText
+                )
+            }
+
+            val dateText = if (history.endDate == null) {
                 "${Utils.formatDate(history.startDate)} → Present"
             } else {
                 "${Utils.formatDate(history.startDate)} → ${Utils.formatDate(history.endDate)}"
             }
-            Text(
-                period, 
-                style = MaterialTheme.typography.bodySmall, 
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
 
-@Composable
-fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    Utils.formatDate(attendance.date), 
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = secondaryText,
+                    modifier = Modifier.size(14.dp)
                 )
                 Text(
-                    siteName, 
-                    style = MaterialTheme.typography.bodySmall, 
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    attendance.status.name, 
-                    color = getStatusColor(attendance.status), 
-                    fontWeight = FontWeight.ExtraBold, 
-                    fontSize = 12.sp
-                )
-                Text(
-                    Utils.formatCurrency(attendance.amount), 
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = dateText,
+                    fontSize = 12.sp,
+                    color = secondaryText,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -857,13 +1359,18 @@ fun AttendanceHistoryItem(attendance: AttendanceEntity, siteName: String) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PaymentHistoryItem(
+fun PaymentHistoryCard(
     payment: PaymentEntity,
     siteName: String,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2)
+    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+    val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
 
     Box {
         Card(
@@ -873,41 +1380,65 @@ fun PaymentHistoryItem(
                     onClick = {},
                     onLongClick = { menuExpanded = true }
                 ),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = cardBg),
+            border = BorderStroke(1.dp, borderColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Row(
-                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        Utils.formatDate(payment.date), 
+                        text = Utils.formatDate(payment.date),
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = primaryText
                     )
                     Text(
-                        "${payment.paymentType.name} - $siteName", 
-                        style = MaterialTheme.typography.bodySmall, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        text = "${payment.paymentType.name} · $siteName",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = secondaryText
                     )
                     if (payment.note.isNotEmpty()) {
                         Text(
-                            "Note: ${payment.note}", 
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            text = "Note: ${payment.note}",
+                            fontSize = 12.sp,
+                            color = primaryText,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
-                Text(
-                    Utils.formatCurrency(payment.amount), 
-                    fontWeight = FontWeight.ExtraBold, 
-                    color = Color(0xFF2E7D32)
-                )
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Surface(
+                        color = Color(0xFF1976ED).copy(alpha = 0.12f),
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = payment.method.name,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1976ED),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Text(
+                        text = Utils.formatCurrency(payment.amount),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0A963D)
+                    )
+                }
             }
         }
 
@@ -949,32 +1480,9 @@ fun PaymentHistoryItem(
     }
 }
 
-fun getStatusColor(status: AttendanceStatus): Color {
-    return when (status) {
-        AttendanceStatus.PRESENT -> Color(0xFF2E7D32)
-        AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
-        AttendanceStatus.ABSENT -> Color(0xFFC62828)
-        AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
-    }
-}
-
-@Composable
-fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            label, 
-            style = MaterialTheme.typography.bodyMedium, 
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            value, 
-            style = MaterialTheme.typography.bodyMedium, 
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
+// -----------------------------------------------------------------------------
+// HELPER COMPOSABLES & DIALOGS
+// -----------------------------------------------------------------------------
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1005,7 +1513,7 @@ fun TransferWorkerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Worker: ${worker.name}", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                
+
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -1033,9 +1541,9 @@ fun TransferWorkerDialog(
                         }
                     }
                 }
-                
+
                 Text(
-                    "Date: ${Utils.formatDate(transferDate)}", 
+                    "Date: ${Utils.formatDate(transferDate)}",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -1059,7 +1567,7 @@ fun TransferWorkerDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordWorkerPaymentDialog(
     worker: WorkerEntity,
@@ -1100,7 +1608,6 @@ fun RecordWorkerPaymentDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Fixed Payment Type Indicator
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = MaterialTheme.shapes.small,
@@ -1125,7 +1632,6 @@ fun RecordWorkerPaymentDialog(
                     }
                 }
 
-                // Site selection
                 ExposedDropdownMenuBox(
                     expanded = siteExpanded,
                     onExpandedChange = { siteExpanded = !siteExpanded }
@@ -1173,7 +1679,10 @@ fun RecordWorkerPaymentDialog(
                 )
 
                 Text("Payment Method", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     PaymentMethod.entries.forEach { method ->
                         FilterChip(
                             selected = selectedMethod == method,
@@ -1289,7 +1798,6 @@ fun ShareWorkerReportDialog(
                     }
                 }
 
-                // Action buttons stacked vertically in precise order with separate layout space
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

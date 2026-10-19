@@ -14,19 +14,28 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material.icons.filled.Search
@@ -34,8 +43,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -48,8 +59,8 @@ import com.example.workermanager.data.entity.WorkerEntity
 import com.example.workermanager.data.entity.WorkerType
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.SiteViewModel
-import java.io.File
 import com.example.workermanager.viewmodel.WorkerViewModel
+import java.io.File
 import java.time.LocalDate
 
 private const val NONE_SITE_ID = -1L
@@ -69,6 +80,12 @@ fun WorkersScreen(
     var workerToEdit by remember { mutableStateOf<WorkerEntity?>(null) }
     var workerToDelete by remember { mutableStateOf<WorkerEntity?>(null) }
 
+    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val screenBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF1F6FD)
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color(0xFFFFFFFF)
+    val textPrimary = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF17243A)
+    val textSecondary = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B)
+
     Scaffold(
         topBar = {
             com.example.workermanager.ui.components.WorkCraftTopHeader(
@@ -79,10 +96,13 @@ fun WorkersScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Worker", fontWeight = FontWeight.Bold) }
+                text = { Text("Add Worker", fontWeight = FontWeight.Bold) },
+                shape = RoundedCornerShape(28.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier.height(42.dp)
             )
         }
     ) { padding ->
@@ -90,54 +110,94 @@ fun WorkersScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(screenBg)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // SECTION 1: SEARCH BAR
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search by name or phone") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, Color(0xFF1677F8).copy(alpha = 0.2f)),
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp)
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = Color(0xFF536789),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.updateSearchQuery(it) },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF26344A)),
+                        decorationBox = { innerTextField ->
+                            if (searchQuery.isEmpty()) {
+                                Text("Search by name or phone", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF536789))
+                            }
+                            innerTextField()
+                        }
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.updateSearchQuery("") }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = Color(0xFF536789), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // SECTION 2: HORIZONTAL SITE FILTER CARDS
             if (sites.isNotEmpty()) {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     item {
                         val isAllSelected = selectedSiteFilterId == null
                         val totalWorkersCount = workers.size
-                        WorkerSiteFilterChip(
+                        WorkerSiteFilterCard(
                             title = "All Sites",
                             workerCount = totalWorkersCount,
                             isSelected = isAllSelected,
-                            onClick = { viewModel.setSelectedSiteFilter(null) }
+                            onClick = { viewModel.setSelectedSiteFilter(null) },
+                            isDark = isDark
                         )
                     }
                     items(sites) { site ->
                         val isSiteSelected = selectedSiteFilterId == site.id
                         val siteWorkersCount = workers.count { it.currentSiteId == site.id }
-                        WorkerSiteFilterChip(
+                        WorkerSiteFilterCard(
                             title = site.name,
                             workerCount = siteWorkersCount,
                             isSelected = isSiteSelected,
-                            onClick = { viewModel.setSelectedSiteFilter(site.id) }
+                            onClick = { viewModel.setSelectedSiteFilter(site.id) },
+                            isDark = isDark
                         )
                     }
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // SECTION 3: WORKER LIST CARDS
             if (workers.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -148,13 +208,13 @@ fun WorkersScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = if (selectedSiteFilterId != null) "No workers assigned to this site." else "No workers added yet.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = textSecondary,
                             style = MaterialTheme.typography.bodyLarge
                         )
                         if (selectedSiteFilterId != null) {
                             Spacer(modifier = Modifier.height(12.dp))
                             TextButton(onClick = { viewModel.setSelectedSiteFilter(null) }) {
-                                Text("Show All Workers", fontWeight = FontWeight.Bold)
+                                Text("Show All Workers", fontWeight = FontWeight.Bold, color = Color(0xFF1677F8))
                             }
                         }
                     }
@@ -162,26 +222,31 @@ fun WorkersScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(workers) { worker ->
                         val stats by viewModel.getWorkerStats(worker.id).collectAsState(initial = null)
                         val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "No Site"
-                        
+
                         WorkerCard(
                             worker = worker,
                             siteName = currentSiteName,
                             pendingBalance = stats?.pendingBalance ?: 0.0,
                             onClick = { onWorkerClick(worker.id) },
                             onEdit = { workerToEdit = worker },
-                            onDelete = { workerToDelete = worker }
+                            onDelete = { workerToDelete = worker },
+                            isDark = isDark,
+                            cardBg = cardBg,
+                            textPrimary = textPrimary,
+                            textSecondary = textSecondary
                         )
                     }
                 }
             }
         }
 
+        // Add / Edit Worker Dialog
         if (showAddDialog || workerToEdit != null) {
             WorkerDialog(
                 worker = workerToEdit,
@@ -219,11 +284,12 @@ fun WorkersScreen(
             )
         }
 
+        // Delete Confirmation Dialog
         if (workerToDelete != null) {
             AlertDialog(
                 onDismissRequest = { workerToDelete = null },
                 title = { Text("Delete Worker?", fontWeight = FontWeight.Bold) },
-                text = { Text("Are you sure you want to delete this worker?", color = MaterialTheme.colorScheme.onSurface) },
+                text = { Text("Are you sure you want to delete this worker?", color = textPrimary) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteWorker(workerToDelete!!)
@@ -234,7 +300,7 @@ fun WorkersScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { workerToDelete = null }) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                        Text("Cancel", color = textPrimary, fontWeight = FontWeight.Medium)
                     }
                 }
             )
@@ -243,43 +309,51 @@ fun WorkersScreen(
 }
 
 @Composable
-fun WorkerSiteFilterChip(
+fun WorkerSiteFilterCard(
     title: String,
     workerCount: Int,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isDark: Boolean = false
 ) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        tonalElevation = if (isSelected) 3.dp else 1.dp,
-        modifier = Modifier.defaultMinSize(minHeight = 53.dp)
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) Color(0xFF1677F8) else (if (isDark) MaterialTheme.colorScheme.surface else Color.White),
+        contentColor = if (isSelected) Color.White else (if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF26344A)),
+        border = BorderStroke(1.dp, if (isSelected) Color(0xFF1677F8) else (if (isDark) Color(0xFF333A45) else Color(0xFFCBD5E1))),
+        shadowElevation = if (isSelected) 3.dp else 1.dp,
+        modifier = Modifier.height(43.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                maxLines = 1
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = null,
+                tint = if (isSelected) Color.White else Color(0xFF1677F8),
+                modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.height(2.dp))
-            val countText = if (workerCount == 1) "1 Worker" else "$workerCount Workers"
-            Text(
-                text = countText,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val countText = if (workerCount == 1) "1 Worker" else "$workerCount Workers"
+                Text(
+                    text = countText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 10.sp,
+                    color = if (isSelected) Color.White.copy(alpha = 0.85f) else (if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B)),
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -316,11 +390,11 @@ fun WorkerAvatar(
     }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier.size(42.dp),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+        color = Color(0xFFDFEBFF),
+        contentColor = Color(0xFF0965E8),
+        border = BorderStroke(1.dp, Color(0xFF0965E8).copy(alpha = 0.2f))
     ) {
         if (bitmap != null) {
             Image(
@@ -334,6 +408,7 @@ fun WorkerAvatar(
                 Text(
                     text = name.trim().take(1).uppercase(),
                     style = textStyle,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -348,25 +423,25 @@ fun WorkerCard(
     pendingBalance: Double,
     onClick: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isDark: Boolean = false,
+    cardBg: Color = Color.White,
+    textPrimary: Color = Color(0xFF17243A),
+    textSecondary: Color = Color(0xFF64748B)
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(14.dp),
+        color = cardBg,
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF333A45) else Color(0xFF0965E8).copy(alpha = 0.15f)),
+        shadowElevation = 2.dp
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp)
-        ) {
-            // Row 1: Worker Avatar, Name & Three-Dot Menu
+        Column(modifier = Modifier.padding(10.dp)) {
+            // TOP ROW: Avatar, Name, Type, Site & Three-Dot Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -378,20 +453,63 @@ fun WorkerCard(
                 ) {
                     WorkerAvatar(
                         photoPath = worker.photoPath,
-                        name = worker.name,
-                        modifier = Modifier.size(38.dp)
+                        name = worker.name
                     )
+
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = worker.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+
+                    Column {
+                        Text(
+                            text = worker.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Construction,
+                                contentDescription = null,
+                                tint = textSecondary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = worker.workerType.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 10.sp,
+                                color = textSecondary
+                            )
+
+                            Text("•", style = MaterialTheme.typography.bodySmall, color = textSecondary, fontSize = 10.sp)
+
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = Color(0xFF0866E8),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = siteName,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0866E8),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
 
+                // Three-Dot Options Menu
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
@@ -399,8 +517,8 @@ fun WorkerCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More Options",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            contentDescription = "Options",
+                            tint = Color(0xFF536789)
                         )
                     }
 
@@ -409,30 +527,32 @@ fun WorkerCard(
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
+                            text = { Text("View Details") },
+                            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
+                            onClick = {
+                                menuExpanded = false
+                                onClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Edit Worker") },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
                             onClick = {
                                 menuExpanded = false
                                 onEdit()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete", color = Color(0xFFC62828)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    tint = Color(0xFFC62828),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
+                            text = { Text("Payment History") },
+                            leadingIcon = { Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
+                            onClick = {
+                                menuExpanded = false
+                                onClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete Worker", color = Color(0xFFC62828)) },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(18.dp)) },
                             onClick = {
                                 menuExpanded = false
                                 onDelete()
@@ -442,43 +562,75 @@ fun WorkerCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Row 2: Worker Type • Site Name
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = worker.workerType.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            // BOTTOM ROW: COMPACT BALANCE BAR
+            val (balBg, balColor, balText) = when {
+                pendingBalance > 0.001 -> Triple(
+                    if (isDark) Color(0xFF3E1F24) else Color(0xFFFFF0F2),
+                    if (isDark) Color(0xFFFF5252) else Color(0xFFD90016),
+                    "${Utils.formatCurrency(pendingBalance)} Due"
                 )
-                Text(
-                    text = "•",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                pendingBalance < -0.001 -> Triple(
+                    if (isDark) Color(0xFF1B382B) else Color(0xFFE4F9EC),
+                    if (isDark) Color(0xFF2ECC71) else Color(0xFF078B35),
+                    "${Utils.formatCurrency(-pendingBalance)} Advance"
                 )
-                Text(
-                    text = siteName,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                else -> Triple(
+                    if (isDark) Color(0xFF252A32) else Color(0xFFF1F5F9),
+                    if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                    "₹0.00"
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp),
+                shape = RoundedCornerShape(9.dp),
+                color = balBg,
+                border = BorderStroke(1.dp, balColor.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = balColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Balance",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = balColor
+                        )
+                    }
 
-            // Row 3: Balance Amount
-            Text(
-                text = "Balance: ${Utils.formatCurrency(pendingBalance)}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (pendingBalance > 0) Color(0xFFC62828) else Color(0xFF2E7D32)
-            )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = balText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = balColor
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = balColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -505,7 +657,6 @@ fun WorkerDialog(
     var isActive by remember { mutableStateOf(worker?.isActive ?: true) }
 
     var nameError by remember { mutableStateOf<String?>(null) }
-    var siteError by remember { mutableStateOf<String?>(null) }
 
     var typeExpanded by remember { mutableStateOf(false) }
     var siteExpanded by remember { mutableStateOf(false) }
@@ -514,44 +665,8 @@ fun WorkerDialog(
     var newSiteName by remember { mutableStateOf("") }
     var newSiteAddress by remember { mutableStateOf("") }
     var newSiteManager by remember { mutableStateOf("") }
-    var newSiteError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val contactUri: Uri? = result.data?.data
-            if (contactUri != null) {
-                val (fetchedName, fetchedNumber) = processContactUri(context, contactUri)
-
-                if (!fetchedName.isNullOrBlank()) {
-                    name = fetchedName.trim()
-                    nameError = null
-                }
-
-                if (!fetchedNumber.isNullOrBlank()) {
-                    val normalized = normalizePhoneNumber(fetchedNumber)
-                    if (normalized.isNotEmpty()) {
-                        phone = normalized
-                    }
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Selected contact has no phone number.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    val displaySites = remember(sites) {
-        val selfWork = sites.find { it.name.equals("Self Work", ignoreCase = true) }
-        val others = sites.filter { !it.name.equals("Self Work", ignoreCase = true) }
-        if (selfWork != null) listOf(selfWork) + others else others
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -563,366 +678,105 @@ fun WorkerDialog(
             ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { 
-                        name = it
-                        if (it.isNotBlank()) nameError = null
-                    },
-                    label = { Text("Name") },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
-                                try {
-                                    contactPickerLauncher.launch(intent)
-                                } catch (e: Exception) {
-                                    Log.e("WorkCraftContact", "Failed to launch contact picker with Phone URI, trying Contacts URI", e)
-                                    try {
-                                        val fallbackIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-                                        contactPickerLauncher.launch(fallbackIntent)
-                                    } catch (ex: Exception) {
-                                        Log.e("WorkCraftContact", "Failed to launch fallback contact picker", ex)
-                                        Toast.makeText(context, "Unable to open contact picker.", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PermContactCalendar,
-                                contentDescription = "Select Contact",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
+                    onValueChange = { name = it; nameError = null },
+                    label = { Text("Worker Name*") },
                     isError = nameError != null,
-                    supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = nameError?.let { { Text(it) } },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Phone") },
+                    label = { Text("Phone Number (Opt)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                // Worker Type Dropdown
-                ExposedDropdownMenuBox(expanded = typeExpanded, onExpandedChange = { typeExpanded = !typeExpanded }) {
+
+                // Worker Type Picker
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = type.name,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Worker Type") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        label = { Text("Worker Type*") },
+                        modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true }
                     )
-                    ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        WorkerType.entries.forEach { t ->
-                            DropdownMenuItem(
-                                text = { Text(t.name, fontWeight = FontWeight.Medium) }, 
-                                onClick = { type = t; typeExpanded = false }
-                            )
+                    Box(modifier = Modifier.matchParentSize().clickable { typeExpanded = true })
+                    DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
+                        WorkerType.entries.forEach { wType ->
+                            DropdownMenuItem(text = { Text(wType.name) }, onClick = { type = wType; typeExpanded = false })
                         }
                     }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = dailyRate, 
-                        onValueChange = { dailyRate = it }, 
-                        label = { Text("Daily Rate") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), 
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = otRate, 
-                        onValueChange = { otRate = it }, 
-                        label = { Text("OT Rate/Hr") }, 
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), 
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                OutlinedTextField(
+                    value = dailyRate,
+                    onValueChange = { dailyRate = it },
+                    label = { Text("Daily Wage Rate (₹)*") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                // Site selection
-                val siteFieldText = when (siteId) {
-                    NONE_SITE_ID -> "Self Work"
-                    null -> "Select Site"
-                    else -> sites.find { it.id == siteId }?.name ?: "Select Site"
-                }
+                OutlinedTextField(
+                    value = otRate,
+                    onValueChange = { otRate = it },
+                    label = { Text("Overtime Rate per Hour (₹)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                val hasSelfWorkSite = remember(sites) {
-                    sites.any { it.name.equals("Self Work", ignoreCase = true) }
-                }
-
-                ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
+                // Site Picker
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = siteFieldText,
+                        value = sites.find { it.id == siteId }?.name ?: "Assign Site (Opt)",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Assign to Site") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
-                        isError = siteError != null,
-                        supportingText = siteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        label = { Text("Site") },
+                        modifier = Modifier.fillMaxWidth().clickable { siteExpanded = true }
                     )
-                    ExposedDropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
-                        if (!hasSelfWorkSite) {
-                            DropdownMenuItem(
-                                text = { Text("Self Work", fontWeight = FontWeight.Medium) },
-                                onClick = {
-                                    siteId = NONE_SITE_ID
-                                    siteError = null
-                                    siteExpanded = false
-                                }
-                            )
+                    Box(modifier = Modifier.matchParentSize().clickable { siteExpanded = true })
+                    DropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        DropdownMenuItem(text = { Text("No Site Assigned") }, onClick = { siteId = null; siteExpanded = false })
+                        sites.forEach { site ->
+                            DropdownMenuItem(text = { Text(site.name) }, onClick = { siteId = site.id; siteExpanded = false })
                         }
-                        displaySites.forEach { site ->
-                            DropdownMenuItem(
-                                text = { Text(site.name, fontWeight = FontWeight.Medium) }, 
-                                onClick = { 
-                                    siteId = site.id
-                                    siteError = null
-                                    siteExpanded = false 
-                                }
-                            )
-                        }
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "Add New Site",
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            },
-                            onClick = {
-                                siteExpanded = false
-                                newSiteName = ""
-                                newSiteAddress = ""
-                                newSiteManager = ""
-                                newSiteError = null
-                                showAddSiteDialog = true
-                            }
-                        )
                     }
                 }
 
-                OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth())
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = isActive, onCheckedChange = { isActive = it })
-                    Text("Active", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes (Opt)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val dRate = dailyRate.toDoubleOrNull() ?: 0.0
-                    val oRate = otRate.toDoubleOrNull() ?: 0.0
-                    var hasError = false
-
                     if (name.isBlank()) {
-                        nameError = "Name is required"
-                        hasError = true
-                    } else {
-                        nameError = null
+                        nameError = "Worker name is required"
+                        return@Button
                     }
-
-                    if (siteId == null) {
-                        siteError = "Please select a site"
-                        hasError = true
-                    } else {
-                        siteError = null
-                    }
-
-                    if (!hasError) {
-                        if (siteId == NONE_SITE_ID) {
-                            val existingSelfWork = sites.find { it.name.equals("Self Work", ignoreCase = true) }
-                            if (existingSelfWork != null) {
-                                onConfirm(name, phone, type, dRate, oRate, joiningDate, existingSelfWork.id, notes, isActive)
-                            } else {
-                                onAddNewSite("Self Work", "Self Work", "Default") { createdSiteId ->
-                                    onConfirm(name, phone, type, dRate, oRate, joiningDate, createdSiteId, notes, isActive)
-                                }
-                            }
-                        } else {
-                            onConfirm(name, phone, type, dRate, oRate, joiningDate, siteId, notes, isActive)
-                        }
-                    }
-                }
-            ) { Text("Save", fontWeight = FontWeight.Bold) }
+                    val dRate = dailyRate.toDoubleOrNull() ?: 0.0
+                    val oRate = otRate.toDoubleOrNull() ?: (dRate / 8.0)
+                    onConfirm(name.trim(), phone.trim(), type, dRate, oRate, joiningDate, siteId, notes.trim(), isActive)
+                },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677F8))
+            ) {
+                Text(if (worker == null) "Add Worker" else "Save Changes", fontWeight = FontWeight.Bold)
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
     )
-
-    if (showAddSiteDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddSiteDialog = false },
-            title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = newSiteName,
-                        onValueChange = { 
-                            newSiteName = it
-                            if (it.isNotBlank()) newSiteError = null
-                        },
-                        label = { Text("Site Name") },
-                        singleLine = true,
-                        isError = newSiteError != null,
-                        supportingText = newSiteError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = newSiteAddress,
-                        onValueChange = { newSiteAddress = it },
-                        label = { Text("Site Address") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = newSiteManager,
-                        onValueChange = { newSiteManager = it },
-                        label = { Text("Site Manager") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val trimmedName = newSiteName.trim()
-                        val trimmedAddress = newSiteAddress.trim()
-                        val trimmedManager = newSiteManager.trim()
-
-                        if (trimmedName.isEmpty()) {
-                            newSiteError = "Site name cannot be empty"
-                        } else if (sites.any { it.name.equals(trimmedName, ignoreCase = true) }) {
-                            newSiteError = "A site with this name already exists"
-                        } else {
-                            onAddNewSite(trimmedName, trimmedAddress, trimmedManager) { createdSiteId ->
-                                siteId = createdSiteId
-                                siteError = null
-                                showAddSiteDialog = false
-                            }
-                        }
-                    }
-                ) {
-                    Text("Save Site", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddSiteDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        )
-    }
-}
-
-private fun processContactUri(context: Context, contactUri: Uri): Pair<String?, String?> {
-    var fetchedName: String? = null
-    var fetchedNumber: String? = null
-
-    try {
-        // Attempt 1: Query as CommonDataKinds.Phone URI
-        val phoneCursor = context.contentResolver.query(
-            contactUri,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
-            ),
-            null,
-            null,
-            null
-        )
-
-        phoneCursor?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-
-                if (nameIdx >= 0) fetchedName = cursor.getString(nameIdx)
-                if (numIdx >= 0) fetchedNumber = cursor.getString(numIdx)
-            }
-        }
-
-        // Attempt 2: If phone number was not retrieved, query Contacts table & Phone table
-        if (fetchedNumber.isNullOrBlank()) {
-            val contactCursor = context.contentResolver.query(
-                contactUri,
-                arrayOf(
-                    ContactsContract.Contacts._ID,
-                    ContactsContract.Contacts.DISPLAY_NAME,
-                    ContactsContract.Contacts.HAS_PHONE_NUMBER
-                ),
-                null,
-                null,
-                null
-            )
-
-            contactCursor?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idIdx = cursor.getColumnIndex(ContactsContract.Contacts._ID)
-                    val nameIdx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
-                    val hasPhoneIdx = cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)
-
-                    if (fetchedName.isNullOrBlank() && nameIdx >= 0) {
-                        fetchedName = cursor.getString(nameIdx)
-                    }
-
-                    val contactId = if (idIdx >= 0) cursor.getString(idIdx) else null
-                    val hasPhone = if (hasPhoneIdx >= 0) cursor.getInt(hasPhoneIdx) else 0
-
-                    if (hasPhone > 0 && contactId != null) {
-                        val pCursor = context.contentResolver.query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                            arrayOf(contactId),
-                            null
-                        )
-                        pCursor?.use { pc ->
-                            if (pc.moveToFirst()) {
-                                val numIdx = pc.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                                if (numIdx >= 0) {
-                                    fetchedNumber = pc.getString(numIdx)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } catch (e: Exception) {
-        Log.e("WorkCraftContact", "Error reading contact details for URI: $contactUri", e)
-    }
-
-    return Pair(fetchedName, fetchedNumber)
-}
-
-private fun normalizePhoneNumber(rawNumber: String): String {
-    val trimmed = rawNumber.trim()
-    if (trimmed.isEmpty()) return ""
-
-    val hasPlus = trimmed.startsWith("+")
-    val digitsOnly = trimmed.filter { it.isDigit() }
-    
-    return if (hasPlus) "+$digitsOnly" else digitsOnly
 }

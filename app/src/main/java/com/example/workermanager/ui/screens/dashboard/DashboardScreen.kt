@@ -106,66 +106,11 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            // REDESIGNED HEADER BANNER WITH BLUE GRADIENT
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(Color(0xFF0756C9), Color(0xFF0789F5))
-                        )
-                    )
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(id = R.drawable.dashlogo),
-                            contentDescription = "WorkCraft Logo",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Work", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-                                Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFFFFD54F))
-                            }
-                            Text(
-                                "Smart Workforce Management",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 10.sp,
-                                color = Color.White.copy(alpha = 0.85f),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    // Notification Bell / Settings Icon with Badge
-                    IconButton(onClick = onSettingsClick) {
-                        BadgedBox(
-                            badge = {
-                                Badge(containerColor = Color(0xFFFFD54F)) {
-                                    Text("•", color = Color.Black)
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                }
-            }
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Dashboard",
+                screenIcon = Icons.Default.Dashboard,
+                onNotificationClick = onSettingsClick
+            )
         }
     ) { padding ->
         Column(

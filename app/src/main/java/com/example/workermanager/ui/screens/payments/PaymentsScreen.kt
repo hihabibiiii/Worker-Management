@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,13 +53,9 @@ fun PaymentsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Payments", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Payments",
+                screenIcon = Icons.Default.Payments
             )
         },
         floatingActionButton = {

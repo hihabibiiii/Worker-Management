@@ -28,12 +28,12 @@
         "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-63:\\drawable\\ic_launcher_background.xml"
     },
     {
-        "merged": "com.example.workermanager.app-merged_res-61:/xml_provider_paths.xml.flat",
-        "source": "com.example.workermanager.app-main-63:/xml/provider_paths.xml"
-    },
-    {
         "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-61:\\xml_backup_rules.xml.flat",
         "source": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-main-63:\\xml\\backup_rules.xml"
+    },
+    {
+        "merged": "com.example.workermanager.app-merged_res-61:/drawable_dashlogo2.png.flat",
+        "source": "com.example.workermanager.app-main-63:/drawable/dashlogo2.png"
     },
     {
         "merged": "C:\\Users\\Habibullah\\.gradle\\daemon\\9.0-milestone-1\\com.example.workermanager.app-merged_res-61:\\drawable_ic_launcher.xml.flat",

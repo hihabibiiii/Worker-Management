@@ -35,19 +35,10 @@ fun SitesScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Project Sites", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "All Sites",
+                screenIcon = Icons.Default.LocationOn,
+                onBackClick = onBack
             )
         },
         floatingActionButton = {

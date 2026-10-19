@@ -104,19 +104,10 @@ fun ContractorMaterialScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Material Management", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Material Management",
+                screenIcon = Icons.Default.Inventory2,
+                onBackClick = onBack
             )
         },
         floatingActionButton = {

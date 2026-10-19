@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material.icons.filled.Search
@@ -70,13 +71,9 @@ fun WorkersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Workers", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Workers",
+                screenIcon = Icons.Default.Groups
             )
         },
         floatingActionButton = {

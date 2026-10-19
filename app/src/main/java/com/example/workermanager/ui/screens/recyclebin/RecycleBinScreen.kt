@@ -45,30 +45,10 @@ fun RecycleBinScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Recycle Bin", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (trashedItems.isNotEmpty()) {
-                        TextButton(
-                            onClick = { showEmptyBinDialog = true },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
-                        ) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Empty Bin", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Recycle Bin",
+                screenIcon = Icons.Default.DeleteSweep,
+                onBackClick = onBack
             )
         }
     ) { padding ->

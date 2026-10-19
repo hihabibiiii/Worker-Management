@@ -19,7 +19,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.PermContactCalendar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -56,19 +58,10 @@ fun ContractsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Contracts / Clients", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Contracts",
+                screenIcon = Icons.AutoMirrored.Filled.Assignment,
+                onBackClick = onBack
             )
         },
         floatingActionButton = {

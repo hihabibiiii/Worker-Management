@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,18 +50,9 @@ fun AttendanceScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Daily Attendance", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { datePickerDialog.show() }) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = "Select Date")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+            com.example.workermanager.ui.components.WorkCraftTopHeader(
+                screenTitle = "Attendance",
+                screenIcon = Icons.Default.History
             )
         }
     ) { padding ->

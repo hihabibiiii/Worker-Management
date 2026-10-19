@@ -1,6 +1,7 @@
 package com.example.workermanager.ui.screens.attendance
 
 import android.app.DatePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,12 +43,19 @@ fun AttendanceScreen(
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            viewModel.updateSelectedDate(LocalDate.of(year, month + 1, dayOfMonth))
+            val pickedDate = LocalDate.of(year, month + 1, dayOfMonth)
+            if (!pickedDate.isAfter(LocalDate.now())) {
+                viewModel.updateSelectedDate(pickedDate)
+            } else {
+                Toast.makeText(context, "Future dates are not allowed for attendance.", Toast.LENGTH_SHORT).show()
+            }
         },
         selectedDate.year,
         selectedDate.monthValue - 1,
         selectedDate.dayOfMonth
-    )
+    ).apply {
+        datePicker.maxDate = System.currentTimeMillis()
+    }
 
     Scaffold(
         topBar = {
@@ -62,15 +71,56 @@ fun AttendanceScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Date and Site Selector Section
+            // Interactive Clickable Attendance Date Bar
             Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = Utils.formatDate(selectedDate),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Surface(
+                    onClick = { datePickerDialog.show() },
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Change Date",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = Utils.formatDate(selectedDate),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                val isToday = selectedDate == LocalDate.now()
+                                Text(
+                                    text = if (isToday) "Today's Attendance" else "Past Date Attendance (${Utils.formatDate(selectedDate)})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(
+                                imageVector = Icons.Default.EditCalendar,
+                                contentDescription = "Pick Date",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -104,14 +154,21 @@ fun AttendanceScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(workersWithAttendance) { item ->
+                    items(
+                        items = workersWithAttendance,
+                        key = { it.worker.id }
+                    ) { item ->
                         AttendanceWorkerCard(
-                            item = item,
-                            onStatusChange = { status, otHours, note ->
-                                viewModel.markAttendance(item.worker, status, otHours, note)
+                            workerAttendance = item,
+                            onStatusChange = { status, overtime, note ->
+                                if (selectedDate.isAfter(LocalDate.now())) {
+                                    Toast.makeText(context, "Cannot record attendance for future dates.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    viewModel.markAttendance(item.worker, status, overtime, note)
+                                }
                             }
                         )
                     }
@@ -122,11 +179,173 @@ fun AttendanceScreen(
 }
 
 @Composable
+fun AttendanceWorkerCard(
+    workerAttendance: WorkerAttendance,
+    onStatusChange: (AttendanceStatus, Double, String) -> Unit
+) {
+    val worker = workerAttendance.worker
+    val attendance = workerAttendance.attendance
+    var showOvertimeDialog by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = worker.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Daily Rate: ${Utils.formatCurrency(worker.dailyRate)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (attendance?.overtimeHours != null && attendance.overtimeHours > 0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = "OT: ${attendance.overtimeHours} hrs (${Utils.formatCurrency(attendance.overtimeAmount)})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Attendance Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                StatusButton(
+                    text = "Present",
+                    isSelected = attendance?.status == AttendanceStatus.PRESENT,
+                    color = Color(0xFF2E7D32),
+                    onClick = { onStatusChange(AttendanceStatus.PRESENT, attendance?.overtimeHours ?: 0.0, attendance?.note ?: "") },
+                    modifier = Modifier.weight(1f)
+                )
+                StatusButton(
+                    text = "Half Day",
+                    isSelected = attendance?.status == AttendanceStatus.HALF_DAY,
+                    color = Color(0xFFEF6C00),
+                    onClick = { onStatusChange(AttendanceStatus.HALF_DAY, attendance?.overtimeHours ?: 0.0, attendance?.note ?: "") },
+                    modifier = Modifier.weight(1f)
+                )
+                StatusButton(
+                    text = "Absent",
+                    isSelected = attendance?.status == AttendanceStatus.ABSENT,
+                    color = Color(0xFFC62828),
+                    onClick = { onStatusChange(AttendanceStatus.ABSENT, 0.0, attendance?.note ?: "") },
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(
+                    onClick = { showOvertimeDialog = true },
+                    contentPadding = PaddingValues(2.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Text("OT", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+
+    if (showOvertimeDialog) {
+        OvertimeDialog(
+            currentOvertime = attendance?.overtimeHours ?: 0.0,
+            onDismiss = { showOvertimeDialog = false },
+            onConfirm = { hours ->
+                val currentStatus = attendance?.status ?: AttendanceStatus.PRESENT
+                onStatusChange(currentStatus, hours, attendance?.note ?: "")
+                showOvertimeDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun StatusButton(
+    text: String,
+    isSelected: Boolean,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        modifier = modifier.height(36.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun OvertimeDialog(
+    currentOvertime: Double,
+    onDismiss: () -> Unit,
+    onConfirm: (Double) -> Unit
+) {
+    var hoursText by remember { mutableStateOf(if (currentOvertime > 0) currentOvertime.toString() else "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Overtime Hours", fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = hoursText,
+                onValueChange = { hoursText = it },
+                label = { Text("Hours") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val hours = hoursText.toDoubleOrNull() ?: 0.0
+                    onConfirm(hours)
+                }
+            ) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         tonalElevation = 2.dp,
         modifier = Modifier.height(36.dp)
     ) {
@@ -142,238 +361,4 @@ fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
             )
         }
     }
-}
-
-@Composable
-fun AttendanceWorkerCard(
-    item: WorkerAttendance,
-    onStatusChange: (AttendanceStatus, Double, String) -> Unit
-) {
-    var showOtDialog by remember { mutableStateOf(false) }
-    var pendingStatusConfirm by remember { mutableStateOf<AttendanceStatus?>(null) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        item.worker.name, 
-                        style = MaterialTheme.typography.titleMedium, 
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        item.worker.workerType.name, 
-                        style = MaterialTheme.typography.bodySmall, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                
-                if (item.attendance != null) {
-                    Text(
-                        text = Utils.formatCurrency(item.attendance.amount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                StatusButton("P", AttendanceStatus.PRESENT, item.attendance?.status, Modifier.weight(1f)) {
-                    pendingStatusConfirm = AttendanceStatus.PRESENT
-                }
-                StatusButton("HD", AttendanceStatus.HALF_DAY, item.attendance?.status, Modifier.weight(1f)) {
-                    pendingStatusConfirm = AttendanceStatus.HALF_DAY
-                }
-                StatusButton("A", AttendanceStatus.ABSENT, item.attendance?.status, Modifier.weight(1f)) {
-                    pendingStatusConfirm = AttendanceStatus.ABSENT
-                }
-                StatusButton("OT", AttendanceStatus.OVERTIME, item.attendance?.status, Modifier.weight(1f)) {
-                    showOtDialog = true
-                }
-            }
-
-            if (item.attendance?.status == AttendanceStatus.OVERTIME) {
-                Text(
-                    "OT: ${item.attendance.overtimeHours} hrs | ₹${item.attendance.overtimeAmount}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-        }
-    }
-
-    if (pendingStatusConfirm != null) {
-        AttendanceConfirmDialog(
-            workerName = item.worker.name,
-            status = pendingStatusConfirm!!,
-            onDismiss = { pendingStatusConfirm = null },
-            onConfirm = {
-                val statusToSave = pendingStatusConfirm!!
-                pendingStatusConfirm = null
-                onStatusChange(statusToSave, 0.0, "")
-            }
-        )
-    }
-
-    if (showOtDialog) {
-        OvertimeDialog(
-            workerName = item.worker.name,
-            onDismiss = { showOtDialog = false },
-            onConfirm = { hours, note ->
-                onStatusChange(AttendanceStatus.OVERTIME, hours, note)
-                showOtDialog = false
-            }
-        )
-    }
-}
-
-@Composable
-fun AttendanceConfirmDialog(
-    workerName: String,
-    status: AttendanceStatus,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    val statusText = when (status) {
-        AttendanceStatus.PRESENT -> "Present"
-        AttendanceStatus.HALF_DAY -> "Half Day"
-        AttendanceStatus.ABSENT -> "Absent"
-        AttendanceStatus.OVERTIME -> "Overtime"
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Confirm Attendance", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "Worker: $workerName",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Attendance: $statusText",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Are you sure you want to mark this attendance?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onConfirm) {
-                Text("Yes", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("No", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            }
-        }
-    )
-}
-
-@Composable
-fun StatusButton(
-    label: String,
-    status: AttendanceStatus,
-    selectedStatus: AttendanceStatus?,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val isSelected = status == selectedStatus
-    val color = when (status) {
-        AttendanceStatus.PRESENT -> Color(0xFF2E7D32)
-        AttendanceStatus.HALF_DAY -> Color(0xFFEF6C00)
-        AttendanceStatus.ABSENT -> Color(0xFFC62828)
-        AttendanceStatus.OVERTIME -> Color(0xFF1565C0)
-        else -> Color(0xFF424242)
-    }
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(36.dp),
-        shape = MaterialTheme.shapes.small,
-        color = if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant,
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = label,
-                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun OvertimeDialog(
-    workerName: String,
-    onDismiss: () -> Unit,
-    onConfirm: (Double, String) -> Unit
-) {
-    var hours by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Overtime for $workerName", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = hours,
-                    onValueChange = { hours = it },
-                    label = { Text("OT Hours") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                    )
-                )
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (Optional)") }
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = { 
-                val h = hours.toDoubleOrNull() ?: 0.0
-                onConfirm(h, note)
-            }) {
-                Text("Confirm", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
-        }
-    )
 }

@@ -56,7 +56,9 @@ class AttendanceViewModel(
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun updateSelectedDate(date: LocalDate) {
-        _selectedDate.value = date
+        if (!date.isAfter(LocalDate.now())) {
+            _selectedDate.value = date
+        }
     }
 
     fun updateSelectedSite(siteId: Long?) {
@@ -69,28 +71,45 @@ class AttendanceViewModel(
         overtimeHours: Double = 0.0,
         note: String = ""
     ) {
-        val siteId = worker.currentSiteId ?: return 
+        val targetDate = _selectedDate.value
+        if (targetDate.isAfter(LocalDate.now())) {
+            return
+        }
+        val siteId = worker.currentSiteId ?: return
         viewModelScope.launch {
             val overtimeAmount = overtimeHours * worker.overtimeRate
             val baseAmount = when (status) {
                 AttendanceStatus.PRESENT -> worker.dailyRate
                 AttendanceStatus.HALF_DAY -> worker.dailyRate / 2.0
                 AttendanceStatus.ABSENT -> 0.0
-                AttendanceStatus.OVERTIME -> 0.0 
+                AttendanceStatus.OVERTIME -> 0.0
             }
-            
+
             val totalAmount = baseAmount + overtimeAmount
-            
-            val attendance = AttendanceEntity(
-                workerId = worker.id,
-                siteId = siteId,
-                date = _selectedDate.value,
-                status = status,
-                overtimeHours = overtimeHours,
-                overtimeAmount = overtimeAmount,
-                amount = totalAmount,
-                note = note
-            )
+
+            val existingList = attendanceRepository.getAttendanceByDate(targetDate).firstOrNull() ?: emptyList()
+            val existing = existingList.find { it.workerId == worker.id && it.siteId == siteId }
+
+            val attendance = if (existing != null) {
+                existing.copy(
+                    status = status,
+                    overtimeHours = overtimeHours,
+                    overtimeAmount = overtimeAmount,
+                    amount = totalAmount,
+                    note = note
+                )
+            } else {
+                AttendanceEntity(
+                    workerId = worker.id,
+                    siteId = siteId,
+                    date = targetDate,
+                    status = status,
+                    overtimeHours = overtimeHours,
+                    overtimeAmount = overtimeAmount,
+                    amount = totalAmount,
+                    note = note
+                )
+            }
             attendanceRepository.insertAttendance(attendance)
         }
     }

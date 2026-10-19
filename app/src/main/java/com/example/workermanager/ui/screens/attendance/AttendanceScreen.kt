@@ -187,6 +187,8 @@ fun AttendanceWorkerCard(
     val attendance = workerAttendance.attendance
     var showOvertimeDialog by remember { mutableStateOf(false) }
 
+    var pendingStatusChange by remember { mutableStateOf<PendingStatusChange?>(null) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -239,21 +241,39 @@ fun AttendanceWorkerCard(
                     text = "Present",
                     isSelected = attendance?.status == AttendanceStatus.PRESENT,
                     color = Color(0xFF2E7D32),
-                    onClick = { onStatusChange(AttendanceStatus.PRESENT, attendance?.overtimeHours ?: 0.0, attendance?.note ?: "") },
+                    onClick = {
+                        pendingStatusChange = PendingStatusChange(
+                            status = AttendanceStatus.PRESENT,
+                            overtimeHours = attendance?.overtimeHours ?: 0.0,
+                            note = attendance?.note ?: ""
+                        )
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 StatusButton(
                     text = "Half Day",
                     isSelected = attendance?.status == AttendanceStatus.HALF_DAY,
                     color = Color(0xFFEF6C00),
-                    onClick = { onStatusChange(AttendanceStatus.HALF_DAY, attendance?.overtimeHours ?: 0.0, attendance?.note ?: "") },
+                    onClick = {
+                        pendingStatusChange = PendingStatusChange(
+                            status = AttendanceStatus.HALF_DAY,
+                            overtimeHours = attendance?.overtimeHours ?: 0.0,
+                            note = attendance?.note ?: ""
+                        )
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 StatusButton(
                     text = "Absent",
                     isSelected = attendance?.status == AttendanceStatus.ABSENT,
                     color = Color(0xFFC62828),
-                    onClick = { onStatusChange(AttendanceStatus.ABSENT, 0.0, attendance?.note ?: "") },
+                    onClick = {
+                        pendingStatusChange = PendingStatusChange(
+                            status = AttendanceStatus.ABSENT,
+                            overtimeHours = 0.0,
+                            note = attendance?.note ?: ""
+                        )
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedButton(
@@ -272,13 +292,65 @@ fun AttendanceWorkerCard(
             currentOvertime = attendance?.overtimeHours ?: 0.0,
             onDismiss = { showOvertimeDialog = false },
             onConfirm = { hours ->
-                val currentStatus = attendance?.status ?: AttendanceStatus.PRESENT
-                onStatusChange(currentStatus, hours, attendance?.note ?: "")
                 showOvertimeDialog = false
+                if (hours > 0) {
+                    pendingStatusChange = PendingStatusChange(
+                        status = AttendanceStatus.OVERTIME,
+                        overtimeHours = hours,
+                        note = attendance?.note ?: ""
+                    )
+                } else {
+                    val currentStatus = attendance?.status ?: AttendanceStatus.PRESENT
+                    pendingStatusChange = PendingStatusChange(
+                        status = currentStatus,
+                        overtimeHours = 0.0,
+                        note = attendance?.note ?: ""
+                    )
+                }
+            }
+        )
+    }
+
+    // YES / NO CONFIRMATION DIALOG FOR ALL FOUR BUTTONS
+    if (pendingStatusChange != null) {
+        val change = pendingStatusChange!!
+        val messageText = when (change.status) {
+            AttendanceStatus.PRESENT -> "Are you sure you want to mark this worker as Present?"
+            AttendanceStatus.ABSENT -> "Are you sure you want to mark this worker as Absent?"
+            AttendanceStatus.HALF_DAY -> "Are you sure you want to mark this worker as Half Day?"
+            AttendanceStatus.OVERTIME -> "Are you sure you want to mark this worker for Overtime?"
+        }
+
+        AlertDialog(
+            onDismissRequest = { pendingStatusChange = null },
+            title = { Text("Confirm Attendance", fontWeight = FontWeight.Bold) },
+            text = { Text(messageText) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onStatusChange(change.status, change.overtimeHours, change.note)
+                        pendingStatusChange = null
+                    }
+                ) {
+                    Text("Yes", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { pendingStatusChange = null }
+                ) {
+                    Text("No")
+                }
             }
         )
     }
 }
+
+data class PendingStatusChange(
+    val status: AttendanceStatus,
+    val overtimeHours: Double,
+    val note: String
+)
 
 @Composable
 fun StatusButton(

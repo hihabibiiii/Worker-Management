@@ -78,11 +78,11 @@ fun WorkCraftTopHeader(
 
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Work", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
-                            Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFFFFD54F))
+                            Text("Work", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.White)
+                            Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFFFFD54F))
                         }
                         Text(
-                            "Smart Workforce Management",
+                            "Smart Work Management",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 10.sp,
                             color = Color.White.copy(alpha = 0.85f),
@@ -93,19 +93,11 @@ fun WorkCraftTopHeader(
 
                 // Notification Bell Icon with Badge
                 IconButton(onClick = onNotificationClick) {
-                    BadgedBox(
-                        badge = {
-                            Badge(containerColor = Color(0xFFFFD54F)) {
-                                Text("•", color = Color.Black)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = Color.White
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = Color.White
+                    )
                 }
             }
         }

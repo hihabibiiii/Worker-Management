@@ -8,15 +8,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,8 @@ fun AttendanceScreen(
     val workersWithAttendance by viewModel.workersWithAttendance.collectAsState()
     val context = LocalContext.current
 
+    var searchQuery by remember { mutableStateOf("") }
+
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
@@ -57,6 +63,17 @@ fun AttendanceScreen(
         datePicker.maxDate = System.currentTimeMillis()
     }
 
+    val filteredWorkersWithAttendance = remember(workersWithAttendance, searchQuery) {
+        if (searchQuery.isBlank()) {
+            workersWithAttendance
+        } else {
+            val q = searchQuery.trim().lowercase()
+            workersWithAttendance.filter {
+                it.worker.name.lowercase().contains(q)
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             com.example.workermanager.ui.components.WorkCraftTopHeader(
@@ -71,7 +88,7 @@ fun AttendanceScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Interactive Clickable Attendance Date Bar
+            // Interactive Clickable Attendance Date Bar & Search Bar & Site Chips
             Column(modifier = Modifier.padding(16.dp)) {
                 Surface(
                     onClick = { datePickerDialog.show() },
@@ -122,9 +139,17 @@ fun AttendanceScreen(
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Search Bar
+                AttendanceSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         SiteChip(
@@ -143,12 +168,15 @@ fun AttendanceScreen(
                 }
             }
 
-            if (workersWithAttendance.isEmpty()) {
+            if (filteredWorkersWithAttendance.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = if (selectedSiteId == null) "No active workers found." 
+                        text = if (searchQuery.isNotBlank()) "No workers found."
+                        else if (selectedSiteId == null) "No active workers found." 
                         else "No workers assigned to this site on this date.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             } else {
@@ -158,7 +186,7 @@ fun AttendanceScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(
-                        items = workersWithAttendance,
+                        items = filteredWorkersWithAttendance,
                         key = { it.worker.id }
                     ) { item ->
                         AttendanceWorkerCard(
@@ -172,6 +200,79 @@ fun AttendanceScreen(
                             }
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AttendanceSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color.White
+    val border = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.3f) else Color(0xFFD9E3F2)
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = {
+                    Text(
+                        "Search workers...",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+            )
+
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }

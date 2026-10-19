@@ -2,6 +2,7 @@ R_DEF: Internal format may change without notice
 local
 drawable dashlogo
 drawable dashlogo2
+drawable headerlogo
 drawable ic_launcher
 drawable ic_launcher_background
 drawable logo

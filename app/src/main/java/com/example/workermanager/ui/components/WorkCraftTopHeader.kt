@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -22,10 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.R
-
-val HeaderGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFF0756C9), Color(0xFF0789F5))
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,12 +38,21 @@ fun WorkCraftTopHeader(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(HeaderGradient)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .height(72.dp)
         ) {
-            // BRANDING ROW (Logo, WorkCraft Title, Subtitle, Notification Bell / Back)
+            // 1. BACKGROUND HEADER IMAGE (R.drawable.headerlogo)
+            Image(
+                painter = painterResource(id = R.drawable.headerlogo),
+                contentDescription = "WorkCraft Header Background",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+
+            // 2. FOREGROUND BRANDING & CONTROLS ROW
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -69,7 +73,7 @@ fun WorkCraftTopHeader(
                         contentDescription = "WorkCraft Logo",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.2f))
                     )
@@ -78,27 +82,20 @@ fun WorkCraftTopHeader(
 
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Work", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.White)
-                            Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color(0xFFFFD54F))
+                            Text("Work", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                            Text("Craft", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFFFFD54F))
                         }
                         Text(
                             "Smart Work Management",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 10.sp,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = Color.White.copy(alpha = 0.9f),
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                // Notification Bell Icon with Badge
-                IconButton(onClick = onNotificationClick) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color.White
-                    )
-                }
+
             }
         }
     }

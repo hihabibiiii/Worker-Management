@@ -90,6 +90,14 @@ fun AttendanceScreen(
         ) {
             // Interactive Clickable Attendance Date Bar & Search Bar & Site Chips
             Column(modifier = Modifier.padding(16.dp)) {
+                // Search Bar
+                AttendanceSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 Surface(
                     onClick = { datePickerDialog.show() },
                     shape = MaterialTheme.shapes.medium,
@@ -139,14 +147,6 @@ fun AttendanceScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Search Bar
-                AttendanceSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it }
-                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 

@@ -417,7 +417,7 @@ fun WorkerDetailsScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Gallery Se Photo Select Karein", fontWeight = FontWeight.Bold)
+                                Text("Choose Photo from Gallery", fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -440,7 +440,7 @@ fun WorkerDetailsScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Camera Se Photo Lein", fontWeight = FontWeight.Bold)
+                                Text("Open Camera.", fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -562,6 +562,7 @@ fun WorkerProfileCard(
     sites: List<SiteEntity>,
     onPickPhoto: () -> Unit
 ) {
+    val context = LocalContext.current
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
@@ -655,7 +656,20 @@ fun WorkerProfileCard(
                         icon = Icons.Default.Phone,
                         label = "Phone",
                         value = if (worker.phone.isNotBlank()) worker.phone else "No Phone",
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = if (worker.phone.isNotBlank()) {
+                            {
+                                try {
+                                    val phoneNumber = worker.phone.trim()
+                                    if (phoneNumber.isNotBlank()) {
+                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+                                        context.startActivity(intent)
+                                    }
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "Unable to open dialer", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else null
                     )
                 }
 
@@ -780,7 +794,8 @@ fun WorkerDetailChip(
     icon: ImageVector,
     label: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD)
@@ -788,7 +803,7 @@ fun WorkerDetailChip(
     val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
 
     Surface(
-        modifier = modifier,
+        modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier,
         shape = RoundedCornerShape(14.dp),
         color = bg
     ) {

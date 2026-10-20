@@ -3,15 +3,16 @@ package com.example.workermanager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -21,6 +22,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -29,7 +31,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -149,70 +162,58 @@ class MainActivity : ComponentActivity() {
                         // Only show bottom bar for main screens
                         if (allNavItems.any { it.route == currentDestination?.route }) {
                             val isMoreSelected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
-                            val navItemColors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                            val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-                            NavigationBar(
-                                modifier = Modifier.height(66.dp),
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 4.dp
+                            val navBg = if (isDark) Color(0xFF1E222A) else Color.White
+                            val navBorder = if (isDark) Color(0xFF333A48) else Color(0xFFCBD5E1)
+                            val unselectedContentColor = if (isDark) Color(0xFF8E9BAE) else Color(0xFF526581)
+                            val selectedBg = Color(0xFF0866E8)
+                            val selectedContentColor = Color.White
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(32.dp),
+                                color = navBg,
+                                border = BorderStroke(1.dp, navBorder),
+                                shadowElevation = 8.dp
                             ) {
-                                primaryNavItems.forEach { screen ->
-                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                    NavigationBarItem(
-                                        icon = {
-                                            screen.icon?.let {
-                                                Icon(
-                                                    imageVector = it,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                        },
-                                        label = { 
-                                            Text(
-                                                text = screen.title,
-                                                maxLines = 1,
-                                                softWrap = false,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ) 
-                                        },
-                                        selected = isSelected,
-                                        colors = navItemColors,
-                                        onClick = {
-                                            navigateToTab(screen.route)
-                                        }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    primaryNavItems.forEach { screen ->
+                                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+
+                                        AnimatedNavItem(
+                                            title = screen.title,
+                                            icon = screen.icon,
+                                            isSelected = isSelected,
+                                            selectedBg = selectedBg,
+                                            selectedContentColor = selectedContentColor,
+                                            unselectedContentColor = unselectedContentColor,
+                                            onClick = { navigateToTab(screen.route) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+
+                                    // More Tab
+                                    AnimatedNavItem(
+                                        title = "More",
+                                        icon = Icons.Default.GridView,
+                                        isSelected = isMoreSelected,
+                                        selectedBg = selectedBg,
+                                        selectedContentColor = selectedContentColor,
+                                        unselectedContentColor = unselectedContentColor,
+                                        onClick = { showMoreSheet = true },
+                                        modifier = Modifier.weight(1f)
                                     )
                                 }
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(
-                                            Icons.Default.MoreHoriz,
-                                            contentDescription = "More",
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            text = "More",
-                                            maxLines = 1,
-                                            softWrap = false,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    },
-                                    selected = isMoreSelected,
-                                    colors = navItemColors,
-                                    onClick = {
-                                        showMoreSheet = true
-                                    }
-                                )
                             }
                         }
                     }
@@ -382,6 +383,70 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AnimatedNavItem(
+    title: String,
+    icon: ImageVector?,
+    isSelected: Boolean,
+    selectedBg: Color,
+    selectedContentColor: Color,
+    unselectedContentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val animatedColor by animateColorAsState(
+        targetValue = if (isSelected) selectedBg else Color.Transparent,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "bgColor"
+    )
+
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.1f else 1.0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "scale"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) selectedContentColor else unselectedContentColor,
+        animationSpec = tween(durationMillis = 200),
+        label = "contentColor"
+    )
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(animatedColor)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            icon?.let {
+                Icon(
+                    imageVector = it,
+                    contentDescription = title,
+                    tint = contentColor,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                )
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor,
+                maxLines = 1,
+                softWrap = false
+            )
         }
     }
 }

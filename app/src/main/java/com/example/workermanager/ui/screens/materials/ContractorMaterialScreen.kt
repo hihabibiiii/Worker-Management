@@ -277,7 +277,7 @@ fun ContractorMaterialScreen(
                                 }
                                 item {
                                     CoreActionChip(
-                                        label = "Material Purchase",
+                                        label = "Purchase Material",
                                         icon = Icons.Default.ShoppingCart,
                                         isSelected = showMaterialPurchaseMenu || showPurchaseMaterialDialog,
                                         isDark = isDark,
@@ -1556,7 +1556,7 @@ fun MaterialPurchaseMenuDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Material Purchase", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(" Purchase Material", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             }
         },
         text = {

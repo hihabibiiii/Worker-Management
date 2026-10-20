@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 enum class ContractorMaterialCategory(val displayName: String) {
-    SHUTTERING_ROOF_CASTING("Shuttering"),
+    SHUTTERING_ROOF_CASTING("Shuttering Materials"),
     CONSTRUCTION_TOOLS_MATERIALS("Construction Materials"),
     MASON_TOOLS("Mason Tools"),
     OTHER_SITE_EQUIPMENT("Other Site Equipment"),

@@ -3,7 +3,6 @@ package com.example.workermanager.ui.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Groups
@@ -23,7 +22,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Payments : Screen("payments", "Payments", Icons.Default.Payments)
     data object Contracts : Screen("contracts", "Contracts", Icons.Default.Assignment)
     data object SiteExpenses : Screen("site_expenses", "Site Expenses", Icons.Default.ReceiptLong)
-    data object SiteMaterials : Screen("site_materials", "Site Material", Icons.Default.Category)
     data object MaterialManagement : Screen("material_management", "Material Management", Icons.Default.Inventory2)
     data object Reports : Screen("reports", "Reports", Icons.Default.Assessment)
     data object RecycleBin : Screen("recycle_bin", "Recycle Bin", Icons.Default.DeleteSweep)

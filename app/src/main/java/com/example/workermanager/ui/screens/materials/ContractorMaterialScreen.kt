@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,7 +31,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.workermanager.viewmodel.PurchaseDestination
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.*
@@ -86,6 +89,11 @@ fun ContractorMaterialScreen(
 
     var activeTab by remember { mutableStateOf(ContractorMaterialTab.INVENTORY) }
     var showAddMaterialDialog by remember { mutableStateOf(false) }
+    var showMaterialPurchaseMenu by remember { mutableStateOf(false) }
+    var showPurchaseMaterialDialog by remember { mutableStateOf(false) }
+    var initialPurchaseDestination by remember { mutableStateOf(PurchaseDestination.INVENTORY) }
+    var materialToEdit by remember { mutableStateOf<ContractorMaterialEntity?>(null) }
+    var materialToDelete by remember { mutableStateOf<ContractorMaterialEntity?>(null) }
 
     val excelExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -269,6 +277,16 @@ fun ContractorMaterialScreen(
                                 }
                                 item {
                                     CoreActionChip(
+                                        label = "Material Purchase",
+                                        icon = Icons.Default.ShoppingCart,
+                                        isSelected = showMaterialPurchaseMenu || showPurchaseMaterialDialog,
+                                        isDark = isDark,
+                                        darkText = darkText,
+                                        onClick = { showMaterialPurchaseMenu = true }
+                                    )
+                                }
+                                item {
+                                    CoreActionChip(
                                         label = "Send to Site",
                                         icon = Icons.Default.Send,
                                         isSelected = activeTab == ContractorMaterialTab.SEND,
@@ -285,16 +303,6 @@ fun ContractorMaterialScreen(
                                         isDark = isDark,
                                         darkText = darkText,
                                         onClick = { activeTab = ContractorMaterialTab.RETURN }
-                                    )
-                                }
-                                item {
-                                    CoreActionChip(
-                                        label = "Add Material",
-                                        icon = Icons.Default.AddCircle,
-                                        isSelected = showAddMaterialDialog,
-                                        isDark = isDark,
-                                        darkText = darkText,
-                                        onClick = { showAddMaterialDialog = true }
                                     )
                                 }
                                 item {
@@ -389,7 +397,14 @@ fun ContractorMaterialScreen(
                         } else {
                             items(stockModels) { item ->
                                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    MaterialInventoryCard(item = item, isDark = isDark, darkText = darkText, subtitleText = subtitleText)
+                                    MaterialInventoryCard(
+                                        item = item,
+                                        isDark = isDark,
+                                        darkText = darkText,
+                                        subtitleText = subtitleText,
+                                        onEditClick = { mat -> materialToEdit = mat },
+                                        onDeleteClick = { mat -> materialToDelete = mat }
+                                    )
                                 }
                             }
                         }
@@ -446,6 +461,54 @@ fun ContractorMaterialScreen(
             }
         }
 
+        if (showMaterialPurchaseMenu) {
+            MaterialPurchaseMenuDialog(
+                onDismiss = { showMaterialPurchaseMenu = false },
+                onAddToInventory = {
+                    initialPurchaseDestination = PurchaseDestination.INVENTORY
+                    showPurchaseMaterialDialog = true
+                },
+                onSendToSite = {
+                    initialPurchaseDestination = PurchaseDestination.DIRECT_TO_SITE
+                    showPurchaseMaterialDialog = true
+                }
+            )
+        }
+
+        if (showPurchaseMaterialDialog) {
+            PurchaseMaterialDialog(
+                sites = sites,
+                materials = materials,
+                initialDestination = initialPurchaseDestination,
+                onDismiss = { showPurchaseMaterialDialog = false },
+                onAddNewMaterialType = {
+                    showAddMaterialDialog = true
+                },
+                onConfirm = { materialId, newMaterialName, category, unit, quantity, purchaseDate, supplierName, invoiceNumber, notes, destination, destinationSiteId ->
+                    viewModel.purchaseMaterial(
+                        materialId = materialId,
+                        newMaterialName = newMaterialName,
+                        category = category,
+                        unit = unit,
+                        quantity = quantity,
+                        purchaseDate = purchaseDate,
+                        supplierName = supplierName,
+                        invoiceNumber = invoiceNumber,
+                        notes = notes,
+                        destination = destination,
+                        destinationSiteId = destinationSiteId,
+                        onError = { errorMsg ->
+                            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                        },
+                        onSuccess = {
+                            showPurchaseMaterialDialog = false
+                            Toast.makeText(context, "Material Purchase Recorded Successfully!", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            )
+        }
+
         if (showAddMaterialDialog) {
             AddMaterialDialog(
                 onDismiss = { showAddMaterialDialog = false },
@@ -453,6 +516,33 @@ fun ContractorMaterialScreen(
                     viewModel.addMaterialToInventory(name, category, unit, initialQty, minStock, notes) {
                         showAddMaterialDialog = false
                         Toast.makeText(context, "Material added successfully!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
+
+        if (materialToEdit != null) {
+            EditMaterialDialog(
+                material = materialToEdit!!,
+                onDismiss = { materialToEdit = null },
+                onConfirm = { updatedMaterial ->
+                    viewModel.updateMaterial(updatedMaterial) {
+                        materialToEdit = null
+                        Toast.makeText(context, "Stock item updated successfully!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
+
+        if (materialToDelete != null) {
+            DeleteStockConfirmationDialog(
+                materialName = materialToDelete!!.name,
+                onDismiss = { materialToDelete = null },
+                onConfirmDelete = {
+                    val targetId = materialToDelete!!.id
+                    materialToDelete = null
+                    viewModel.deleteMaterial(targetId) {
+                        Toast.makeText(context, "Stock item deleted successfully!", Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -574,8 +664,12 @@ fun MaterialInventoryCard(
     item: ContractorMaterialStockModel,
     isDark: Boolean = false,
     darkText: Color = DarkText,
-    subtitleText: Color = SubtitleText
+    subtitleText: Color = SubtitleText,
+    onEditClick: (ContractorMaterialEntity) -> Unit,
+    onDeleteClick: (ContractorMaterialEntity) -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -644,7 +738,7 @@ fun MaterialInventoryCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     Surface(
                         color = if (isDark) Color(0xFF1B382B) else Color(0xFFD7FBE0),
@@ -658,6 +752,43 @@ fun MaterialInventoryCard(
                             fontWeight = FontWeight.ExtraBold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
+                    }
+
+                    Box {
+                        IconButton(
+                            onClick = { menuExpanded = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Options",
+                                tint = subtitleText,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit Stock", color = darkText, fontWeight = FontWeight.Medium) },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(18.dp)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onEditClick(item.material)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete Stock", color = Color(0xFFD32F2F), fontWeight = FontWeight.Medium) },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(18.dp)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onDeleteClick(item.material)
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -1080,6 +1211,15 @@ fun BrokenLostMaterialTab(
         )
 
         OutlinedTextField(
+            value = Utils.formatDate(eventDate),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Event Date*") },
+            trailingIcon = { IconButton(onClick = { datePickerDialog.show() }) { Icon(Icons.Default.CalendarMonth, contentDescription = null) } },
+            modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() }
+        )
+
+        OutlinedTextField(
             value = reasonNotes,
             onValueChange = { reasonNotes = it },
             label = { Text("Reason / Notes (Opt)") },
@@ -1397,5 +1537,699 @@ fun AddMaterialDialog(
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+fun MaterialPurchaseMenuDialog(
+    onDismiss: () -> Unit,
+    onAddToInventory: () -> Unit,
+    onSendToSite: () -> Unit
+) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else DarkText
+    val subtitleText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else SubtitleText
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Material Purchase", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Select how you want to record this material purchase:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = subtitleText
+                )
+
+                // Option 1: Add to Inventory
+                Surface(
+                    onClick = {
+                        onDismiss()
+                        onAddToInventory()
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FB),
+                    border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(PrimaryBlue.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Warehouse, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("1. Add to Inventory", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = darkText)
+                            Text("Record purchase & add quantity to contractor stock.", fontSize = 12.sp, color = subtitleText)
+                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = PrimaryBlue)
+                    }
+                }
+
+                // Option 2: Send to Site
+                Surface(
+                    onClick = {
+                        onDismiss()
+                        onSendToSite()
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FB),
+                    border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(PrimaryBlue.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.LocalShipping, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("2. Send to Site", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = darkText)
+                            Text("Purchase & send directly to a selected site.", fontSize = 12.sp, color = subtitleText)
+                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = PrimaryBlue)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PurchaseMaterialDialog(
+    sites: List<SiteEntity>,
+    materials: List<ContractorMaterialEntity>,
+    initialDestination: PurchaseDestination = PurchaseDestination.INVENTORY,
+    onDismiss: () -> Unit,
+    onAddNewMaterialType: () -> Unit,
+    onConfirm: (
+        materialId: Long?,
+        newMaterialName: String?,
+        category: ContractorMaterialCategory,
+        unit: ContractorMaterialUnit,
+        quantity: Double,
+        purchaseDate: LocalDate,
+        supplierName: String,
+        invoiceNumber: String,
+        notes: String,
+        destination: PurchaseDestination,
+        destinationSiteId: Long?
+    ) -> Unit
+) {
+    var supplierName by remember { mutableStateOf("") }
+    var selectedMaterialId by remember { mutableStateOf<Long?>(materials.firstOrNull()?.id) }
+    var quantityStr by remember { mutableStateOf("") }
+    var purchaseDate by remember { mutableStateOf(LocalDate.now()) }
+    var invoiceNumber by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    var destination by remember { mutableStateOf(initialDestination) }
+    var selectedSiteId by remember { mutableStateOf<Long?>(null) }
+
+    var materialExpanded by remember { mutableStateOf(false) }
+    var siteExpanded by remember { mutableStateOf(false) }
+
+    var supplierError by remember { mutableStateOf<String?>(null) }
+    var quantityError by remember { mutableStateOf<String?>(null) }
+    var siteError by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else DarkText
+    val secondaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else SubtitleText
+
+    val selectedMaterial = materials.find { it.id == selectedMaterialId }
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, y, m, d -> purchaseDate = LocalDate.of(y, m + 1, d) },
+        purchaseDate.year, purchaseDate.monthValue - 1, purchaseDate.dayOfMonth
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("Record Material Purchase", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Record material purchased from supplier or shop",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = secondaryTextColor
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // 1. Purchased From (Shop / Supplier)
+                OutlinedTextField(
+                    value = supplierName,
+                    onValueChange = {
+                        supplierName = it
+                        supplierError = null
+                    },
+                    label = { Text("Purchased From (Shop / Supplier) *") },
+                    leadingIcon = { Icon(Icons.Default.Storefront, contentDescription = null, tint = PrimaryBlue) },
+                    isError = supplierError != null,
+                    supportingText = supplierError?.let { { Text(it) } },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // 2. Material Selection
+                ExposedDropdownMenuBox(
+                    expanded = materialExpanded,
+                    onExpandedChange = { materialExpanded = !materialExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedMaterial?.name ?: "Select Material *",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Select Material *") },
+                        leadingIcon = { Icon(Icons.Default.Inventory2, contentDescription = null, tint = PrimaryBlue) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = materialExpanded) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = materialExpanded,
+                        onDismissRequest = { materialExpanded = false },
+                        modifier = Modifier
+                            .heightIn(max = 280.dp)
+                            .background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+                    ) {
+                        materials.forEach { mat ->
+                            DropdownMenuItem(
+                                text = { Text("${mat.name} (${mat.category.displayName})", color = primaryTextColor, fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    selectedMaterialId = mat.id
+                                    materialExpanded = false
+                                }
+                            )
+                        }
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("+ Create New Material Type", color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            onClick = {
+                                materialExpanded = false
+                                onAddNewMaterialType()
+                            }
+                        )
+                    }
+                }
+
+                // 3. Quantity
+                OutlinedTextField(
+                    value = quantityStr,
+                    onValueChange = {
+                        quantityStr = it
+                        quantityError = null
+                    },
+                    label = { Text("Purchase Quantity * (${selectedMaterial?.unit?.displayName ?: "Pcs"})") },
+                    leadingIcon = { Icon(Icons.Default.Numbers, contentDescription = null, tint = PrimaryBlue) },
+                    isError = quantityError != null,
+                    supportingText = quantityError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // 4. Purchase Date
+                OutlinedTextField(
+                    value = Utils.formatDate(purchaseDate),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Purchase Date *") },
+                    leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = PrimaryBlue) },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(Icons.Default.EditCalendar, contentDescription = null, tint = PrimaryBlue)
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { datePickerDialog.show() }
+                )
+
+                // 5. Optional Details
+                OutlinedTextField(
+                    value = invoiceNumber,
+                    onValueChange = { invoiceNumber = it },
+                    label = { Text("Bill / Invoice No. (Optional)") },
+                    leadingIcon = { Icon(Icons.Default.Receipt, contentDescription = null, tint = PrimaryBlue) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Description (Optional)") },
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, tint = PrimaryBlue) },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // 6. TWO DESTINATION OPTIONS
+                Text(
+                    text = "Purchase Destination *",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryTextColor,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Option 1: Add to Inventory
+                    DestinationOptionCard(
+                        title = "Add to Inventory",
+                        subtitle = "Save in central stock",
+                        icon = Icons.Default.Warehouse,
+                        isSelected = destination == PurchaseDestination.INVENTORY,
+                        isDark = isDark,
+                        onClick = {
+                            destination = PurchaseDestination.INVENTORY
+                            siteError = null
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Option 2: Send Directly to Site
+                    DestinationOptionCard(
+                        title = "Send to Site",
+                        subtitle = "Direct site delivery",
+                        icon = Icons.Default.LocalShipping,
+                        isSelected = destination == PurchaseDestination.DIRECT_TO_SITE,
+                        isDark = isDark,
+                        onClick = { destination = PurchaseDestination.DIRECT_TO_SITE },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Destination Site dropdown if Direct to Site
+                if (destination == PurchaseDestination.DIRECT_TO_SITE) {
+                    ExposedDropdownMenuBox(
+                        expanded = siteExpanded,
+                        onExpandedChange = { siteExpanded = !siteExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val currentSiteName = sites.find { it.id == selectedSiteId }?.name ?: "Select Destination Site *"
+                        OutlinedTextField(
+                            value = currentSiteName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Destination Site *") },
+                            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = PrimaryBlue) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+                            isError = siteError != null,
+                            supportingText = siteError?.let { { Text(it) } },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = siteExpanded,
+                            onDismissRequest = { siteExpanded = false },
+                            modifier = Modifier
+                                .heightIn(max = 280.dp)
+                                .background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+                        ) {
+                            sites.forEach { site ->
+                                DropdownMenuItem(
+                                    text = { Text(site.name, color = primaryTextColor, fontWeight = FontWeight.Medium) },
+                                    onClick = {
+                                        selectedSiteId = site.id
+                                        siteError = null
+                                        siteExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            var isSaving by remember { mutableStateOf(false) }
+
+            Button(
+                onClick = {
+                    if (supplierName.isBlank()) {
+                        supplierError = "Supplier / Shop name is required"
+                        return@Button
+                    }
+                    val q = quantityStr.toDoubleOrNull() ?: 0.0
+                    if (q <= 0.001) {
+                        quantityError = "Valid quantity > 0 is required"
+                        return@Button
+                    }
+                    if (destination == PurchaseDestination.DIRECT_TO_SITE && selectedSiteId == null) {
+                        siteError = "Destination site selection required"
+                        return@Button
+                    }
+
+                    if (selectedMaterialId != null && !isSaving) {
+                        isSaving = true
+                        onConfirm(
+                            selectedMaterialId,
+                            null,
+                            selectedMaterial?.category ?: ContractorMaterialCategory.SHUTTERING_ROOF_CASTING,
+                            selectedMaterial?.unit ?: ContractorMaterialUnit.PCS,
+                            q,
+                            purchaseDate,
+                            supplierName.trim(),
+                            invoiceNumber.trim(),
+                            notes.trim(),
+                            destination,
+                            selectedSiteId
+                        )
+                    }
+                },
+                enabled = !isSaving && supplierName.isNotBlank() && (quantityStr.toDoubleOrNull() ?: 0.0) > 0,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Save Purchase", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun DestinationOptionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    isDark: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cardBg = if (isSelected) {
+        PrimaryBlue.copy(alpha = 0.12f)
+    } else {
+        if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F5FB)
+    }
+    val borderColor = if (isSelected) PrimaryBlue else if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.3f) else Color(0xFFD9E3F2)
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = cardBg,
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(if (isSelected) PrimaryBlue else PrimaryBlue.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = if (isSelected) Color.White else PrimaryBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) PrimaryBlue else if (isDark) MaterialTheme.colorScheme.onSurface else DarkText,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                fontSize = 10.sp,
+                color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else SubtitleText,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditMaterialDialog(
+    material: ContractorMaterialEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (ContractorMaterialEntity) -> Unit
+) {
+    var name by remember { mutableStateOf(material.name) }
+    var selectedCategory by remember { mutableStateOf(material.category) }
+    var selectedUnit by remember { mutableStateOf(material.unit) }
+    var minStockStr by remember { mutableStateOf(material.minStockLevel.toString()) }
+    var notes by remember { mutableStateOf(material.notes) }
+
+    var categoryExpanded by remember { mutableStateOf(false) }
+    var unitExpanded by remember { mutableStateOf(false) }
+
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else DarkText
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Material / Stock", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Material Name *") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Category Picker
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false },
+                        modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+                    ) {
+                        ContractorMaterialCategory.entries.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat.displayName, color = darkText) },
+                                onClick = {
+                                    selectedCategory = cat
+                                    categoryExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Unit Picker
+                ExposedDropdownMenuBox(
+                    expanded = unitExpanded,
+                    onExpandedChange = { unitExpanded = !unitExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedUnit.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Unit *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = unitExpanded,
+                        onDismissRequest = { unitExpanded = false },
+                        modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+                    ) {
+                        ContractorMaterialUnit.entries.forEach { u ->
+                            DropdownMenuItem(
+                                text = { Text(u.displayName, color = darkText) },
+                                onClick = {
+                                    selectedUnit = u
+                                    unitExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = minStockStr,
+                    onValueChange = { minStockStr = it },
+                    label = { Text("Minimum Stock Alert Level") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Description (Optional)") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onConfirm(
+                            material.copy(
+                                name = name.trim(),
+                                category = selectedCategory,
+                                unit = selectedUnit,
+                                minStockLevel = minStockStr.toDoubleOrNull() ?: 0.0,
+                                notes = notes.trim(),
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Save Changes", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun DeleteStockConfirmationDialog(
+    materialName: String,
+    onDismiss: () -> Unit,
+    onConfirmDelete: () -> Unit
+) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else DarkText
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF5252),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Delete Stock Entry?", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Text(
+                "Are you sure you want to delete '$materialName'? This will remove the material from your active inventory.",
+                color = darkText,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirmDelete,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Delete", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
     )
 }

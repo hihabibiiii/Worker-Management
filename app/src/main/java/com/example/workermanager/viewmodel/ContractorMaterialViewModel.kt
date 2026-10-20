@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+enum class PurchaseDestination {
+    INVENTORY,
+    DIRECT_TO_SITE
+}
+
 data class ContractorMaterialStockModel(
     val material: ContractorMaterialEntity,
     val totalAddedQuantity: Double,
@@ -230,6 +235,105 @@ class ContractorMaterialViewModel(
     fun setSelectedCategory(cat: ContractorMaterialCategory?) { _selectedCategory.value = cat }
     fun setSearchQuery(query: String) { _searchQuery.value = query }
 
+    fun purchaseMaterial(
+        materialId: Long?,
+        newMaterialName: String?,
+        category: ContractorMaterialCategory = ContractorMaterialCategory.SHUTTERING_ROOF_CASTING,
+        unit: ContractorMaterialUnit = ContractorMaterialUnit.PCS,
+        quantity: Double,
+        purchaseDate: LocalDate,
+        supplierName: String,
+        invoiceNumber: String,
+        notes: String,
+        destination: PurchaseDestination,
+        destinationSiteId: Long?,
+        onError: (String) -> Unit,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            if (supplierName.isBlank()) {
+                onError("Purchased From (Shop / Supplier) name is required.")
+                return@launch
+            }
+            if (quantity <= 0.001) {
+                onError("Purchase quantity must be greater than zero.")
+                return@launch
+            }
+            if (destination == PurchaseDestination.DIRECT_TO_SITE && destinationSiteId == null) {
+                onError("Please select a destination site for direct delivery.")
+                return@launch
+            }
+
+            val materialsList = repository.allMaterials.firstOrNull() ?: emptyList()
+            val targetMaterialId = if (materialId != null) {
+                materialId
+            } else if (!newMaterialName.isNullOrBlank()) {
+                val existing = materialsList.find { it.name.equals(newMaterialName.trim(), ignoreCase = true) && it.isActive }
+                if (existing != null) {
+                    existing.id
+                } else {
+                    val mat = ContractorMaterialEntity(
+                        name = newMaterialName.trim(),
+                        category = category,
+                        unit = unit,
+                        minStockLevel = 0.0,
+                        notes = ""
+                    )
+                    repository.insertMaterial(mat)
+                }
+            } else {
+                onError("Please select or enter a material.")
+                return@launch
+            }
+
+            val currentMaterial = repository.allMaterials.firstOrNull()?.find { it.id == targetMaterialId }
+            val unitDisplayName = currentMaterial?.unit?.displayName ?: unit.displayName
+
+            val formattedNotes = buildString {
+                append("Purchased from: ${supplierName.trim()}")
+                if (invoiceNumber.isNotBlank()) append(" | Bill/Inv: ${invoiceNumber.trim()}")
+                if (notes.isNotBlank()) append(" | Notes: ${notes.trim()}")
+            }
+
+            if (destination == PurchaseDestination.INVENTORY) {
+                val tx = ContractorMaterialTransactionEntity(
+                    materialId = targetMaterialId,
+                    siteId = null,
+                    transactionType = ContractorMaterialTransactionType.ADDED,
+                    transactionDate = purchaseDate,
+                    quantity = quantity,
+                    unit = unitDisplayName,
+                    reasonOrNotes = formattedNotes
+                )
+                repository.insertTransaction(tx)
+            } else {
+                val siteName = siteRepository.allSites.firstOrNull()?.find { it.id == destinationSiteId }?.name ?: "Site"
+                val addTx = ContractorMaterialTransactionEntity(
+                    materialId = targetMaterialId,
+                    siteId = null,
+                    transactionType = ContractorMaterialTransactionType.ADDED,
+                    transactionDate = purchaseDate,
+                    quantity = quantity,
+                    unit = unitDisplayName,
+                    reasonOrNotes = "Purchased from: ${supplierName.trim()} [Direct Delivery to $siteName]"
+                )
+                val sendTx = ContractorMaterialTransactionEntity(
+                    materialId = targetMaterialId,
+                    siteId = destinationSiteId,
+                    transactionType = ContractorMaterialTransactionType.SENT,
+                    transactionDate = purchaseDate,
+                    quantity = quantity,
+                    unit = unitDisplayName,
+                    reasonOrNotes = formattedNotes
+                )
+                repository.insertTransaction(addTx)
+                repository.insertTransaction(sendTx)
+            }
+
+            onSuccess()
+        }
+    }
+
     fun addMaterialToInventory(
         name: String,
         category: ContractorMaterialCategory,
@@ -412,6 +516,28 @@ class ContractorMaterialViewModel(
     fun deactivateMaterial(materialId: Long) {
         viewModelScope.launch {
             repository.deactivateMaterial(materialId)
+        }
+    }
+
+    fun updateMaterial(
+        material: ContractorMaterialEntity,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            repository.updateMaterial(
+                material.copy(updatedAt = System.currentTimeMillis())
+            )
+            onSuccess()
+        }
+    }
+
+    fun deleteMaterial(
+        materialId: Long,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            repository.softDeleteMaterial(materialId)
+            onSuccess()
         }
     }
 

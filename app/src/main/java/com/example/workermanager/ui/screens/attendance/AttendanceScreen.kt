@@ -467,6 +467,7 @@ fun StatusButton(
             containerColor = if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant,
             contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
         ),
+        border = ButtonDefaults.outlinedButtonBorder,
         modifier = modifier.height(36.dp),
         contentPadding = PaddingValues(0.dp)
     ) {

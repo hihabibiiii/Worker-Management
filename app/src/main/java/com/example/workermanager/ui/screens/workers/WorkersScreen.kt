@@ -640,196 +640,344 @@ fun WorkerDialog(
     initialPhone: String = "",
     onDismiss: () -> Unit,
     onAddNewSite: (String, String, String, (Long) -> Unit) -> Unit,
-    onConfirm: (String, String, WorkerType, Double, Double, LocalDate, Long?, String, Boolean) -> Unit
+    onConfirm: (
+        String,
+        String,
+        WorkerType,
+        Double,
+        Double,
+        LocalDate,
+        Long?,
+        String,
+        Boolean
+    ) -> Unit
 ) {
-    var name by remember(worker, initialName) { mutableStateOf(worker?.name ?: initialName) }
-    var phone by remember(worker, initialPhone) { mutableStateOf(worker?.phone ?: initialPhone) }
-    var type by remember { mutableStateOf(worker?.workerType ?: WorkerType.LABOUR) }
-    var dailyRate by remember { mutableStateOf(worker?.dailyRate?.let { if (it > 0) it.toString() else "" } ?: "") }
-    var otRate by remember { mutableStateOf(worker?.overtimeRate?.let { if (it > 0) it.toString() else "" } ?: "") }
-    var joiningDate by remember { mutableStateOf(worker?.joiningDate ?: LocalDate.now()) }
-    var siteId by remember { mutableStateOf(worker?.currentSiteId) }
-    var notes by remember { mutableStateOf(worker?.notes ?: "") }
-    var isActive by remember { mutableStateOf(worker?.isActive ?: true) }
+    var name by remember(worker, initialName) {
+        mutableStateOf(worker?.name ?: initialName)
+    }
+
+    var phone by remember(worker, initialPhone) {
+        mutableStateOf(worker?.phone ?: initialPhone)
+    }
+
+    var type by remember(worker) {
+        mutableStateOf(worker?.workerType ?: WorkerType.LABOUR)
+    }
+
+    var dailyRate by remember(worker) {
+        mutableStateOf(
+            worker?.dailyRate?.let {
+                if (it > 0) it.toString() else ""
+            } ?: ""
+        )
+    }
+
+    var otRate by remember(worker) {
+        mutableStateOf(
+            worker?.overtimeRate?.let {
+                if (it > 0) it.toString() else ""
+            } ?: ""
+        )
+    }
+
+    var joiningDate by remember(worker) {
+        mutableStateOf(worker?.joiningDate ?: LocalDate.now())
+    }
+
+    var siteId by remember(worker) {
+        mutableStateOf(worker?.currentSiteId)
+    }
+
+    var notes by remember(worker) {
+        mutableStateOf(worker?.notes ?: "")
+    }
+
+    var isActive by remember(worker) {
+        mutableStateOf(worker?.isActive ?: true)
+    }
 
     var nameError by remember { mutableStateOf<String?>(null) }
+    var siteError by remember { mutableStateOf<String?>(null) }
 
     var typeExpanded by remember { mutableStateOf(false) }
     var siteExpanded by remember { mutableStateOf(false) }
 
     var showAddSiteDialog by remember { mutableStateOf(false) }
+
     var newSiteName by remember { mutableStateOf("") }
     var newSiteAddress by remember { mutableStateOf("") }
     var newSiteManager by remember { mutableStateOf("") }
-
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val dialogBg = if (isDark) MaterialTheme.colorScheme.surface else Color(0xFFE6F2FF)
-    val fieldContainerBg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color.White
-    val titleTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
-    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
-    val secondaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
-    val primaryColor = Color(0xFF1976ED)
-
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedContainerColor = fieldContainerBg,
-        unfocusedContainerColor = fieldContainerBg,
-        disabledContainerColor = fieldContainerBg,
-        errorContainerColor = fieldContainerBg,
-        focusedTextColor = primaryTextColor,
-        unfocusedTextColor = primaryTextColor,
-        focusedLabelColor = primaryColor,
-        unfocusedLabelColor = secondaryTextColor,
-        focusedLeadingIconColor = primaryColor,
-        unfocusedLeadingIconColor = primaryColor,
-        focusedTrailingIconColor = primaryColor,
-        unfocusedTrailingIconColor = primaryColor,
-        focusedBorderColor = primaryColor,
-        unfocusedBorderColor = if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)
-    )
+    var newSiteError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
 
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val contactUri: Uri? = result.data?.data
-            if (contactUri != null) {
-                val (fetchedName, fetchedNumber) = com.example.workermanager.util.ContactUtils.processContactUri(context, contactUri)
-                if (!fetchedName.isNullOrBlank()) {
-                    name = fetchedName
-                    nameError = null
-                }
-                if (!fetchedNumber.isNullOrBlank()) {
-                    phone = com.example.workermanager.util.ContactUtils.normalizePhoneNumber(fetchedNumber)
+    // Theme colors
+    val isDark =
+        MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    val dialogBg =
+        if (isDark) MaterialTheme.colorScheme.surface
+        else Color(0xFFE6F1FC)
+
+    val fieldBg =
+        if (isDark) MaterialTheme.colorScheme.surfaceVariant
+        else Color.White
+
+    val titleColor =
+        if (isDark) MaterialTheme.colorScheme.onSurface
+        else Color(0xFF111111)
+
+    val textColor =
+        if (isDark) MaterialTheme.colorScheme.onSurface
+        else Color(0xFF0F172A)
+
+    val secondaryTextColor =
+        if (isDark) MaterialTheme.colorScheme.onSurfaceVariant
+        else Color(0xFF596580)
+
+    val primaryColor = Color(0xFF1976ED)
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = fieldBg,
+        unfocusedContainerColor = fieldBg,
+        disabledContainerColor = fieldBg,
+        errorContainerColor = fieldBg,
+
+        focusedTextColor = textColor,
+        unfocusedTextColor = textColor,
+
+        focusedLabelColor = primaryColor,
+        unfocusedLabelColor = secondaryTextColor,
+
+        focusedBorderColor = primaryColor,
+        unfocusedBorderColor = if (isDark) {
+            MaterialTheme.colorScheme.outline
+        } else {
+            Color(0xFFCBD5E1)
+        },
+
+        cursorColor = primaryColor
+    )
+
+    // Contact Picker
+    val contactPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+
+            if (result.resultCode == Activity.RESULT_OK) {
+                val contactUri = result.data?.data
+
+                if (contactUri != null) {
+                    val (fetchedName, fetchedNumber) =
+                        com.example.workermanager.util.ContactUtils
+                            .processContactUri(context, contactUri)
+
+                    if (!fetchedName.isNullOrBlank()) {
+                        name = fetchedName.trim()
+                        nameError = null
+                    }
+
+                    if (!fetchedNumber.isNullOrBlank()) {
+                        phone =
+                            com.example.workermanager.util.ContactUtils
+                                .normalizePhoneNumber(fetchedNumber)
+                    }
                 }
             }
         }
+
+    // Preserve Self Work ordering
+    val displaySites = remember(sites) {
+        val selfWork = sites.find {
+            it.name.equals("Self Work", ignoreCase = true)
+        }
+
+        val others = sites.filter {
+            !it.name.equals("Self Work", ignoreCase = true)
+        }
+
+        if (selfWork != null) listOf(selfWork) + others
+        else others
     }
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        )
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
+                .fillMaxWidth(0.90f)
                 .wrapContentHeight()
                 .padding(vertical = 16.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = dialogBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+
+            shape = RoundedCornerShape(32.dp),
+
+            colors = CardDefaults.cardColors(
+                containerColor = dialogBg
+            ),
+
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 8.dp
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
             ) {
+
                 // Title
                 Text(
-                    text = if (worker == null) "Add Worker" else "Edit Worker",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = if (worker == null) {
+                        "Add Worker"
+                    } else {
+                        "Edit Worker"
+                    },
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = titleTextColor
+                    color = titleColor
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Scrollable Form Fields
+                // Scrollable form
                 Column(
                     modifier = Modifier
-                        .weight(weight = 1f, fill = false)
+                        .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+
+                    verticalArrangement =
+                        Arrangement.spacedBy(12.dp)
                 ) {
-                    // 1. Worker Name
+
+                    // Name
                     OutlinedTextField(
                         value = name,
+
                         onValueChange = {
                             name = it
                             nameError = null
                         },
-                        label = { Text("Worker Name *") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = primaryColor
-                            )
+
+                        label = {
+                            Text("Name *")
                         },
+
                         trailingIcon = {
                             IconButton(
                                 onClick = {
-                                    val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                                    val intent = Intent(
+                                        Intent.ACTION_PICK,
+                                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                                    )
+
                                     try {
                                         contactPickerLauncher.launch(intent)
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         try {
-                                            val fallbackIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-                                            contactPickerLauncher.launch(fallbackIntent)
+                                            val fallbackIntent = Intent(
+                                                Intent.ACTION_PICK,
+                                                ContactsContract.Contacts.CONTENT_URI
+                                            )
+
+                                            contactPickerLauncher.launch(
+                                                fallbackIntent
+                                            )
                                         } catch (_: Exception) {
-                                            Toast.makeText(context, "Unable to open contact picker.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Unable to open contact picker.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     }
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.PermContactCalendar,
+                                    imageVector =
+                                        Icons.Default.PermContactCalendar,
+
                                     contentDescription = "Select Contact",
+
                                     tint = primaryColor
                                 )
                             }
                         },
+
                         isError = nameError != null,
-                        supportingText = nameError?.let { { Text(it) } },
+
+                        supportingText = nameError?.let { err ->
+                            {
+                                Text(
+                                    text = err,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = textFieldColors,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // 2. Phone Number
+                    // Phone
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
-                        label = { Text("Phone Number") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = null,
-                                tint = primaryColor
-                            )
+
+                        onValueChange = {
+                            phone = it
                         },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+
+                        label = {
+                            Text("Phone")
+                        },
+
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone
+                        ),
+
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = textFieldColors,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // 3. Worker Type Dropdown
+                    // Worker Type
                     ExposedDropdownMenuBox(
                         expanded = typeExpanded,
-                        onExpandedChange = { typeExpanded = !typeExpanded },
+
+                        onExpandedChange = {
+                            typeExpanded = !typeExpanded
+                        },
+
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
-                            value = type.name.lowercase().replaceFirstChar { it.uppercase() },
+                            value = type.name,
+
                             onValueChange = {},
+
                             readOnly = true,
-                            label = { Text("Worker Type *") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Badge,
-                                    contentDescription = null,
-                                    tint = primaryColor
-                                )
+
+                            label = {
+                                Text("Worker Type")
                             },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults
+                                    .TrailingIcon(
+                                        expanded = typeExpanded
+                                    )
+                            },
+
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = fieldColors,
+
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -837,20 +985,31 @@ fun WorkerDialog(
 
                         ExposedDropdownMenu(
                             expanded = typeExpanded,
-                            onDismissRequest = { typeExpanded = false },
-                            modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+
+                            onDismissRequest = {
+                                typeExpanded = false
+                            },
+
+                            modifier = Modifier.background(
+                                if (isDark) {
+                                    MaterialTheme.colorScheme.surface
+                                } else {
+                                    Color.White
+                                }
+                            )
                         ) {
-                            WorkerType.entries.forEach { wType ->
+                            WorkerType.entries.forEach { workerType ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            text = wType.name.lowercase().replaceFirstChar { it.uppercase() },
-                                            fontWeight = FontWeight.Medium,
-                                            color = primaryTextColor
+                                            workerType.name,
+                                            color = textColor,
+                                            fontWeight = FontWeight.Medium
                                         )
                                     },
+
                                     onClick = {
-                                        type = wType
+                                        type = workerType
                                         typeExpanded = false
                                     }
                                 )
@@ -858,75 +1017,107 @@ fun WorkerDialog(
                         }
                     }
 
-                    // 4. Daily Rate & OT Rate/Hr (Side-by-side)
+                    // Daily Rate and OT Rate
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+
+                        horizontalArrangement =
+                            Arrangement.spacedBy(8.dp)
                     ) {
-                        // Daily Wage Rate
                         OutlinedTextField(
                             value = dailyRate,
-                            onValueChange = { dailyRate = it },
-                            label = { Text("Daily Rate (₹)*") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Payments,
-                                    contentDescription = null,
-                                    tint = primaryColor,
-                                    modifier = Modifier.size(20.dp)
-                                )
+
+                            onValueChange = {
+                                dailyRate = it
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+
+                            label = {
+                                Text("Daily Rate")
+                            },
+
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal
+                            ),
+
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = fieldColors,
                             modifier = Modifier.weight(1f)
                         )
 
-                        // OT Rate/Hr
                         OutlinedTextField(
                             value = otRate,
-                            onValueChange = { otRate = it },
-                            label = { Text("OT Rate/Hr (₹)") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = primaryColor,
-                                    modifier = Modifier.size(20.dp)
-                                )
+
+                            onValueChange = {
+                                otRate = it
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+
+                            label = {
+                                Text("OT Rate/Hr")
+                            },
+
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal
+                            ),
+
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = fieldColors,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    // 5. Assign to Site Dropdown
+                    // Site selection
+                    val siteFieldText = when (siteId) {
+                        null -> "Select Site"
+
+                        else -> sites.find {
+                            it.id == siteId
+                        }?.name ?: "Select Site"
+                    }
+
                     ExposedDropdownMenuBox(
                         expanded = siteExpanded,
-                        onExpandedChange = { siteExpanded = !siteExpanded },
+
+                        onExpandedChange = {
+                            siteExpanded = !siteExpanded
+                        },
+
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val currentSiteText = sites.find { it.id == siteId }?.name ?: "Assign to Site"
                         OutlinedTextField(
-                            value = currentSiteText,
+                            value = siteFieldText,
+
                             onValueChange = {},
+
                             readOnly = true,
-                            label = { Text("Assign to Site") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = primaryColor
-                                )
+
+                            label = {
+                                Text("Assign to Site")
                             },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = siteExpanded) },
+
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults
+                                    .TrailingIcon(
+                                        expanded = siteExpanded
+                                    )
+                            },
+
+                            isError = siteError != null,
+
+                            supportingText = siteError?.let { err ->
+                                {
+                                    Text(
+                                        text = err,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = fieldColors,
+
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -934,100 +1125,159 @@ fun WorkerDialog(
 
                         ExposedDropdownMenu(
                             expanded = siteExpanded,
-                            onDismissRequest = { siteExpanded = false },
-                            modifier = Modifier.background(if (isDark) MaterialTheme.colorScheme.surface else Color.White)
+
+                            onDismissRequest = {
+                                siteExpanded = false
+                            },
+
+                            modifier = Modifier.background(
+                                if (isDark) {
+                                    MaterialTheme.colorScheme.surface
+                                } else {
+                                    Color.White
+                                }
+                            )
                         ) {
+                            // No site assigned
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = "No Site Assigned",
-                                        fontWeight = FontWeight.Normal,
-                                        color = primaryTextColor
+                                        "No Site Assigned",
+                                        color = textColor
                                     )
                                 },
+
                                 onClick = {
                                     siteId = null
+                                    siteError = null
                                     siteExpanded = false
                                 }
                             )
-                            sites.forEach { site ->
+
+                            // Existing sites
+                            displaySites.forEach { site ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            text = site.name,
-                                            fontWeight = FontWeight.Medium,
-                                            color = primaryTextColor
+                                            site.name,
+                                            color = textColor
                                         )
                                     },
+
                                     onClick = {
                                         siteId = site.id
+                                        siteError = null
                                         siteExpanded = false
                                     }
                                 )
                             }
+
                             HorizontalDivider()
+
+                            // Add New Site
                             DropdownMenuItem(
                                 text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment =
+                                            Alignment.CenterVertically
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
                                             contentDescription = null,
-                                            tint = primaryColor,
-                                            modifier = Modifier.size(18.dp)
+                                            tint = primaryColor
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("+ Add New Site", color = primaryColor, fontWeight = FontWeight.Bold)
+
+                                        Spacer(
+                                            modifier = Modifier.width(8.dp)
+                                        )
+
+                                        Text(
+                                            "Add New Site",
+                                            color = primaryColor,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 },
+
                                 onClick = {
                                     siteExpanded = false
+                                    newSiteName = ""
+                                    newSiteAddress = ""
+                                    newSiteManager = ""
+                                    newSiteError = null
                                     showAddSiteDialog = true
                                 }
                             )
                         }
                     }
 
-                    // 6. Notes
+                    // Notes
                     OutlinedTextField(
                         value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notes") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Notes,
-                                contentDescription = null,
-                                tint = primaryColor
-                            )
+
+                        onValueChange = {
+                            notes = it
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = textFieldColors,
+
+                        label = {
+                            Text("Notes")
+                        },
+
+                        shape = RoundedCornerShape(8.dp),
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // 7. Active Status Checkbox
+                    // Active checkbox
                     Surface(
-                        color = fieldContainerBg,
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline else Color(0xFFCBD5E1)),
+                        color = fieldBg,
+
+                        shape = RoundedCornerShape(8.dp),
+
+                        border = BorderStroke(
+                            1.dp,
+                            if (isDark) {
+                                MaterialTheme.colorScheme.outline
+                            } else {
+                                Color(0xFFCBD5E1)
+                            }
+                        ),
+
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { isActive = !isActive }
+                            .clickable {
+                                isActive = !isActive
+                            }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.padding(
+                                horizontal = 12.dp,
+                                vertical = 6.dp
+                            ),
+
+                            verticalAlignment =
+                                Alignment.CenterVertically
                         ) {
                             Checkbox(
                                 checked = isActive,
-                                onCheckedChange = { isActive = it },
-                                colors = CheckboxDefaults.colors(checkedColor = primaryColor)
+
+                                onCheckedChange = {
+                                    isActive = it
+                                },
+
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = primaryColor
+                                )
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Spacer(
+                                modifier = Modifier.width(4.dp)
+                            )
+
                             Text(
-                                text = "Active Worker",
+                                text = "Active",
                                 fontWeight = FontWeight.SemiBold,
-                                color = titleTextColor,
-                                fontSize = 14.sp
+                                color = titleColor
                             )
                         }
                     }
@@ -1035,14 +1285,22 @@ fun WorkerDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Action Buttons (Bottom Right)
+                // Cancel and Save
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+
                     horizontalArrangement = Arrangement.End,
+
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", fontWeight = FontWeight.Bold, color = secondaryTextColor)
+                    TextButton(
+                        onClick = onDismiss
+                    ) {
+                        Text(
+                            "Cancel",
+                            fontWeight = FontWeight.Bold,
+                            color = secondaryTextColor
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1050,73 +1308,185 @@ fun WorkerDialog(
                     Button(
                         onClick = {
                             if (name.isBlank()) {
-                                nameError = "Worker name is required"
+                                nameError = "Name is required"
                                 return@Button
                             }
-                            val dRate = dailyRate.toDoubleOrNull() ?: 0.0
-                            val oRate = otRate.toDoubleOrNull() ?: (dRate / 8.0)
-                            onConfirm(name.trim(), phone.trim(), type, dRate, oRate, joiningDate, siteId, notes.trim(), isActive)
+
+                            if (siteId == null) {
+                                siteError = "Please select a site"
+                                return@Button
+                            }
+
+                            val dRate =
+                                dailyRate.toDoubleOrNull() ?: 0.0
+
+                            val oRate =
+                                otRate.toDoubleOrNull() ?: (dRate / 8.0)
+
+                            onConfirm(
+                                name.trim(),
+                                phone.trim(),
+                                type,
+                                dRate,
+                                oRate,
+                                joiningDate,
+                                siteId,
+                                notes.trim(),
+                                isActive
+                            )
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+
+                        shape = RoundedCornerShape(8.dp),
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = primaryColor
+                        )
                     ) {
-                        Text(if (worker == null) "Add Worker" else "Save Changes", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            text = if (worker == null) {
+                                "Save"
+                            } else {
+                                "Save Changes"
+                            },
+
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
                 }
             }
         }
     }
 
-    // Add New Site Quick Dialog
+    // Add New Site dialog
     if (showAddSiteDialog) {
         AlertDialog(
-            onDismissRequest = { showAddSiteDialog = false },
-            title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
+            onDismissRequest = {
+                showAddSiteDialog = false
+            },
+
+            title = {
+                Text(
+                    "Add New Site",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(
+                        rememberScrollState()
+                    ),
+
+                    verticalArrangement =
+                        Arrangement.spacedBy(8.dp)
+                ) {
                     OutlinedTextField(
                         value = newSiteName,
-                        onValueChange = { newSiteName = it },
-                        label = { Text("Site Name *") },
+
+                        onValueChange = {
+                            newSiteName = it
+                            newSiteError = null
+                        },
+
+                        label = {
+                            Text("Site Name *")
+                        },
+
+                        isError = newSiteError != null,
+
+                        supportingText = newSiteError?.let { err ->
+                            {
+                                Text(
+                                    err,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = newSiteAddress,
-                        onValueChange = { newSiteAddress = it },
-                        label = { Text("Location / Address") },
+
+                        onValueChange = {
+                            newSiteAddress = it
+                        },
+
+                        label = {
+                            Text("Site Address")
+                        },
+
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = newSiteManager,
-                        onValueChange = { newSiteManager = it },
-                        label = { Text("Site Manager") },
+
+                        onValueChange = {
+                            newSiteManager = it
+                        },
+
+                        label = {
+                            Text("Site Manager")
+                        },
+
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
+
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newSiteName.isNotBlank()) {
-                            onAddNewSite(newSiteName.trim(), newSiteAddress.trim(), newSiteManager.trim()) { createdId ->
-                                siteId = createdId
+                        val trimmedName = newSiteName.trim()
+                        val trimmedAddress = newSiteAddress.trim()
+                        val trimmedManager = newSiteManager.trim()
+
+                        when {
+                            trimmedName.isEmpty() -> {
+                                newSiteError = "Site name is required"
                             }
-                            newSiteName = ""
-                            newSiteAddress = ""
-                            newSiteManager = ""
-                            showAddSiteDialog = false
+
+                            sites.any {
+                                it.name.equals(
+                                    trimmedName,
+                                    ignoreCase = true
+                                )
+                            } -> {
+                                newSiteError = "Site already exists"
+                            }
+
+                            else -> {
+                                onAddNewSite(
+                                    trimmedName,
+                                    trimmedAddress,
+                                    trimmedManager
+                                ) { createdId ->
+                                    siteId = createdId
+                                    siteError = null
+                                    showAddSiteDialog = false
+                                }
+                            }
                         }
                     },
+
                     enabled = newSiteName.isNotBlank()
                 ) {
-                    Text("Add Site", fontWeight = FontWeight.Bold)
+                    Text("Save Site")
                 }
             },
+
             dismissButton = {
-                TextButton(onClick = { showAddSiteDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showAddSiteDialog = false
+                    }
+                ) {
                     Text("Cancel")
                 }
             }

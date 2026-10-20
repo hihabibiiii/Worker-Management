@@ -3,7 +3,6 @@ package com.example.workermanager.ui.screens.dashboard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -198,95 +197,175 @@ fun DashboardScreen(
             var isExpenseSummaryExpanded by remember { mutableStateOf(false) }
 
             // 1. Worker Payment Summary
-            ExpandableSummaryCard(
+            DashboardSummaryCard(
                 title = "Worker Payment Summary",
                 subtitle = "View worker wise payment details",
-                icon = Icons.Default.AccountBalanceWallet,
-                cardBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFE2F0FF),
-                accentColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E8),
+                headerIcon = Icons.Default.AccountBalanceWallet,
+                accentColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E9),
+                headerBgColor = if (isDark) Color(0xFF1A283C) else Color(0xFFEAF2FD),
                 isExpanded = isWorkerSummaryExpanded,
                 isDark = isDark,
                 onToggle = { isWorkerSummaryExpanded = !isWorkerSummaryExpanded }
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
-                SummaryRow("Today's Wages", Utils.formatCurrency(stats.todayEarned), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Wages", Utils.formatCurrency(stats.totalEarned), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalPaid), darkText = darkText)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = dashPrimary.copy(alpha = 0.2f))
-                SummaryRow(
+                DashboardSummaryRow(
+                    label = "Today's Wages",
+                    value = Utils.formatCurrency(stats.todayEarned),
+                    icon = Icons.Default.Today,
+                    iconColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E9),
+                    isDark = isDark,
+                    valueColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E9),
+                    isBoldValue = true
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Wages",
+                    value = Utils.formatCurrency(stats.totalEarned),
+                    icon = Icons.Default.AccountBalanceWallet,
+                    iconColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E9),
+                    isDark = isDark
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Paid",
+                    value = Utils.formatCurrency(stats.totalPaid),
+                    icon = Icons.Default.Payments,
+                    iconColor = if (isDark) Color(0xFF4CAF50) else Color(0xFF0A963D),
+                    isDark = isDark
+                )
+
+                val pendingRedBg = if (isDark) Color(0xFF381014) else Color(0xFFFDE8EC)
+                val pendingRedBorder = if (isDark) Color(0xFF5C1B24) else Color(0xFFF9C0C9)
+                val pendingRedTextColor = if (isDark) Color(0xFFE57373) else Color(0xFFD7192D)
+
+                DashboardSummaryRow(
                     label = "Pending Balance",
                     value = Utils.formatCurrency(stats.totalPending),
-                    isBold = true,
-                    valueColor = if (stats.totalPending > 0) Color(0xFFFF5252) else Color(0xFF2ECC71),
-                    darkText = darkText
+                    icon = Icons.Default.Pending,
+                    iconColor = pendingRedTextColor,
+                    isDark = isDark,
+                    rowBgColor = pendingRedBg,
+                    borderColor = pendingRedBorder,
+                    valueColor = pendingRedTextColor,
+                    isBoldValue = true
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // 2. Client Payments Summary
-            ExpandableSummaryCard(
+            DashboardSummaryCard(
                 title = "Client Payments Summary",
                 subtitle = "View client wise payment details",
-                icon = Icons.Default.Person,
-                cardBg = if (isDark) Color(0xFF1B382B) else Color(0xFFDDF8F1),
+                headerIcon = Icons.Default.Person,
                 accentColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0BAA75),
+                headerBgColor = if (isDark) Color(0xFF122E22) else Color(0xFFE6F7F2),
                 isExpanded = isClientSummaryExpanded,
                 isDark = isDark,
                 onToggle = { isClientSummaryExpanded = !isClientSummaryExpanded }
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
                 if (stats.totalContracts == 0) {
-                    Text(
-                        "No clients or contracts added yet.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = darkText.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                    DashboardInfoRow(
+                        message = "No clients or contracts added yet.",
+                        icon = Icons.Default.Info,
+                        accentColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0BAA75),
+                        isDark = isDark
                     )
                 }
-                SummaryRow("Total Contracts", stats.totalContracts.toString(), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Receivable", Utils.formatCurrency(stats.totalContractReceivable), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Received", Utils.formatCurrency(stats.totalContractReceived), darkText = darkText)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF0BAA75).copy(alpha = 0.2f))
-                SummaryRow(
+
+                DashboardSummaryRow(
+                    label = "Total Contracts",
+                    value = stats.totalContracts.toString(),
+                    icon = Icons.AutoMirrored.Filled.Assignment,
+                    iconColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0BAA75),
+                    isDark = isDark
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Receivable",
+                    value = Utils.formatCurrency(stats.totalContractReceivable),
+                    icon = Icons.Default.Payments,
+                    iconColor = if (isDark) Color(0xFF2ECC71) else Color(0xFF0BAA75),
+                    isDark = isDark
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Received",
+                    value = Utils.formatCurrency(stats.totalContractReceived),
+                    icon = Icons.Default.CheckCircle,
+                    iconColor = if (isDark) Color(0xFF4CAF50) else Color(0xFF0A963D),
+                    isDark = isDark
+                )
+
+                val remainingRedBg = if (isDark) Color(0xFF381014) else Color(0xFFFDE8EC)
+                val remainingRedBorder = if (isDark) Color(0xFF5C1B24) else Color(0xFFF9C0C9)
+                val remainingRedTextColor = if (isDark) Color(0xFFE57373) else Color(0xFFD7192D)
+
+                DashboardSummaryRow(
                     label = "Total Remaining",
                     value = Utils.formatCurrency(stats.totalContractRemaining),
-                    isBold = true,
-                    valueColor = Color(0xFFFF5252),
-                    darkText = darkText
+                    icon = Icons.Default.HourglassBottom,
+                    iconColor = remainingRedTextColor,
+                    isDark = isDark,
+                    rowBgColor = remainingRedBg,
+                    borderColor = remainingRedBorder,
+                    valueColor = remainingRedTextColor,
+                    isBoldValue = true
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // 3. Sites Expense Summary
-            ExpandableSummaryCard(
+            DashboardSummaryCard(
                 title = "Sites Expense Summary",
                 subtitle = "View site wise expenses details",
-                icon = Icons.Default.CurrencyRupee,
-                cardBg = if (isDark) Color(0xFF2B1F47) else Color(0xFFEEE8FF),
+                headerIcon = Icons.Default.CurrencyRupee,
                 accentColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                headerBgColor = if (isDark) Color(0xFF23183B) else Color(0xFFF0EAFF),
                 isExpanded = isExpenseSummaryExpanded,
                 isDark = isDark,
                 onToggle = { isExpenseSummaryExpanded = !isExpenseSummaryExpanded }
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
-                SummaryRow("Today Expense", Utils.formatCurrency(stats.todayExpense), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Expense", Utils.formatCurrency(stats.totalExpense), darkText = darkText)
-                Spacer(modifier = Modifier.height(6.dp))
-                SummaryRow("Total Paid", Utils.formatCurrency(stats.totalExpensePaid), darkText = darkText)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF6938E8).copy(alpha = 0.2f))
-                SummaryRow(
+                DashboardSummaryRow(
+                    label = "Today Expense",
+                    value = Utils.formatCurrency(stats.todayExpense),
+                    icon = Icons.Default.Today,
+                    iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                    isDark = isDark,
+                    valueColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                    isBoldValue = true
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Expense",
+                    value = Utils.formatCurrency(stats.totalExpense),
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                    iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
+                    isDark = isDark
+                )
+
+                DashboardSummaryRow(
+                    label = "Total Paid",
+                    value = Utils.formatCurrency(stats.totalExpensePaid),
+                    icon = Icons.Default.Payments,
+                    iconColor = if (isDark) Color(0xFF4CAF50) else Color(0xFF0A963D),
+                    isDark = isDark
+                )
+
+                val remainGreenBg = if (isDark) Color(0xFF122E22) else Color(0xFFE6F7F2)
+                val remainGreenBorder = if (isDark) Color(0xFF1B5E20) else Color(0xFFC2EFE1)
+                val remainGreenTextColor = if (isDark) Color(0xFF4CAF50) else Color(0xFF0BAA75)
+
+                DashboardSummaryRow(
                     label = "Total Remain",
                     value = Utils.formatCurrency(stats.totalExpenseRemain),
-                    isBold = true,
-                    valueColor = if (stats.totalExpenseRemain > 0) Color(0xFFFF5252) else Color(0xFF2ECC71),
-                    darkText = darkText
+                    icon = Icons.Default.AccountBalance,
+                    iconColor = remainGreenTextColor,
+                    isDark = isDark,
+                    rowBgColor = remainGreenBg,
+                    borderColor = remainGreenBorder,
+                    valueColor = remainGreenTextColor,
+                    isBoldValue = true
                 )
             }
 
@@ -630,94 +709,317 @@ fun AttendanceStatCard(
 }
 
 @Composable
-fun ExpandableSummaryCard(
+fun DashboardSummaryCard(
     title: String,
     subtitle: String,
-    icon: ImageVector,
-    cardBg: Color,
+    headerIcon: ImageVector,
     accentColor: Color,
+    headerBgColor: Color,
     isExpanded: Boolean,
-    isDark: Boolean = false,
+    isDark: Boolean,
     onToggle: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
+    val cardBg =
+        if (isDark) MaterialTheme.colorScheme.surface else Color.White
+
+    val borderColor =
+        if (isDark) {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+        } else {
+            Color(0xFFDCE7F5)
+        }
+
+    val titleTextColor =
+        if (isDark) {
+            MaterialTheme.colorScheme.onSurface
+        } else {
+            Color(0xFF0B1028)
+        }
+
+    val subtitleTextColor =
+        if (isDark) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            Color(0xFF71809A)
+        }
+
+    Card(
         modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
-        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f)),
-        shadowElevation = 2.dp
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = cardBg
+        ),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            // Colored Vertical Accent on the Left
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            // Left Accent Bar
             Box(
                 modifier = Modifier
-                    .width(5.dp)
+                    .width(3.dp)
                     .fillMaxHeight()
                     .background(accentColor)
             )
 
-            Column(modifier = Modifier.padding(14.dp).weight(1f)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onToggle() },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                // Compact Header Container
+                Surface(
+                    onClick = onToggle,
+                    shape = RoundedCornerShape(11.dp),
+                    color = headerBgColor,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 8.dp,
+                                vertical = 6.dp
+                            ),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            modifier = Modifier.size(38.dp),
-                            shape = CircleShape,
-                            color = cardBg
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                            // Header Icon Container
+                            Box(
+                                modifier = Modifier
+                                    .size(35.dp)
+                                    .background(
+                                        accentColor,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = headerIcon,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            Spacer(
+                                modifier = Modifier.width(8.dp)
+                            )
+
+                            // Title and Subtitle
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = title,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = titleTextColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Text(
+                                    text = subtitle,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = subtitleTextColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(
+                            modifier = Modifier.width(5.dp)
+                        )
 
-                        Column {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A),
-                                fontSize = 15.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B),
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                        // Expand / Collapse Button
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .background(
+                                    accentColor.copy(alpha = 0.12f),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isExpanded) {
+                                    Icons.Default.KeyboardArrowUp
+                                } else {
+                                    Icons.Default.KeyboardArrowDown
+                                },
+                                contentDescription = if (isExpanded) {
+                                    "Collapse"
+                                } else {
+                                    "Expand"
+                                },
+                                tint = accentColor,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
-
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A),
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
 
-                AnimatedVisibility(visible = isExpanded) {
-                    Column {
+                // Expanded Content
+                AnimatedVisibility(
+                    visible = isExpanded
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
                         content()
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun DashboardSummaryRow(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    iconColor: Color,
+    isDark: Boolean,
+    rowBgColor: Color? = null,
+    borderColor: Color? = null,
+    valueColor: Color? = null,
+    isBoldValue: Boolean = false
+) {
+    val defaultRowBg =
+        if (isDark) MaterialTheme.colorScheme.surfaceVariant
+        else Color(0xFFF4F7FC)
+
+    val defaultBorder =
+        if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+        else Color(0xFFE8EEF7)
+
+    val primaryText =
+        if (isDark) MaterialTheme.colorScheme.onSurface
+        else Color(0xFF0B1028)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = rowBgColor ?: defaultRowBg,
+        border = BorderStroke(1.dp, borderColor ?: defaultBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 7.dp), // Height reduced
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp), // Reduced from 38.dp
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                iconColor.copy(alpha = 0.15f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = primaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = value,
+                fontSize = 15.sp,
+                fontWeight = if (isBoldValue) FontWeight.Bold
+                else FontWeight.SemiBold,
+                color = valueColor ?: primaryText,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+fun DashboardInfoRow(
+    message: String,
+    icon: ImageVector = Icons.Default.Info,
+    accentColor: Color,
+    isDark: Boolean
+) {
+    val bg = if (isDark) accentColor.copy(alpha = 0.15f) else Color(0xFFE6F7F2)
+    val border = if (isDark) accentColor.copy(alpha = 0.3f) else Color(0xFFC2EFE1)
+    val textAndIconColor = if (isDark) Color(0xFF4CAF50) else Color(0xFF0BAA75)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textAndIconColor,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = textAndIconColor
+            )
         }
     }
 }
@@ -769,25 +1071,5 @@ fun QuickActionGridCard(
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = iconColor, modifier = Modifier.size(12.dp))
             }
         }
-    }
-}
-
-@Composable
-fun SummaryRow(label: String, value: String, isBold: Boolean = false, valueColor: Color? = null, darkText: Color = Color(0xFF0F172A)) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = darkText
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
-            color = valueColor ?: darkText
-        )
     }
 }

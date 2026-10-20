@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.workermanager.viewmodel.PurchaseDestination
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.*
@@ -116,12 +117,24 @@ fun ContractorMaterialScreen(
         }
     }
 
+    val handleBack: () -> Unit = {
+        if (activeTab != ContractorMaterialTab.INVENTORY) {
+            activeTab = ContractorMaterialTab.INVENTORY
+        } else {
+            onBack()
+        }
+    }
+
+    BackHandler(enabled = activeTab != ContractorMaterialTab.INVENTORY) {
+        handleBack()
+    }
+
     Scaffold(
         topBar = {
             com.example.workermanager.ui.components.WorkCraftTopHeader(
                 screenTitle = "Material Management",
                 screenIcon = Icons.Default.Inventory2,
-                onBackClick = onBack
+                onBackClick = handleBack
             )
         },
         floatingActionButton = {

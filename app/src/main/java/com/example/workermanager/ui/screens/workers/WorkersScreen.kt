@@ -715,36 +715,33 @@ fun WorkerDialog(
     val isDark =
         MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-    val dialogBg =
-        if (isDark) MaterialTheme.colorScheme.surface
-        else Color(0xFFE6F1FC)
+    val dialogBackground =
+        if (isDark) Color.Black else Color(0xFFE6F1FC)
 
-    val fieldBg =
-        if (isDark) MaterialTheme.colorScheme.surfaceVariant
-        else Color.White
+    val dialogTextColor =
+        if (isDark) Color.White else Color(0xFF0F172A)
 
-    val titleColor =
-        if (isDark) MaterialTheme.colorScheme.onSurface
-        else Color(0xFF111111)
+    val dialogBg = dialogBackground
 
-    val textColor =
-        if (isDark) MaterialTheme.colorScheme.onSurface
-        else Color(0xFF0F172A)
+    val fieldBg = dialogBackground
+
+    val titleColor = dialogTextColor
+
+    val textColor = dialogTextColor
 
     val secondaryTextColor =
-        if (isDark) MaterialTheme.colorScheme.onSurfaceVariant
-        else Color(0xFF596580)
+        if (isDark) Color(0xFF94A3B8) else Color(0xFF596580)
 
     val primaryColor = Color(0xFF1976ED)
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedContainerColor = fieldBg,
-        unfocusedContainerColor = fieldBg,
-        disabledContainerColor = fieldBg,
-        errorContainerColor = fieldBg,
+        focusedContainerColor = dialogBackground,
+        unfocusedContainerColor = dialogBackground,
+        disabledContainerColor = dialogBackground,
+        errorContainerColor = dialogBackground,
 
-        focusedTextColor = textColor,
-        unfocusedTextColor = textColor,
+        focusedTextColor = dialogTextColor,
+        unfocusedTextColor = dialogTextColor,
 
         focusedLabelColor = primaryColor,
         unfocusedLabelColor = secondaryTextColor,
@@ -990,13 +987,7 @@ fun WorkerDialog(
                                 typeExpanded = false
                             },
 
-                            modifier = Modifier.background(
-                                if (isDark) {
-                                    MaterialTheme.colorScheme.surface
-                                } else {
-                                    Color.White
-                                }
-                            )
+                            modifier = Modifier.background(dialogBackground)
                         ) {
                             WorkerType.entries.forEach { workerType ->
                                 DropdownMenuItem(
@@ -1130,13 +1121,7 @@ fun WorkerDialog(
                                 siteExpanded = false
                             },
 
-                            modifier = Modifier.background(
-                                if (isDark) {
-                                    MaterialTheme.colorScheme.surface
-                                } else {
-                                    Color.White
-                                }
-                            )
+                            modifier = Modifier.background(dialogBackground)
                         ) {
                             // No site assigned
                             DropdownMenuItem(
@@ -1229,57 +1214,37 @@ fun WorkerDialog(
                     )
 
                     // Active checkbox
-                    Surface(
-                        color = fieldBg,
-
-                        shape = RoundedCornerShape(8.dp),
-
-                        border = BorderStroke(
-                            1.dp,
-                            if (isDark) {
-                                MaterialTheme.colorScheme.outline
-                            } else {
-                                Color(0xFFCBD5E1)
-                            }
-                        ),
-
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 isActive = !isActive
-                            }
+                            },
+
+                        verticalAlignment =
+                            Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                horizontal = 12.dp,
-                                vertical = 6.dp
-                            ),
+                        Checkbox(
+                            checked = isActive,
 
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = isActive,
+                            onCheckedChange = {
+                                isActive = it
+                            },
 
-                                onCheckedChange = {
-                                    isActive = it
-                                },
-
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = primaryColor
-                                )
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = primaryColor
                             )
+                        )
 
-                            Spacer(
-                                modifier = Modifier.width(4.dp)
-                            )
+                        Spacer(
+                            modifier = Modifier.width(4.dp)
+                        )
 
-                            Text(
-                                text = "Active",
-                                fontWeight = FontWeight.SemiBold,
-                                color = titleColor
-                            )
-                        }
+                        Text(
+                            text = "Active",
+                            fontWeight = FontWeight.SemiBold,
+                            color = titleColor
+                        )
                     }
                 }
 
@@ -1365,6 +1330,12 @@ fun WorkerDialog(
                 showAddSiteDialog = false
             },
 
+            containerColor = dialogBackground,
+
+            titleContentColor = dialogTextColor,
+
+            textContentColor = dialogTextColor,
+
             title = {
                 Text(
                     "Add New Site",
@@ -1405,6 +1376,7 @@ fun WorkerDialog(
                         },
 
                         singleLine = true,
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -1420,6 +1392,7 @@ fun WorkerDialog(
                         },
 
                         singleLine = true,
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -1435,6 +1408,7 @@ fun WorkerDialog(
                         },
 
                         singleLine = true,
+                        colors = fieldColors,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

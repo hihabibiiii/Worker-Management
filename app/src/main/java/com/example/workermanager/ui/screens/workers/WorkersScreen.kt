@@ -1124,20 +1124,7 @@ fun WorkerDialog(
                             modifier = Modifier.background(dialogBackground)
                         ) {
                             // No site assigned
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "No Site Assigned",
-                                        color = textColor
-                                    )
-                                },
 
-                                onClick = {
-                                    siteId = null
-                                    siteError = null
-                                    siteExpanded = false
-                                }
-                            )
 
                             // Existing sites
                             displaySites.forEach { site ->

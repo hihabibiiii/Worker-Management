@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,39 +181,79 @@ class MainActivity : ComponentActivity() {
                                 border = BorderStroke(1.dp, navBorder),
                                 shadowElevation = 8.dp
                             ) {
-                                Row(
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 6.dp, vertical = 6.dp),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(horizontal = 6.dp, vertical = 6.dp)
                                 ) {
-                                    primaryNavItems.forEach { screen ->
-                                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                    val totalTabs = primaryNavItems.size + 1
+                                    val targetSelectedIndex = if (isMoreSelected) {
+                                        primaryNavItems.size
+                                    } else {
+                                        primaryNavItems.indexOfFirst { screen ->
+                                            currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                        }.takeIf { it >= 0 } ?: 0
+                                    }
 
-                                        AnimatedNavItem(
-                                            title = screen.title,
-                                            icon = screen.icon,
-                                            isSelected = isSelected,
-                                            selectedBg = selectedBg,
-                                            selectedContentColor = selectedContentColor,
-                                            unselectedContentColor = unselectedContentColor,
-                                            onClick = { navigateToTab(screen.route) },
-                                            modifier = Modifier.weight(1f)
+                                    val animatedIndex by androidx.compose.animation.core.animateFloatAsState(
+                                        targetValue = targetSelectedIndex.toFloat(),
+                                        animationSpec = androidx.compose.animation.core.spring(
+                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium,
+                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy
+                                        ),
+                                        label = "animatedIndex"
+                                    )
+
+                                    BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+                                        val tabWidth = maxWidth / totalTabs
+
+                                        Box(
+                                            modifier = Modifier
+                                                .offset {
+                                                    androidx.compose.ui.unit.IntOffset(
+                                                        (tabWidth * animatedIndex).roundToPx(),
+                                                        0
+                                                    )
+                                                }
+                                                .width(tabWidth)
+                                                .fillMaxHeight()
+                                                .clip(RoundedCornerShape(22.dp))
+                                                .background(selectedBg)
                                         )
                                     }
 
-                                    // More Tab
-                                    AnimatedNavItem(
-                                        title = "More",
-                                        icon = Icons.Default.GridView,
-                                        isSelected = isMoreSelected,
-                                        selectedBg = selectedBg,
-                                        selectedContentColor = selectedContentColor,
-                                        unselectedContentColor = unselectedContentColor,
-                                        onClick = { showMoreSheet = true },
-                                        modifier = Modifier.weight(1f)
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        primaryNavItems.forEachIndexed { index, screen ->
+                                            val selectionFraction = (1.0f - kotlin.math.abs(animatedIndex - index)).coerceIn(0f, 1f)
+
+                                            AnimatedNavItem(
+                                                title = screen.title,
+                                                icon = screen.icon,
+                                                selectionFraction = selectionFraction,
+                                                selectedContentColor = selectedContentColor,
+                                                unselectedContentColor = unselectedContentColor,
+                                                onClick = { navigateToTab(screen.route) },
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+
+                                        // More Tab
+                                        val moreSelectionFraction = (1.0f - kotlin.math.abs(animatedIndex - primaryNavItems.size)).coerceIn(0f, 1f)
+
+                                        AnimatedNavItem(
+                                            title = "More",
+                                            icon = Icons.Default.GridView,
+                                            selectionFraction = moreSelectionFraction,
+                                            selectedContentColor = selectedContentColor,
+                                            unselectedContentColor = unselectedContentColor,
+                                            onClick = { showMoreSheet = true },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -391,36 +432,29 @@ class MainActivity : ComponentActivity() {
 fun AnimatedNavItem(
     title: String,
     icon: ImageVector?,
-    isSelected: Boolean,
-    selectedBg: Color,
+    selectionFraction: Float,
     selectedContentColor: Color,
     unselectedContentColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val animatedColor by animateColorAsState(
-        targetValue = if (isSelected) selectedBg else Color.Transparent,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "bgColor"
+    val contentColor = androidx.compose.ui.graphics.lerp(
+        unselectedContentColor,
+        selectedContentColor,
+        selectionFraction
     )
 
-    val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.1f else 1.0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "scale"
-    )
-
-    val contentColor by animateColorAsState(
-        targetValue = if (isSelected) selectedContentColor else unselectedContentColor,
-        animationSpec = tween(durationMillis = 200),
-        label = "contentColor"
-    )
+    val scale = 1.0f + 0.12f * selectionFraction
+    val isSelected = selectionFraction > 0.5f
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
-            .background(animatedColor)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
             .padding(vertical = 8.dp, horizontal = 2.dp),
         contentAlignment = Alignment.Center
     ) {

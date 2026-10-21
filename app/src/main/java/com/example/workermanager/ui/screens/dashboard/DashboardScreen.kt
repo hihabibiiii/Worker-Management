@@ -369,7 +369,7 @@ fun DashboardScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Find Existing Backup Prompt (Visible when database is empty)
             if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {
@@ -434,7 +434,7 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 

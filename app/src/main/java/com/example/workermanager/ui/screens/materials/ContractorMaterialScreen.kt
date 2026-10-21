@@ -375,16 +375,33 @@ fun ContractorMaterialScreen(
                             }
                         }
 
-                        // 5. CONTRACTOR INVENTORY SECTION HEADING
+                        // 5. CONTRACTOR INVENTORY HEADING WITH FULL-WIDTH BACKGROUND STRIP
                         item {
-                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                            ) {
+                                val headingBadgeBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFEBF2FD)
+
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = headingBadgeBg,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Inventory2, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.Inventory2,
+                                            contentDescription = null,
+                                            tint = PrimaryBlue,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "Contractor Inventory (${stockModels.size})",
@@ -393,17 +410,39 @@ fun ContractorMaterialScreen(
                                             color = darkText
                                         )
                                     }
-                                    Icon(Icons.Default.Tune, contentDescription = "Decor", tint = PrimaryBlue.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+
+                                    IconButton(
+                                        onClick = { activeTab = ContractorMaterialTab.REPORTS },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Assessment,
+                                            contentDescription = "Contractor Inventory Report",
+                                            tint = PrimaryBlue,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Box(modifier = Modifier.width(60.dp).height(3.dp).background(PrimaryBlue, shape = RoundedCornerShape(2.dp)))
+
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .width(60.dp)
+                                        .height(3.dp)
+                                        .background(PrimaryBlue, shape = RoundedCornerShape(2.dp))
+                                )
                             }
                         }
 
                         // 6. MATERIAL INVENTORY CARDS
                         if (stockModels.isEmpty()) {
                             item {
-                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text("No material inventory records found.", color = subtitleText)
                                 }
                             }
@@ -1377,63 +1416,174 @@ fun SiteWiseReportTab(
         siteStocks
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Site-wise Material Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
-            Button(onClick = onExportExcel, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
-                Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Export Excel", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.4f
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Contractor Material Report",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = darkText
+                )
+                Button(
+                    onClick = onExportExcel,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Export Excel", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
-        // Site Filter
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = if (selectedReportSiteId == null) "All Sites Combined" else sites.find { it.id == selectedReportSiteId }?.name ?: "Select Site",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Select Site for Report") },
-                modifier = Modifier.fillMaxWidth().clickable { siteExpanded = true }
-            )
-            Box(modifier = Modifier.matchParentSize().clickable { siteExpanded = true })
-            DropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
-                DropdownMenuItem(text = { Text("All Sites Combined") }, onClick = { selectedReportSiteId = null; siteExpanded = false })
-                sites.forEach { site ->
-                    DropdownMenuItem(text = { Text(site.name) }, onClick = { selectedReportSiteId = site.id; siteExpanded = false })
+        // 1. CENTRAL CONTRACTOR INVENTORY SUMMARY
+        if (selectedReportSiteId == null && inventory.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Central Inventory Summary (${inventory.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlue
+                )
+            }
+
+            items(inventory) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
+                    border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.material.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = darkText
+                            )
+                            Surface(
+                                color = PrimaryBlue.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = item.material.category.displayName,
+                                    fontSize = 10.sp,
+                                    color = PrimaryBlue,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Total Added: ${item.totalAddedQuantity} ${item.material.unit.displayName}", fontSize = 11.sp, color = subtitleText)
+                            Text("Issued to Sites: ${item.quantityAtSites} ${item.material.unit.displayName}", fontSize = 11.sp, color = subtitleText)
+                            Text(
+                                text = "Available: ${item.availableQuantity} ${item.material.unit.displayName}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (item.isLowStock) Color(0xFFFF5252) else Color(0xFF2E7D32)
+                            )
+                        }
+
+                        if (item.brokenQuantity > 0 || item.lostQuantity > 0) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Broken: ${item.brokenQuantity} ${item.material.unit.displayName} | Lost: ${item.lostQuantity} ${item.material.unit.displayName}",
+                                fontSize = 11.sp,
+                                color = Color(0xFFC62828)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. SITE-WISE ASSIGNMENT SECTION
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Site-Wise Material Stock",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlue
+                )
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = if (selectedReportSiteId == null) "All Sites Combined" else sites.find { it.id == selectedReportSiteId }?.name ?: "Select Site",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Select Site for Report") },
+                        modifier = Modifier.fillMaxWidth().clickable { siteExpanded = true }
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { siteExpanded = true })
+                    DropdownMenu(expanded = siteExpanded, onDismissRequest = { siteExpanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text("All Sites Combined") },
+                            onClick = { selectedReportSiteId = null; siteExpanded = false }
+                        )
+                        sites.forEach { site ->
+                            DropdownMenuItem(
+                                text = { Text(site.name) },
+                                onClick = { selectedReportSiteId = site.id; siteExpanded = false }
+                            )
+                        }
+                    }
                 }
             }
         }
 
         if (filteredSiteStocks.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No material assignments for this site.", color = subtitleText)
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text("No material assignments for this site.", color = subtitleText)
+                }
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(filteredSiteStocks) { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
-                            Text("Site: ${item.siteName}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+            items(filteredSiteStocks) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
+                    border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.15f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(item.materialName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
+                        Text("Site: ${item.siteName}", style = MaterialTheme.typography.bodySmall, color = PrimaryBlue, fontWeight = FontWeight.Bold)
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Sent: ${item.totalSent} ${item.unit}", fontSize = 11.sp)
-                                Text("Returned: ${item.totalReturned} ${item.unit}", fontSize = 11.sp)
-                                Text("Current: ${item.currentSiteQuantity} ${item.unit}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), fontSize = 12.sp)
-                            }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Sent: ${item.totalSent} ${item.unit}", fontSize = 11.sp, color = subtitleText)
+                            Text("Returned: ${item.totalReturned} ${item.unit}", fontSize = 11.sp, color = subtitleText)
+                            Text("Current: ${item.currentSiteQuantity} ${item.unit}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), fontSize = 11.sp)
+                        }
 
-                            if (item.brokenAtSite > 0 || item.lostAtSite > 0) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Broken at Site: ${item.brokenAtSite} | Lost at Site: ${item.lostAtSite}", fontSize = 11.sp, color = Color(0xFFC62828))
-                            }
+                        if (item.brokenAtSite > 0 || item.lostAtSite > 0) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Broken at Site: ${item.brokenAtSite} | Lost at Site: ${item.lostAtSite}", fontSize = 11.sp, color = Color(0xFFC62828))
                         }
                     }
                 }

@@ -602,7 +602,7 @@ fun WorkerCard(
                                 onEdit()
                             }
                         )
-                        
+
                         DropdownMenuItem(
                             text = { Text("Delete Worker", color = Color(0xFFC62828)) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(18.dp)) },

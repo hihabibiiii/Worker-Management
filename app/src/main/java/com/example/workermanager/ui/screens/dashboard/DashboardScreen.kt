@@ -409,26 +409,34 @@ fun DashboardScreen(
             }
 
             // SECTION 4: QUICK ACTIONS SECTION (3x2 GRID)
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.FlashOn, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
-                    }
+            val quickActionsHeaderBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFEBF2FD)
 
-                    TextButton(onClick = onNavigateToReports) {
-                        Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = dashPrimary)
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(16.dp))
-                    }
+            // Full-width horizontal background strip with rounded corners behind Quick Actions heading
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .background(color = quickActionsHeaderBg, shape = RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.FlashOn, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = onNavigateToReports) {
+                    Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = dashPrimary)
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(16.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 
                 // Row 1 (Add Worker, Attendance, Add Site)
                 Row(

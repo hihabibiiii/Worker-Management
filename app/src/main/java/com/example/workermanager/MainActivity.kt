@@ -141,8 +141,7 @@ class MainActivity : ComponentActivity() {
                 
                 val allNavItems = primaryNavItems + moreNavItems
 
-                var showMoreSheet by remember { mutableStateOf(false) }
-                val sheetState = rememberModalBottomSheetState()
+                var showMoreSheet by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
 
                 val navigateToTab: (String) -> Unit = { targetRoute ->
                     val startDestinationRoute = navController.graph.findStartDestination().route
@@ -162,7 +161,7 @@ class MainActivity : ComponentActivity() {
 
                         // Only show bottom bar for main screens
                         if (allNavItems.any { it.route == currentDestination?.route }) {
-                            val isMoreSelected = moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
+                            val isMoreSelected = showMoreSheet || moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
                             val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
                             val navBg = if (isDark) Color(0xFF1E222A) else Color.White
@@ -236,7 +235,10 @@ class MainActivity : ComponentActivity() {
                                                 selectionFraction = selectionFraction,
                                                 selectedContentColor = selectedContentColor,
                                                 unselectedContentColor = unselectedContentColor,
-                                                onClick = { navigateToTab(screen.route) },
+                                                onClick = {
+                                                    if (showMoreSheet) showMoreSheet = false
+                                                    navigateToTab(screen.route)
+                                                },
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
@@ -250,7 +252,7 @@ class MainActivity : ComponentActivity() {
                                             selectionFraction = moreSelectionFraction,
                                             selectedContentColor = selectedContentColor,
                                             unselectedContentColor = unselectedContentColor,
-                                            onClick = { showMoreSheet = true },
+                                            onClick = { showMoreSheet = !showMoreSheet },
                                             modifier = Modifier.weight(1f)
                                         )
                                     }
@@ -259,165 +261,227 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-
-                    NavHost(
-                        navController = navController,
-                        startDestination = Screen.Dashboard.route,
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        composable(Screen.Dashboard.route) {
-                            DashboardScreen(
-                                viewModel = dashboardViewModel,
-                                siteViewModel = siteViewModel,
-                                workerViewModel = workerViewModel,
-                                contractViewModel = contractViewModel,
-                                siteExpenseViewModel = siteExpenseViewModel,
-                                onAddWorker = { navigateToTab(Screen.Workers.route) },
-                                onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
-                                onNavigateToRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
-                                onNavigateToReports = { navigateToTab(Screen.Reports.route) },
-                                onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                                onSiteClick = { siteId ->
-                                    navController.navigate(Screen.SiteDetails.createRoute(siteId))
-                                }
-                            )
-                        }
-                        composable(Screen.Sites.route) {
-                            SitesScreen(
-                                viewModel = siteViewModel,
-                                onBack = { navController.popBackStack() },
-                                onSiteClick = { siteId ->
-                                    navController.navigate(Screen.SiteDetails.createRoute(siteId))
-                                }
-                            )
-                        }
-                        composable(
-                            route = Screen.SiteDetails.route,
-                            arguments = listOf(navArgument("siteId") { type = NavType.LongType })
-                        ) { backStackEntry ->
-                            val siteId = backStackEntry.arguments?.getLong("siteId") ?: 0L
-                            SiteDetailsScreen(
-                                siteId = siteId,
-                                viewModel = siteViewModel,
-                                workerViewModel = workerViewModel,
-                                attendanceViewModel = attendanceViewModel,
-                                paymentViewModel = paymentViewModel,
-                                onBack = { navController.popBackStack() },
-                                onWorkerClick = { workerId ->
-                                    navController.navigate(Screen.WorkerDetails.createRoute(workerId))
-                                }
-                            )
-                        }
-                        composable(Screen.Workers.route) {
-                            WorkersScreen(
-                                viewModel = workerViewModel,
-                                siteViewModel = siteViewModel,
-                                onWorkerClick = { workerId ->
-                                    navController.navigate(Screen.WorkerDetails.createRoute(workerId))
-                                }
-                            )
-                        }
-                        composable(
-                            route = Screen.WorkerDetails.route,
-                            arguments = listOf(navArgument("workerId") { type = NavType.LongType })
-                        ) { backStackEntry ->
-                            val workerId = backStackEntry.arguments?.getLong("workerId") ?: 0L
-                            WorkerDetailsScreen(
-                                workerId = workerId,
-                                viewModel = workerViewModel,
-                                attendanceViewModel = attendanceViewModel,
-                                paymentViewModel = paymentViewModel,
-                                siteViewModel = siteViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.Attendance.route) {
-                            AttendanceScreen(
-                                viewModel = attendanceViewModel,
-                                siteViewModel = siteViewModel
-                            )
-                        }
-                        composable(Screen.Payments.route) {
-                            PaymentsScreen(
-                                viewModel = paymentViewModel,
-                                siteViewModel = siteViewModel
-                            )
-                        }
-                        composable(Screen.Contracts.route) {
-                            val sitesList by siteViewModel.allSites.collectAsState(initial = emptyList())
-                            ContractsScreen(
-                                viewModel = contractViewModel,
-                                sites = sitesList,
-                                onBack = { navController.popBackStack() },
-                                onContractClick = { contractId ->
-                                    navController.navigate(Screen.ContractDetails.createRoute(contractId))
-                                }
-                            )
-                        }
-                        composable(Screen.SiteExpenses.route) {
-                            com.example.workermanager.ui.screens.expenses.SiteExpensesScreen(
-                                viewModel = siteExpenseViewModel,
-                                siteViewModel = siteViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.MaterialManagement.route) {
-                            com.example.workermanager.ui.screens.materials.ContractorMaterialScreen(
-                                viewModel = contractorMaterialViewModel,
-                                siteViewModel = siteViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(
-                            route = Screen.ContractDetails.route,
-                            arguments = listOf(navArgument("contractId") { type = NavType.LongType })
-                        ) { backStackEntry ->
-                            val contractId = backStackEntry.arguments?.getLong("contractId") ?: 0L
-                            ContractDetailsScreen(
-                                contractId = contractId,
-                                viewModel = contractViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.Reports.route) {
-                            ReportsScreen(
-                                viewModel = reportViewModel,
-                                siteViewModel = siteViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.RecycleBin.route) {
-                            RecycleBinScreen(
-                                viewModel = recycleBinViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(Screen.Settings.route) {
-                            SettingsScreen(
-                                viewModel = settingsViewModel,
-                                onBack = { navController.popBackStack() },
-                                onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) }
-                            )
-                        }
-                    }
-                    
-                    if (showMoreSheet) {
-                        ModalBottomSheet(
-                            onDismissRequest = { showMoreSheet = false },
-                            sheetState = sheetState
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Dashboard.route,
+                            modifier = Modifier.padding(innerPadding)
                         ) {
-                            Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                                moreNavItems.forEach { screen ->
-                                    ListItem(
-                                        headlineContent = { Text(screen.title) },
-                                        leadingContent = { 
-                                            screen.icon?.let { Icon(it, contentDescription = null) } 
-                                        },
-                                        modifier = Modifier.clickable {
-                                            showMoreSheet = false
-                                            navigateToTab(screen.route)
+                            composable(Screen.Dashboard.route) {
+                                DashboardScreen(
+                                    viewModel = dashboardViewModel,
+                                    siteViewModel = siteViewModel,
+                                    workerViewModel = workerViewModel,
+                                    contractViewModel = contractViewModel,
+                                    siteExpenseViewModel = siteExpenseViewModel,
+                                    onAddWorker = { navigateToTab(Screen.Workers.route) },
+                                    onMarkAttendance = { navigateToTab(Screen.Attendance.route) },
+                                    onNavigateToRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
+                                    onNavigateToReports = { navigateToTab(Screen.Reports.route) },
+                                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                                    onSiteClick = { siteId ->
+                                        navController.navigate(Screen.SiteDetails.createRoute(siteId))
+                                    }
+                                )
+                            }
+                            composable(Screen.Sites.route) {
+                                SitesScreen(
+                                    viewModel = siteViewModel,
+                                    onBack = { navController.popBackStack() },
+                                    onSiteClick = { siteId ->
+                                        navController.navigate(Screen.SiteDetails.createRoute(siteId))
+                                    }
+                                )
+                            }
+                            composable(
+                                route = Screen.SiteDetails.route,
+                                arguments = listOf(navArgument("siteId") { type = NavType.LongType })
+                            ) { backStackEntry ->
+                                val siteId = backStackEntry.arguments?.getLong("siteId") ?: 0L
+                                SiteDetailsScreen(
+                                    siteId = siteId,
+                                    viewModel = siteViewModel,
+                                    workerViewModel = workerViewModel,
+                                    attendanceViewModel = attendanceViewModel,
+                                    paymentViewModel = paymentViewModel,
+                                    onBack = { navController.popBackStack() },
+                                    onWorkerClick = { workerId ->
+                                        navController.navigate(Screen.WorkerDetails.createRoute(workerId))
+                                    }
+                                )
+                            }
+                            composable(Screen.Workers.route) {
+                                WorkersScreen(
+                                    viewModel = workerViewModel,
+                                    siteViewModel = siteViewModel,
+                                    onWorkerClick = { workerId ->
+                                        navController.navigate(Screen.WorkerDetails.createRoute(workerId))
+                                    }
+                                )
+                            }
+                            composable(
+                                route = Screen.WorkerDetails.route,
+                                arguments = listOf(navArgument("workerId") { type = NavType.LongType })
+                            ) { backStackEntry ->
+                                val workerId = backStackEntry.arguments?.getLong("workerId") ?: 0L
+                                WorkerDetailsScreen(
+                                    workerId = workerId,
+                                    viewModel = workerViewModel,
+                                    attendanceViewModel = attendanceViewModel,
+                                    paymentViewModel = paymentViewModel,
+                                    siteViewModel = siteViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.Attendance.route) {
+                                AttendanceScreen(
+                                    viewModel = attendanceViewModel,
+                                    siteViewModel = siteViewModel
+                                )
+                            }
+                            composable(Screen.Payments.route) {
+                                PaymentsScreen(
+                                    viewModel = paymentViewModel,
+                                    siteViewModel = siteViewModel
+                                )
+                            }
+                            composable(Screen.Contracts.route) {
+                                val sitesList by siteViewModel.allSites.collectAsState(initial = emptyList())
+                                ContractsScreen(
+                                    viewModel = contractViewModel,
+                                    sites = sitesList,
+                                    onBack = { navController.popBackStack() },
+                                    onContractClick = { contractId ->
+                                        navController.navigate(Screen.ContractDetails.createRoute(contractId))
+                                    }
+                                )
+                            }
+                            composable(Screen.SiteExpenses.route) {
+                                com.example.workermanager.ui.screens.expenses.SiteExpensesScreen(
+                                    viewModel = siteExpenseViewModel,
+                                    siteViewModel = siteViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.MaterialManagement.route) {
+                                com.example.workermanager.ui.screens.materials.ContractorMaterialScreen(
+                                    viewModel = contractorMaterialViewModel,
+                                    siteViewModel = siteViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(
+                                route = Screen.ContractDetails.route,
+                                arguments = listOf(navArgument("contractId") { type = NavType.LongType })
+                            ) { backStackEntry ->
+                                val contractId = backStackEntry.arguments?.getLong("contractId") ?: 0L
+                                ContractDetailsScreen(
+                                    contractId = contractId,
+                                    viewModel = contractViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.Reports.route) {
+                                ReportsScreen(
+                                    viewModel = reportViewModel,
+                                    siteViewModel = siteViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.RecycleBin.route) {
+                                RecycleBinScreen(
+                                    viewModel = recycleBinViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.Settings.route) {
+                                SettingsScreen(
+                                    viewModel = settingsViewModel,
+                                    onBack = { navController.popBackStack() },
+                                    onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) }
+                                )
+                            }
+                        }
+
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = showMoreSheet,
+                            enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + androidx.compose.animation.fadeIn(),
+                            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + androidx.compose.animation.fadeOut(),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            androidx.activity.compose.BackHandler { showMoreSheet = false }
+
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.4f))
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) { showMoreSheet = false }
+                                )
+
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .fillMaxWidth()
+                                        .padding(bottom = innerPadding.calculateBottomPadding() + 8.dp, start = 12.dp, end = 12.dp),
+                                    shape = RoundedCornerShape(28.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 8.dp,
+                                    shadowElevation = 16.dp
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 12.dp, bottom = 12.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(36.dp)
+                                                .height(4.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                                                .align(Alignment.CenterHorizontally)
+                                        )
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Text(
+                                            text = "More Options",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        moreNavItems.forEach { screen ->
+                                            ListItem(
+                                                headlineContent = {
+                                                    Text(
+                                                        screen.title,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                },
+                                                leadingContent = {
+                                                    screen.icon?.let {
+                                                        Icon(
+                                                            it,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier.clickable {
+                                                    showMoreSheet = false
+                                                    navigateToTab(screen.route)
+                                                }
+                                            )
                                         }
-                                    )
+                                    }
                                 }
                             }
                         }

@@ -132,7 +132,7 @@ fun ContractorMaterialScreen(
     Scaffold(
         topBar = {
             com.example.workermanager.ui.components.WorkCraftTopHeader(
-                screenTitle = "Material Management",
+                screenTitle = "Site Materials",
                 screenIcon = Icons.Default.Inventory2,
                 onBackClick = handleBack
             )

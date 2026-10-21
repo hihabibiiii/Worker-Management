@@ -602,14 +602,7 @@ fun WorkerCard(
                                 onEdit()
                             }
                         )
-                        DropdownMenuItem(
-                            text = { Text("Payment History") },
-                            leadingIcon = { Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
-                            onClick = {
-                                menuExpanded = false
-                                onClick()
-                            }
-                        )
+                        
                         DropdownMenuItem(
                             text = { Text("Delete Worker", color = Color(0xFFC62828)) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(18.dp)) },

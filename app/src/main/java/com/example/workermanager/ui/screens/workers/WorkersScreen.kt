@@ -229,8 +229,8 @@ fun WorkersScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(workers) { worker ->
                         val stats by viewModel.getWorkerStats(worker.id).collectAsState(initial = null)
@@ -431,16 +431,19 @@ fun WorkerCard(
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
     isDark: Boolean = false,
     cardBg: Color = Color.White,
     textPrimary: Color = Color(0xFF17243A),
     textSecondary: Color = Color(0xFF64748B)
 ) {
+    val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         color = cardBg,
@@ -558,6 +561,31 @@ fun WorkerCard(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Call") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0866E8),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                val phoneNumber = worker.phone.trim()
+                                if (phoneNumber.isNotBlank()) {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Cannot open dialer app", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Phone number not available", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("View Details") },
                             leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },

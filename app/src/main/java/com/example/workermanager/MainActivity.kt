@@ -1,6 +1,11 @@
 package com.example.workermanager
 
+import android.app.Activity
 import android.os.Bundle
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -35,12 +40,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -81,7 +89,7 @@ class MainActivity : ComponentActivity() {
 
             WorkerManagerTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
-                
+
                 val siteViewModel: SiteViewModel = viewModel(
                     factory = SiteViewModelFactory(app.siteRepository)
                 )
@@ -128,7 +136,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Attendance,
                     Screen.Payments
                 )
-                
+
                 val moreNavItems = listOf(
                     Screen.Sites,
                     Screen.Contracts,
@@ -138,7 +146,7 @@ class MainActivity : ComponentActivity() {
                     Screen.RecycleBin,
                     Screen.Settings
                 )
-                
+
                 val allNavItems = primaryNavItems + moreNavItems
 
                 var showMoreSheet by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
@@ -154,107 +162,183 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                val currentRoute = currentDestination?.route
+
+                val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                val screenBg = when {
+                    isDark -> MaterialTheme.colorScheme.background
+                    currentRoute == Screen.Dashboard.route -> Color(0xFFF7F9FE)
+                    currentRoute == Screen.Workers.route ||
+                            currentRoute == Screen.Payments.route ||
+                            currentRoute == Screen.MaterialManagement.route -> Color(0xFFF1F6FD)
+                    else -> MaterialTheme.colorScheme.background
+                }
+
+                val view = LocalView.current
+                if (!view.isInEditMode) {
+                    SideEffect {
+                        val window = (view.context as? Activity)?.window
+                        window?.let {
+                            it.navigationBarColor = screenBg.toArgb()
+                            val insetsController = WindowCompat.getInsetsController(it, view)
+                            insetsController.isAppearanceLightNavigationBars = !isDark
+                        }
+                    }
+                }
+
                 Scaffold(
+                    containerColor = screenBg,
                     bottomBar = {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-
-                        // Only show bottom bar for main screens
-                        if (allNavItems.any { it.route == currentDestination?.route }) {
+                        if (allNavItems.any { it.route == currentRoute }) {
                             val isMoreSelected = showMoreSheet || moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
-                            val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-                            val navBg = if (isDark) Color(0xFF1E222A) else Color.White
-                            val navBorder = if (isDark) Color(0xFF333A48) else Color(0xFFCBD5E1)
-                            val unselectedContentColor = if (isDark) Color(0xFF8E9BAE) else Color(0xFF526581)
-                            val selectedBg = Color(0xFF0866E8)
-                            val selectedContentColor = Color.White
+                            val unselectedContentColor = if (isDark) Color(0xFFD0D8E5).copy(alpha = 0.72f) else Color(0xFF526581)
+                            val selectedContentColor = if (isDark) Color.White else Color(0xFF172B4D)
 
-                            Surface(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .navigationBarsPadding()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                shape = RoundedCornerShape(32.dp),
-                                color = navBg,
-                                border = BorderStroke(1.dp, navBorder),
-                                shadowElevation = 8.dp
+                                    .padding(bottom = 8.dp),
+                                contentAlignment = Alignment.Center
                             ) {
+                                // Single floating glass navbar: no separate outer container.
                                 Box(
                                     modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .widthIn(max = 420.dp)
                                         .fillMaxWidth()
-                                        .padding(horizontal = 6.dp, vertical = 6.dp)
-                                ) {
-                                    val totalTabs = primaryNavItems.size + 1
-                                    val targetSelectedIndex = if (isMoreSelected) {
-                                        primaryNavItems.size
-                                    } else {
-                                        primaryNavItems.indexOfFirst { screen ->
-                                            currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                        }.takeIf { it >= 0 } ?: 0
-                                    }
-
-                                    val animatedIndex by androidx.compose.animation.core.animateFloatAsState(
-                                        targetValue = targetSelectedIndex.toFloat(),
-                                        animationSpec = androidx.compose.animation.core.spring(
-                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium,
-                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy
-                                        ),
-                                        label = "animatedIndex"
-                                    )
-
-                                    BoxWithConstraints(modifier = Modifier.matchParentSize()) {
-                                        val tabWidth = maxWidth / totalTabs
-
-                                        Box(
-                                            modifier = Modifier
-                                                .offset {
-                                                    androidx.compose.ui.unit.IntOffset(
-                                                        (tabWidth * animatedIndex).roundToPx(),
-                                                        0
-                                                    )
-                                                }
-                                                .width(tabWidth)
-                                                .fillMaxHeight()
-                                                .clip(RoundedCornerShape(22.dp))
-                                                .background(selectedBg)
+                                        .height(70.dp)
+                                        .shadow(
+                                            elevation = 14.dp,
+                                            shape = CircleShape,
+                                            ambientColor = Color.Black.copy(alpha = 0.10f),
+                                            spotColor = Color.Black.copy(alpha = 0.18f)
                                         )
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        .clip(CircleShape)
+                                        .border(
+                                            width = 1.dp,
+                                            brush = Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.White.copy(alpha = if (isDark) 0.42f else 0.88f),
+                                                    Color.White.copy(alpha = if (isDark) 0.12f else 0.36f)
+                                                )
+                                            ),
+                                            shape = CircleShape
+                                        )
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = if (isDark) {
+                                                    listOf(Color(0xCC202632), Color(0xB310141D))
+                                                } else {
+                                                    listOf(Color(0xE6FFFFFF), Color(0xC9EAF1FC))
+                                                }
+                                            )
+                                        )
+                                        .then(
+                                            Modifier.background(
+                                                Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color.White.copy(alpha = if (isDark) 0.10f else 0.28f),
+                                                        Color.White.copy(alpha = 0.02f)
+                                                    )
+                                                ),
+                                                CircleShape
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 6.dp, vertical = 6.dp)
                                     ) {
-                                        primaryNavItems.forEachIndexed { index, screen ->
-                                            val selectionFraction = (1.0f - kotlin.math.abs(animatedIndex - index)).coerceIn(0f, 1f)
+                                        val totalTabs = primaryNavItems.size + 1
+                                        val targetSelectedIndex = if (isMoreSelected) {
+                                            primaryNavItems.size
+                                        } else {
+                                            primaryNavItems.indexOfFirst { screen ->
+                                                currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                            }.takeIf { it >= 0 } ?: 0
+                                        }
 
-                                            AnimatedNavItem(
-                                                title = screen.title,
-                                                icon = screen.icon,
-                                                selectionFraction = selectionFraction,
-                                                selectedContentColor = selectedContentColor,
-                                                unselectedContentColor = unselectedContentColor,
-                                                onClick = {
-                                                    if (showMoreSheet) showMoreSheet = false
-                                                    navigateToTab(screen.route)
-                                                },
-                                                modifier = Modifier.weight(1f)
+                                        val animatedIndex by androidx.compose.animation.core.animateFloatAsState(
+                                            targetValue = targetSelectedIndex.toFloat(),
+                                            animationSpec = androidx.compose.animation.core.spring(
+                                                stiffness = androidx.compose.animation.core.Spring.StiffnessMedium,
+                                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy
+                                            ),
+                                            label = "animatedIndex"
+                                        )
+
+                                        BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+                                            val tabWidth = maxWidth / totalTabs
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .offset {
+                                                        androidx.compose.ui.unit.IntOffset(
+                                                            (tabWidth * animatedIndex).roundToPx(),
+                                                            0
+                                                        )
+                                                    }
+                                                    .width(tabWidth)
+                                                    .fillMaxHeight()
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        Brush.verticalGradient(
+                                                            colors = listOf(
+                                                                Color.White.copy(alpha = if (isDark) 0.24f else 0.78f),
+                                                                Color.White.copy(alpha = if (isDark) 0.10f else 0.42f)
+                                                            )
+                                                        )
+                                                    )
+                                                    .then(
+                                                        Modifier.background(
+                                                            Color.Transparent,
+                                                            CircleShape
+                                                        )
+                                                    )
                                             )
                                         }
 
-                                        // More Tab
-                                        val moreSelectionFraction = (1.0f - kotlin.math.abs(animatedIndex - primaryNavItems.size)).coerceIn(0f, 1f)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            primaryNavItems.forEachIndexed { index, screen ->
+                                                val selectionFraction = (1.0f - kotlin.math.abs(animatedIndex - index)).coerceIn(0f, 1f)
 
-                                        AnimatedNavItem(
-                                            title = "More",
-                                            icon = Icons.Default.GridView,
-                                            selectionFraction = moreSelectionFraction,
-                                            selectedContentColor = selectedContentColor,
-                                            unselectedContentColor = unselectedContentColor,
-                                            onClick = { showMoreSheet = !showMoreSheet },
-                                            modifier = Modifier.weight(1f)
-                                        )
+                                                AnimatedNavItem(
+                                                    title = screen.title,
+                                                    icon = screen.icon,
+                                                    selectionFraction = selectionFraction,
+                                                    selectedContentColor = selectedContentColor,
+                                                    unselectedContentColor = unselectedContentColor,
+                                                    onClick = {
+                                                        if (showMoreSheet) showMoreSheet = false
+                                                        navigateToTab(screen.route)
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+
+                                            // More Tab
+                                            val moreSelectionFraction = (1.0f - kotlin.math.abs(animatedIndex - primaryNavItems.size)).coerceIn(0f, 1f)
+
+                                            AnimatedNavItem(
+                                                title = "More",
+                                                icon = Icons.Default.GridView,
+                                                selectionFraction = moreSelectionFraction,
+                                                selectedContentColor = selectedContentColor,
+                                                unselectedContentColor = unselectedContentColor,
+                                                onClick = { showMoreSheet = !showMoreSheet },
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -513,7 +597,7 @@ fun AnimatedNavItem(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(CircleShape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

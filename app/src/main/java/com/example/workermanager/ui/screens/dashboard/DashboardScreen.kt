@@ -509,7 +509,7 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(96.dp))
         }
 
         // Dialogs & Prompts

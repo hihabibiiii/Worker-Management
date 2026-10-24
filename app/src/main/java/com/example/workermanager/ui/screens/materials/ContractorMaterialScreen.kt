@@ -145,7 +145,8 @@ fun ContractorMaterialScreen(
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.AddCircle, contentDescription = null) },
                     text = { Text("Add Material", fontWeight = FontWeight.Bold) },
-                    shape = CircleShape
+                    shape = CircleShape,
+                    modifier = Modifier.padding(bottom = 80.dp)
                 )
             }
         }
@@ -1610,9 +1611,10 @@ fun AddMaterialDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Add Construction Material", fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -1861,6 +1863,7 @@ fun PurchaseMaterialDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = {
             Column {
                 Text("Record Material Purchase", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
@@ -1873,7 +1876,7 @@ fun PurchaseMaterialDialog(
         },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 1. Purchased From (Shop / Supplier)
@@ -2221,10 +2224,11 @@ fun EditMaterialDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Material / Stock", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(

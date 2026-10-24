@@ -70,7 +70,8 @@ fun SiteExpensesScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Expense", fontWeight = FontWeight.Bold) }
+                text = { Text("Add Expense", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.padding(bottom = 80.dp)
             )
         }
     ) { padding ->
@@ -140,7 +141,7 @@ fun SiteExpensesScreen(
             // Main Content: Summary Cards & Site Expense History List
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 4 Summary Cards Grid
@@ -488,10 +489,11 @@ fun AddExpenseDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("+ Add Site Expense", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Site Picker
@@ -747,10 +749,11 @@ fun EditExpenseDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Expense", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ExposedDropdownMenuBox(expanded = siteExpanded, onExpandedChange = { siteExpanded = !siteExpanded }) {
@@ -847,9 +850,13 @@ fun RecordExpensePaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Record Expense Payment", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text("Expense: ${model.expense.description}", fontWeight = FontWeight.Bold)
                 Text("Pending Amount: ${Utils.formatCurrency(model.pendingAmount)}", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
 

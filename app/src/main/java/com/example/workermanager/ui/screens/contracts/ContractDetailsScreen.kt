@@ -91,7 +91,8 @@ fun ContractDetailsScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Payment", fontWeight = FontWeight.Bold) }
+                text = { Text("Add Payment", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.padding(bottom = 80.dp)
             )
         }
     ) { padding ->
@@ -417,9 +418,13 @@ fun EditClientPaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Client Payment", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
@@ -481,9 +486,13 @@ fun AddClientPaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Add Client Payment", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text("Remaining to receive: ${Utils.formatCurrency(remainingAmount)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 
                 OutlinedTextField(
@@ -601,10 +610,11 @@ fun EditContractDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Contract", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedTextField(

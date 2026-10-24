@@ -109,7 +109,7 @@ fun WorkersScreen(
                 text = { Text("Add Worker", fontWeight = FontWeight.Bold) },
                 shape = RoundedCornerShape(28.dp),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
-                modifier = Modifier.height(42.dp)
+                modifier = Modifier.padding(bottom = 80.dp).height(42.dp)
             )
         }
     ) { padding ->
@@ -847,13 +847,16 @@ fun WorkerDialog(
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
-            usePlatformDefaultWidth = false
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
         )
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.90f)
                 .wrapContentHeight()
+                .imePadding()
+                .navigationBarsPadding()
                 .padding(vertical = 16.dp),
 
             shape = RoundedCornerShape(32.dp),

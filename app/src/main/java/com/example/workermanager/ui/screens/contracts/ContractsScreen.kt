@@ -70,7 +70,8 @@ fun ContractsScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Contract", fontWeight = FontWeight.Bold) }
+                text = { Text("Add Contract", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.padding(bottom = 80.dp)
             )
         }
     ) { padding ->
@@ -127,7 +128,7 @@ fun ContractsScreen(
                 is ContractUiState.Success -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.contracts) { model ->
@@ -279,10 +280,11 @@ fun AddContractDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Add New Contract", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedTextField(

@@ -47,7 +47,8 @@ fun SitesScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Site", fontWeight = FontWeight.Bold) }
+                text = { Text("Add Site", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.padding(bottom = 80.dp)
             )
         }
     ) { padding ->
@@ -60,7 +61,7 @@ fun SitesScreen(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(sites) { site ->
@@ -143,10 +144,11 @@ fun AddSiteDialog(
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Add New Site", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedTextField(

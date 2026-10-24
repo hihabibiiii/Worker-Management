@@ -2,6 +2,8 @@ package com.example.workermanager.ui.screens.sites
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -265,9 +267,13 @@ fun EditSiteDialog(site: SiteEntity, onDismiss: () -> Unit, onConfirm: (String, 
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Site", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Site Name") })
                 OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
                 OutlinedTextField(value = manager, onValueChange = { manager = it }, label = { Text("Site Manager") })

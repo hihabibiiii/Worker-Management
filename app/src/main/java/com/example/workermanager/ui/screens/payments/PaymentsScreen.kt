@@ -1,6 +1,7 @@
 package com.example.workermanager.ui.screens.payments
 
 import android.app.DatePickerDialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -79,7 +80,8 @@ fun PaymentsScreen(
                 contentColor = Color.White,
                 shape = CircleShape,
                 icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                text = { Text("Add Payment", fontWeight = FontWeight.Bold, color = Color.White) }
+                text = { Text("Add Payment", fontWeight = FontWeight.Bold, color = Color.White) },
+                modifier = Modifier.padding(bottom = 80.dp)
             )
         },
         containerColor = screenBg
@@ -687,10 +689,11 @@ fun AddPaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Make Payment", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Site Selection
@@ -903,10 +906,11 @@ fun EditPaymentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Edit Payment", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Site Selection

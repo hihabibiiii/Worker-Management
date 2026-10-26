@@ -141,7 +141,7 @@ fun SiteExpensesScreen(
             // Main Content: Summary Cards & Site Expense History List
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 4 Summary Cards Grid

@@ -71,6 +71,7 @@ import java.io.File
 import java.time.LocalDate
 
 private const val NONE_SITE_ID = -1L
+private const val SELF_WORK_VIRTUAL_ID = -999L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -229,7 +230,7 @@ fun WorkersScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 80.dp),
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(workers, key = { it.id }) { worker ->
@@ -258,6 +259,7 @@ fun WorkersScreen(
             WorkerDialog(
                 worker = workerToEdit,
                 sites = sites,
+                siteViewModel = siteViewModel,
                 onDismiss = {
                     showAddDialog = false
                     workerToEdit = null
@@ -684,6 +686,7 @@ fun WorkerDialog(
     sites: List<SiteEntity>,
     initialName: String = "",
     initialPhone: String = "",
+    siteViewModel: SiteViewModel? = null,
     onDismiss: () -> Unit,
     onAddNewSite: (String, String, String, (Long) -> Unit) -> Unit,
     onConfirm: (
@@ -728,6 +731,19 @@ fun WorkerDialog(
 
     var joiningDate by remember(worker) {
         mutableStateOf(worker?.joiningDate ?: LocalDate.now())
+    }
+
+    val existingSelfWorkSite = remember(sites) {
+        sites.find { it.name.equals("Self Work", ignoreCase = true) }
+    }
+
+    val virtualSelfWorkSite = remember {
+        SiteEntity(
+            id = SELF_WORK_VIRTUAL_ID,
+            name = "Self Work",
+            address = "Self Work",
+            manager = "Default"
+        )
     }
 
     var siteId by remember(worker) {
@@ -830,18 +846,11 @@ fun WorkerDialog(
             }
         }
 
-    // Preserve Self Work ordering
-    val displaySites = remember(sites) {
-        val selfWork = sites.find {
-            it.name.equals("Self Work", ignoreCase = true)
-        }
-
-        val others = sites.filter {
-            !it.name.equals("Self Work", ignoreCase = true)
-        }
-
-        if (selfWork != null) listOf(selfWork) + others
-        else others
+    // Preserve Self Work ordering & display virtual Self Work option if none exists in DB
+    val displaySites = remember(sites, existingSelfWorkSite) {
+        val others = sites.filter { !it.name.equals("Self Work", ignoreCase = true) }
+        val selfWorkEntry = existingSelfWorkSite ?: virtualSelfWorkSite
+        listOf(selfWorkEntry) + others
     }
 
     Dialog(
@@ -1109,11 +1118,9 @@ fun WorkerDialog(
 
                     // Site selection
                     val siteFieldText = when (siteId) {
+                        SELF_WORK_VIRTUAL_ID -> "Self Work"
                         null -> "Select Site"
-
-                        else -> sites.find {
-                            it.id == siteId
-                        }?.name ?: "Select Site"
+                        else -> sites.find { it.id == siteId }?.name ?: if (existingSelfWorkSite?.id == siteId) "Self Work" else "Select Site"
                     }
 
                     ExposedDropdownMenuBox(
@@ -1318,23 +1325,41 @@ fun WorkerDialog(
                                 return@Button
                             }
 
-                            val dRate =
-                                dailyRate.toDoubleOrNull() ?: 0.0
+                            val dRate = dailyRate.toDoubleOrNull() ?: 0.0
+                            val oRate = otRate.toDoubleOrNull() ?: (dRate / 8.0)
 
-                            val oRate =
-                                otRate.toDoubleOrNull() ?: (dRate / 8.0)
+                            val performSave: (Long) -> Unit = { targetSiteId ->
+                                onConfirm(
+                                    name.trim(),
+                                    phone.trim(),
+                                    type,
+                                    dRate,
+                                    oRate,
+                                    joiningDate,
+                                    targetSiteId,
+                                    notes.trim(),
+                                    isActive
+                                )
+                            }
 
-                            onConfirm(
-                                name.trim(),
-                                phone.trim(),
-                                type,
-                                dRate,
-                                oRate,
-                                joiningDate,
-                                siteId,
-                                notes.trim(),
-                                isActive
-                            )
+                            if (siteId == SELF_WORK_VIRTUAL_ID) {
+                                if (siteViewModel != null) {
+                                    siteViewModel.ensureSelfWorkIfNoSitesExist { createdOrExistingId ->
+                                        val finalSiteId = createdOrExistingId ?: sites.find { it.name.equals("Self Work", ignoreCase = true) }?.id
+                                        if (finalSiteId != null) {
+                                            performSave(finalSiteId)
+                                        } else {
+                                            siteError = "Failed to assign Self Work site"
+                                        }
+                                    }
+                                } else {
+                                    onAddNewSite("Self Work", "Self Work", "Default") { newSiteId ->
+                                        performSave(newSiteId)
+                                    }
+                                }
+                            } else {
+                                performSave(siteId!!)
+                            }
                         },
 
                         shape = RoundedCornerShape(8.dp),

@@ -517,6 +517,7 @@ fun DashboardScreen(
             com.example.workermanager.ui.screens.workers.WorkerDialog(
                 worker = null,
                 sites = sites,
+                siteViewModel = siteViewModel,
                 onDismiss = { showAddWorkerDialog = false },
                 onAddNewSite = { siteName, siteAddress, siteManager, onCreated ->
                     siteViewModel.addSite(name = siteName, address = siteAddress, manager = siteManager) { newId ->

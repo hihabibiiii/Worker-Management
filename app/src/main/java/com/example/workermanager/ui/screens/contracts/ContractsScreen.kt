@@ -128,7 +128,7 @@ fun ContractsScreen(
                 is ContractUiState.Success -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.contracts, key = { it.contract.id }) { model ->

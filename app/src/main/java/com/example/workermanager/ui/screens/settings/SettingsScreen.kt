@@ -427,6 +427,8 @@ fun SettingsScreen(
                 modifier = Modifier.clickable { showDeleteDialog = true },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
+
+            Spacer(modifier = Modifier.height(96.dp))
         }
 
         if (pendingRestorePayload != null) {

@@ -161,7 +161,7 @@ fun ContractorMaterialScreen(
                 ContractorMaterialTab.INVENTORY -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 80.dp),
+                        contentPadding = PaddingValues(bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // 1. SEARCH BAR AT THE VERY TOP
@@ -1338,7 +1338,11 @@ fun MaterialHistoryLedgerTab(
                 Text("No material transactions recorded.", color = subtitleText)
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(transactions, key = { it.transaction.id }) { model ->
                     val tx = model.transaction
                     Card(
@@ -1421,7 +1425,8 @@ fun SiteWiseReportTab(
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {

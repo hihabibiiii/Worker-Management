@@ -571,21 +571,21 @@ fun WorkerProfileCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else primaryBlue.copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(14.dp)
         ) {
             // 1. HORIZONTAL PROFILE HEADER (Avatar on left, Name & Active badge on right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Avatar with camera badge
                 Box(
@@ -595,15 +595,15 @@ fun WorkerProfileCard(
                     WorkerAvatarLarge(
                         photoPath = worker.photoPath,
                         name = worker.name,
-                        modifier = Modifier.size(100.dp)
+                        modifier = Modifier.size(80.dp)
                     )
 
                     Surface(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                         shape = CircleShape,
                         color = primaryBlue,
                         contentColor = Color.White,
-                        shadowElevation = 3.dp,
+                        shadowElevation = 2.dp,
                         border = BorderStroke(2.dp, cardBg)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -611,7 +611,7 @@ fun WorkerProfileCard(
                                 imageVector = Icons.Default.CameraAlt,
                                 contentDescription = "Change Photo",
                                 tint = Color.White,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
@@ -620,12 +620,12 @@ fun WorkerProfileCard(
                 // Name & Active Status Column on the right
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = worker.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontSize = 22.sp,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryTextColor,
                         maxLines = 1,
@@ -636,16 +636,16 @@ fun WorkerProfileCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 2. INFORMATION GRID (2x2 Column/Row Grid)
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WorkerDetailChip(
                         icon = Icons.Default.Badge,
@@ -677,7 +677,7 @@ fun WorkerProfileCard(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WorkerDetailChip(
                         icon = Icons.Default.LocationOn,
@@ -687,9 +687,9 @@ fun WorkerProfileCard(
                     )
 
                     val wageText = if (worker.overtimeRate > 0) {
-                        "${Utils.formatCurrency(worker.dailyRate)}/day (${Utils.formatCurrency(worker.overtimeRate)}/h OT)"
+                        "${Utils.formatCurrency(worker.dailyRate)} (${Utils.formatCurrency(worker.overtimeRate)}/h OT)"
                     } else {
-                        "${Utils.formatCurrency(worker.dailyRate)}/day"
+                        Utils.formatCurrency(worker.dailyRate)
                     }
                     WorkerDetailChip(
                         icon = Icons.Default.Payments,
@@ -717,7 +717,7 @@ fun WorkerAvatarLarge(
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     BitmapFactory.decodeFile(photoPath, options)
                     var sampleSize = 1
-                    while (options.outWidth / sampleSize > 400 || options.outHeight / sampleSize > 400) {
+                    while (options.outWidth / sampleSize > 300 || options.outHeight / sampleSize > 300) {
                         sampleSize *= 2
                     }
                     val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
@@ -729,12 +729,14 @@ fun WorkerAvatarLarge(
         } else null
     }
 
+    val primaryBlue = Color(0xFF087FE5)
+
     Surface(
         modifier = modifier.clip(CircleShape),
         shape = CircleShape,
-        color = Color(0xFFDFEBFF),
-        contentColor = Color(0xFF1557C0),
-        border = BorderStroke(2.dp, Color(0xFF1557C0).copy(alpha = 0.2f))
+        color = Color(0xFFE5F2FF),
+        contentColor = primaryBlue,
+        border = BorderStroke(2.dp, primaryBlue.copy(alpha = 0.25f))
     ) {
         if (bitmap != null) {
             Image(
@@ -747,9 +749,9 @@ fun WorkerAvatarLarge(
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Text(
                     text = name.trim().take(1).uppercase(),
-                    fontSize = 36.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1557C0)
+                    color = primaryBlue
                 )
             }
         }
@@ -760,12 +762,12 @@ fun WorkerAvatarLarge(
 fun ActiveStatusBadge(isActive: Boolean) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val bgColor = if (isActive) {
-        if (isDark) Color(0xFF0F3818) else Color(0xFFDDFBE7)
+        if (isDark) Color(0xFF0F3818) else Color(0xFFE3FAF0)
     } else {
-        if (isDark) Color(0xFF381014) else Color(0xFFFFE3E7)
+        if (isDark) Color(0xFF381014) else Color(0xFFFFE6E8)
     }
-    val textColor = if (isActive) Color(0xFF087A2D) else Color(0xFFD7192D)
-    val dotColor = if (isActive) Color(0xFF079B3B) else Color(0xFFD7192D)
+    val textColor = if (isActive) Color(0xFF16A36A) else Color(0xFFD93D55)
+    val dotColor = if (isActive) Color(0xFF16A36A) else Color(0xFFD93D55)
 
     Surface(
         color = bgColor,
@@ -800,31 +802,34 @@ fun WorkerDetailChip(
     onClick: (() -> Unit)? = null
 ) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD)
-    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
-    val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+    val bg = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF4F9FF)
+    val primaryText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101D4D)
+    val secondaryText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF515B70)
+    val primaryBlue = Color(0xFF087FE5)
 
     Surface(
         modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier,
-        shape = RoundedCornerShape(14.dp),
-        color = bg
+        shape = RoundedCornerShape(16.dp),
+        color = bg,
+        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.15f) else Color.White)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(30.dp)
-                    .background(Color(0xFF1976ED).copy(alpha = 0.12f), CircleShape),
+                    .size(28.dp)
+                    .background(primaryBlue.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = Color(0xFF1976ED),
-                    modifier = Modifier.size(16.dp)
+                    tint = primaryBlue,
+                    modifier = Modifier.size(15.dp)
                 )
             }
             Column(modifier = Modifier.weight(1f)) {

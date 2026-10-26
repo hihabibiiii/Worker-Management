@@ -565,78 +565,80 @@ fun WorkerProfileCard(
     val context = LocalContext.current
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
-    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101426)
+    val primaryTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF101D4D)
     val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "Not Assigned"
+    val primaryBlue = Color(0xFF087FE5)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFFE0E7F2))
+        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else primaryBlue.copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(18.dp)
         ) {
-            // Avatar with camera badge
-            Box(
-                contentAlignment = Alignment.BottomEnd,
-                modifier = Modifier.clickable { onPickPhoto() }
+            // 1. HORIZONTAL PROFILE HEADER (Avatar on left, Name & Active badge on right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                WorkerAvatarLarge(
-                    photoPath = worker.photoPath,
-                    name = worker.name,
-                    modifier = Modifier.size(110.dp)
-                )
-
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    shape = CircleShape,
-                    color = Color(0xFF1976ED),
-                    contentColor = Color.White,
-                    shadowElevation = 2.dp,
-                    border = BorderStroke(2.dp, cardBg)
+                // Avatar with camera badge
+                Box(
+                    contentAlignment = Alignment.BottomEnd,
+                    modifier = Modifier.clickable { onPickPhoto() }
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Change Photo",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    WorkerAvatarLarge(
+                        photoPath = worker.photoPath,
+                        name = worker.name,
+                        modifier = Modifier.size(100.dp)
+                    )
+
+                    Surface(
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        color = primaryBlue,
+                        contentColor = Color.White,
+                        shadowElevation = 3.dp,
+                        border = BorderStroke(2.dp, cardBg)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Change Photo",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
+                }
+
+                // Name & Active Status Column on the right
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = worker.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryTextColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    ActiveStatusBadge(isActive = worker.isActive)
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Worker Name & Active Status
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = worker.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = primaryTextColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                ActiveStatusBadge(isActive = worker.isActive)
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Worker Info Grid (Type, Phone, Site, Daily Wage)
+            // 2. INFORMATION GRID (2x2 Column/Row Grid)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)

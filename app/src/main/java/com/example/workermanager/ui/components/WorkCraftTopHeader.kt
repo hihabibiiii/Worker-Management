@@ -36,9 +36,7 @@ fun WorkCraftTopHeader(
         modifier = Modifier.fillMaxWidth()
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             // 1. BACKGROUND HEADER IMAGE (R.drawable.headerlogo)
             Image(
@@ -51,7 +49,9 @@ fun WorkCraftTopHeader(
             // 2. FOREGROUND BRANDING & CONTROLS ROW
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .height(72.dp)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween

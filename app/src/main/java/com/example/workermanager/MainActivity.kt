@@ -75,6 +75,7 @@ import com.example.workermanager.viewmodel.*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             val app = application as WorkerApplication
             val themeMode by app.themePreferenceManager.themeMode.collectAsState()
@@ -155,8 +156,10 @@ class MainActivity : ComponentActivity() {
                     SideEffect {
                         val window = (view.context as? Activity)?.window
                         window?.let {
+                            it.statusBarColor = Color.Transparent.toArgb()
                             it.navigationBarColor = screenBg.toArgb()
                             val insetsController = WindowCompat.getInsetsController(it, view)
+                            insetsController.isAppearanceLightStatusBars = false
                             insetsController.isAppearanceLightNavigationBars = !isDark
                         }
                     }

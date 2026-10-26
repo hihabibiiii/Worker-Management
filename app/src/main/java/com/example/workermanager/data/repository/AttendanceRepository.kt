@@ -25,6 +25,9 @@ class AttendanceRepository(
     fun getTotalEarnedByWorker(workerId: Long): Flow<Double?> = 
         attendanceDao.getTotalEarnedByWorker(workerId)
 
+    fun getTotalEarned(): Flow<Double?> = 
+        attendanceDao.getTotalEarned()
+
     fun getTotalEarnedBySite(siteId: Long): Flow<Double?> = 
         attendanceDao.getTotalEarnedBySite(siteId)
 

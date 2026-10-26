@@ -189,7 +189,7 @@ fun SiteExpensesScreen(
                         }
                     }
                 } else {
-                    items(uiModels) { model ->
+                    items(uiModels, key = { it.expense.id }) { model ->
                         ExpenseCard(
                             model = model,
                             onClick = { selectedUiModelDetails = model },

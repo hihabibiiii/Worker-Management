@@ -99,9 +99,12 @@ class SiteExpenseViewModel(
             }
         }
 
+        val siteMap = sites.associateBy { it.id }
+        val paymentsByExpense = payments.groupBy { it.expenseId }
+
         val models = filteredExpenses.map { exp ->
-            val siteName = sites.find { it.id == exp.siteId }?.name ?: "Unknown Site"
-            val expPayments = payments.filter { it.expenseId == exp.id }
+            val siteName = siteMap[exp.siteId]?.name ?: "Unknown Site"
+            val expPayments = paymentsByExpense[exp.id] ?: emptyList()
             val paidSum = expPayments.sumOf { it.amount }
             val pending = (exp.amount - paidSum).coerceAtLeast(0.0)
 
@@ -136,13 +139,12 @@ class SiteExpenseViewModel(
         val currentMonth = YearMonth.now()
 
         val filteredExpenses = if (siteId == null) expenses else expenses.filter { it.siteId == siteId }
-        val activeExpIds = filteredExpenses.map { it.id }.toSet()
-        val filteredPayments = payments.filter { activeExpIds.contains(it.expenseId) }
+        val paymentsByExpense = payments.groupBy { it.expenseId }
 
         val todayExp = filteredExpenses.filter { it.expenseDate == today }.sumOf { it.amount }
         val monthExp = filteredExpenses.filter { it.expenseDate.year == currentMonth.year && it.expenseDate.monthValue == currentMonth.monthValue }.sumOf { it.amount }
         val totalExp = filteredExpenses.sumOf { it.amount }
-        val totalPaid = filteredPayments.sumOf { it.amount }
+        val totalPaid = filteredExpenses.sumOf { exp -> paymentsByExpense[exp.id]?.sumOf { it.amount } ?: 0.0 }
         val totalPending = (totalExp - totalPaid).coerceAtLeast(0.0)
 
         SiteExpenseDashboardStats(

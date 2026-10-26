@@ -133,8 +133,8 @@ fun DashboardScreen(
                             isDark = isDark
                         )
                     }
-                    items(sites) { site ->
-                        val workDays by viewModel.getSiteWorkingDays(site.id).collectAsState(initial = 0)
+                    items(sites, key = { it.id }) { site ->
+                        val workDays by remember(site.id) { viewModel.getSiteWorkingDays(site.id) }.collectAsState(initial = 0)
                         SiteSelectorCard(
                             name = site.name,
                             isSelected = selectedSiteId == site.id,

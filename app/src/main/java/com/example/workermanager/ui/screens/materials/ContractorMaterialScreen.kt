@@ -448,7 +448,7 @@ fun ContractorMaterialScreen(
                                 }
                             }
                         } else {
-                            items(stockModels) { item ->
+                            items(stockModels, key = { it.material.id }) { item ->
                                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                                     MaterialInventoryCard(
                                         item = item,
@@ -1339,7 +1339,7 @@ fun MaterialHistoryLedgerTab(
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(transactions) { model ->
+                items(transactions, key = { it.transaction.id }) { model ->
                     val tx = model.transaction
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -1459,7 +1459,7 @@ fun SiteWiseReportTab(
                 )
             }
 
-            items(inventory) { item ->
+            items(inventory, key = { it.material.id }) { item ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = cardBg),
@@ -1563,7 +1563,7 @@ fun SiteWiseReportTab(
                 }
             }
         } else {
-            items(filteredSiteStocks) { item ->
+            items(filteredSiteStocks, key = { "${it.siteId}_${it.materialId}" }) { item ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = cardBg),

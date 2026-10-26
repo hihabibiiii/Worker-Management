@@ -88,22 +88,33 @@ class ContractorMaterialViewModel(
             (query.isBlank() || mat.name.lowercase().contains(query))
         }
 
+        val txsByMaterial = transactions.groupBy { it.materialId }
+
         filtered.map { mat ->
-            val matTxs = transactions.filter { it.materialId == mat.id }
+            val matTxs = txsByMaterial[mat.id] ?: emptyList()
 
-            val totalAdded = matTxs.filter {
-                it.transactionType == ContractorMaterialTransactionType.ADDED ||
-                it.transactionType == ContractorMaterialTransactionType.ADJUSTMENT
-            }.sumOf { it.quantity }
+            var totalAdded = 0.0
+            var sent = 0.0
+            var returned = 0.0
+            var brokenCentral = 0.0
+            var lostCentral = 0.0
+            var brokenSite = 0.0
+            var lostSite = 0.0
 
-            val sent = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.SENT }.sumOf { it.quantity }
-            val returned = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.RETURNED }.sumOf { it.quantity }
-
-            val brokenCentral = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN && it.siteId == null }.sumOf { it.quantity }
-            val lostCentral = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST && it.siteId == null }.sumOf { it.quantity }
-
-            val brokenSite = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN && it.siteId != null }.sumOf { it.quantity }
-            val lostSite = matTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST && it.siteId != null }.sumOf { it.quantity }
+            for (tx in matTxs) {
+                when (tx.transactionType) {
+                    ContractorMaterialTransactionType.ADDED,
+                    ContractorMaterialTransactionType.ADJUSTMENT -> totalAdded += tx.quantity
+                    ContractorMaterialTransactionType.SENT -> sent += tx.quantity
+                    ContractorMaterialTransactionType.RETURNED -> returned += tx.quantity
+                    ContractorMaterialTransactionType.BROKEN -> {
+                        if (tx.siteId == null) brokenCentral += tx.quantity else brokenSite += tx.quantity
+                    }
+                    ContractorMaterialTransactionType.LOST -> {
+                        if (tx.siteId == null) lostCentral += tx.quantity else lostSite += tx.quantity
+                    }
+                }
+            }
 
             val avail = (totalAdded - sent + returned - brokenCentral - lostCentral).coerceAtLeast(0.0)
             val atSites = (sent - returned - brokenSite - lostSite).coerceAtLeast(0.0)
@@ -152,20 +163,28 @@ class ContractorMaterialViewModel(
         val siteIdFilter = flows[3] as Long?
 
         val activeSites = if (siteIdFilter != null) sites.filter { it.id == siteIdFilter } else sites
+        val txsBySiteAndMaterial = transactions.filter { it.siteId != null }.groupBy { Pair(it.siteId!!, it.materialId) }
         val list = mutableListOf<SiteMaterialStockModel>()
 
         for (site in activeSites) {
-            val siteTxs = transactions.filter { it.siteId == site.id }
-
             for (mat in materials) {
                 if (!mat.isActive) continue
-                val matSiteTxs = siteTxs.filter { it.materialId == mat.id }
-                if (matSiteTxs.isEmpty()) continue
+                val matSiteTxs = txsBySiteAndMaterial[Pair(site.id, mat.id)] ?: continue
 
-                val sent = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.SENT }.sumOf { it.quantity }
-                val returned = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.RETURNED }.sumOf { it.quantity }
-                val broken = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.BROKEN }.sumOf { it.quantity }
-                val lost = matSiteTxs.filter { it.transactionType == ContractorMaterialTransactionType.LOST }.sumOf { it.quantity }
+                var sent = 0.0
+                var returned = 0.0
+                var broken = 0.0
+                var lost = 0.0
+
+                for (tx in matSiteTxs) {
+                    when (tx.transactionType) {
+                        ContractorMaterialTransactionType.SENT -> sent += tx.quantity
+                        ContractorMaterialTransactionType.RETURNED -> returned += tx.quantity
+                        ContractorMaterialTransactionType.BROKEN -> broken += tx.quantity
+                        ContractorMaterialTransactionType.LOST -> lost += tx.quantity
+                        else -> {}
+                    }
+                }
 
                 val currentSiteQty = (sent - returned - broken - lost).coerceAtLeast(0.0)
 
@@ -208,9 +227,12 @@ class ContractorMaterialViewModel(
         val categoryFilter = flows[4] as ContractorMaterialCategory?
         val query = (flows[5] as String).trim().lowercase()
 
+        val materialsMap = materials.associateBy { it.id }
+        val sitesMap = sites.associateBy { it.id }
+
         val filtered = transactions.filter { tx ->
-            val mat = materials.find { it.id == tx.materialId }
-            val siteName = sites.find { it.id == tx.siteId }?.name ?: ""
+            val mat = materialsMap[tx.materialId]
+            val siteName = tx.siteId?.let { sitesMap[it]?.name } ?: ""
 
             (siteIdFilter == null || tx.siteId == siteIdFilter) &&
             (categoryFilter == null || mat?.category == categoryFilter) &&
@@ -220,8 +242,8 @@ class ContractorMaterialViewModel(
         }
 
         filtered.map { tx ->
-            val matName = materials.find { it.id == tx.materialId }?.name ?: "Unknown Material"
-            val siteName = tx.siteId?.let { sId -> sites.find { it.id == sId }?.name }
+            val matName = materialsMap[tx.materialId]?.name ?: "Unknown Material"
+            val siteName = tx.siteId?.let { sitesMap[it]?.name }
 
             ContractorMaterialTxUiModel(
                 transaction = tx,

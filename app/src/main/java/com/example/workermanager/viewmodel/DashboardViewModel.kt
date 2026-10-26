@@ -63,8 +63,8 @@ class DashboardViewModel(
         val workerPaymentsFlow = if (siteId == null) paymentRepository.allPayments
                                 else paymentRepository.getPaymentsBySite(siteId)
         
-        val historyAttendanceFlow = if (siteId == null) attendanceRepository.getAttendanceInRange(LocalDate.of(2000, 1, 1), LocalDate.now())
-                                   else attendanceRepository.getAttendanceBySite(siteId)
+        val totalEarnedFlow = if (siteId == null) attendanceRepository.getTotalEarned()
+                             else attendanceRepository.getTotalEarnedBySite(siteId)
         
         val contractsFlow = if (siteId == null) contractRepository.allContracts
                            else contractRepository.getContractsBySite(siteId)
@@ -85,7 +85,7 @@ class DashboardViewModel(
         combine(
             attendanceFlow,
             workerPaymentsFlow,
-            historyAttendanceFlow,
+            totalEarnedFlow,
             contractsFlow,
             contractReceivedFlow,
             siteExpensesFlow,
@@ -95,8 +95,7 @@ class DashboardViewModel(
             val attendance = flowsArray[0] as List<com.example.workermanager.data.entity.AttendanceEntity>
             @Suppress("UNCHECKED_CAST")
             val allPayments = flowsArray[1] as List<com.example.workermanager.data.entity.PaymentEntity>
-            @Suppress("UNCHECKED_CAST")
-            val historyAttendance = flowsArray[2] as List<com.example.workermanager.data.entity.AttendanceEntity>
+            val earned = (flowsArray[2] as Double?) ?: 0.0
             @Suppress("UNCHECKED_CAST")
             val contracts = flowsArray[3] as List<com.example.workermanager.data.entity.ContractEntity>
             val receivedAmt = flowsArray[4] as Double
@@ -106,7 +105,6 @@ class DashboardViewModel(
             val siteExpensePayments = flowsArray[6] as List<com.example.workermanager.data.entity.SiteExpensePaymentEntity>
 
             val today = LocalDate.now()
-            val earned = historyAttendance.sumOf { it.amount }
             val paid = allPayments.sumOf { it.amount }
             val totalContractsAmt = contracts.sumOf { it.totalAmount }
 

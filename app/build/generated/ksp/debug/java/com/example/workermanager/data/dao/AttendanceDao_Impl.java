@@ -796,6 +796,41 @@ public final class AttendanceDao_Impl implements AttendanceDao {
   }
 
   @Override
+  public Flow<Double> getTotalEarned() {
+    final String _sql = "SELECT SUM(amount) FROM attendance";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<Double>() {
+      @Override
+      @Nullable
+      public Double call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Double _result;
+          if (_cursor.moveToFirst()) {
+            final Double _tmp;
+            if (_cursor.isNull(0)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getDouble(0);
+            }
+            _result = _tmp;
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
   public Flow<Double> getTotalEarnedByWorker(final long workerId) {
     final String _sql = "SELECT SUM(amount) FROM attendance WHERE workerId = ?";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);

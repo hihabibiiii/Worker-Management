@@ -40,6 +40,9 @@ interface AttendanceDao {
     @Delete
     suspend fun deleteAttendance(attendance: AttendanceEntity)
 
+    @Query("SELECT SUM(amount) FROM attendance")
+    fun getTotalEarned(): Flow<Double?>
+
     @Query("SELECT SUM(amount) FROM attendance WHERE workerId = :workerId")
     fun getTotalEarnedByWorker(workerId: Long): Flow<Double?>
 

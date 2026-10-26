@@ -232,8 +232,8 @@ fun WorkersScreen(
                     contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(workers) { worker ->
-                        val stats by viewModel.getWorkerStats(worker.id).collectAsState(initial = null)
+                    items(workers, key = { it.id }) { worker ->
+                        val stats by remember(worker.id) { viewModel.getWorkerStats(worker.id) }.collectAsState(initial = null)
                         val currentSiteName = sites.find { it.id == worker.currentSiteId }?.name ?: "No Site"
 
                         WorkerCard(

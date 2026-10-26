@@ -52,9 +52,11 @@ class PaymentViewModel(
         if (payments.isEmpty()) {
             PaymentsUiState.Empty
         } else {
+            val workerMap = workersList.associateBy { it.id }
+            val siteMap = sitesList.associateBy { it.id }
             val mapped = payments.map { payment ->
-                val worker = workersList.find { it.id == payment.workerId }
-                val site = sitesList.find { it.id == payment.siteId }
+                val worker = workerMap[payment.workerId]
+                val site = siteMap[payment.siteId]
                 PaymentUiModel(payment, worker?.name ?: "Unknown", site?.name ?: "Unknown Site")
             }
             PaymentsUiState.Success(mapped)

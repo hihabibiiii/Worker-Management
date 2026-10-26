@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -96,29 +97,11 @@ class MainActivity : ComponentActivity() {
                 val dashboardViewModel: DashboardViewModel = viewModel(
                     factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository, app.siteExpenseRepository)
                 )
-                val reportViewModel: ReportViewModel = viewModel(
-                    factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
-                )
-                val settingsViewModel: SettingsViewModel = viewModel(
-                    factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.themePreferenceManager)
-                )
                 val contractViewModel: ContractViewModel = viewModel(
                     factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)
                 )
-                val recycleBinViewModel: RecycleBinViewModel = viewModel(
-                    factory = RecycleBinViewModelFactory(
-                        app.workerRepository,
-                        app.siteRepository,
-                        app.contractRepository,
-                        app.paymentRepository,
-                        app.clientPaymentRepository
-                    )
-                )
                 val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
                     factory = SiteExpenseViewModelFactory(app.siteExpenseRepository, app.siteRepository)
-                )
-                val contractorMaterialViewModel: ContractorMaterialViewModel = viewModel(
-                    factory = ContractorMaterialViewModelFactory(app.contractorMaterialRepository, app.siteRepository)
                 )
 
                 val primaryNavItems = listOf(
@@ -286,6 +269,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable(Screen.MaterialManagement.route) {
+                                val contractorMaterialViewModel: ContractorMaterialViewModel = viewModel(
+                                    factory = ContractorMaterialViewModelFactory(app.contractorMaterialRepository, app.siteRepository)
+                                )
                                 com.example.workermanager.ui.screens.materials.ContractorMaterialScreen(
                                     viewModel = contractorMaterialViewModel,
                                     siteViewModel = siteViewModel,
@@ -304,6 +290,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable(Screen.Reports.route) {
+                                val reportViewModel: ReportViewModel = viewModel(
+                                    factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
+                                )
                                 ReportsScreen(
                                     viewModel = reportViewModel,
                                     siteViewModel = siteViewModel,
@@ -311,12 +300,24 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable(Screen.RecycleBin.route) {
+                                val recycleBinViewModel: RecycleBinViewModel = viewModel(
+                                    factory = RecycleBinViewModelFactory(
+                                        app.workerRepository,
+                                        app.siteRepository,
+                                        app.contractRepository,
+                                        app.paymentRepository,
+                                        app.clientPaymentRepository
+                                    )
+                                )
                                 RecycleBinScreen(
                                     viewModel = recycleBinViewModel,
                                     onBack = { navController.popBackStack() }
                                 )
                             }
                             composable(Screen.Settings.route) {
+                                val settingsViewModel: SettingsViewModel = viewModel(
+                                    factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.themePreferenceManager)
+                                )
                                 SettingsScreen(
                                     viewModel = settingsViewModel,
                                     onBack = { navController.popBackStack() },
@@ -328,8 +329,9 @@ class MainActivity : ComponentActivity() {
                         if (allNavItems.any { it.route == currentRoute }) {
                             val isMoreSelected = showMoreSheet || moreNavItems.any { currentDestination?.hierarchy?.any { h -> h.route == it.route } == true }
 
-                            val unselectedContentColor = if (isDark) Color(0xFFD0D8E5).copy(alpha = 0.72f) else Color(0xFF526581)
-                            val selectedContentColor = if (isDark) Color.White else Color(0xFF172B4D)
+                            val unselectedContentColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF526581)
+                            val selectedContentColor = Color.White
+                            val indicatorColor = Color(0xFF0866E8)
 
                             Box(
                                 modifier = Modifier
@@ -339,51 +341,21 @@ class MainActivity : ComponentActivity() {
                                     .padding(bottom = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // Single floating glass navbar: no separate outer container.
-                                Box(
+                                // Solid, premium floating navbar Surface
+                                Surface(
                                     modifier = Modifier
                                         .padding(horizontal = 16.dp)
                                         .widthIn(max = 420.dp)
                                         .fillMaxWidth()
-                                        .height(70.dp)
-                                        .shadow(
-                                            elevation = 14.dp,
-                                            shape = CircleShape,
-                                            ambientColor = Color.Black.copy(alpha = 0.10f),
-                                            spotColor = Color.Black.copy(alpha = 0.18f)
-                                        )
-                                        .clip(CircleShape)
-                                        .border(
-                                            width = 1.dp,
-                                            brush = Brush.verticalGradient(
-                                                colors = listOf(
-                                                    Color.White.copy(alpha = if (isDark) 0.42f else 0.88f),
-                                                    Color.White.copy(alpha = if (isDark) 0.12f else 0.36f)
-                                                )
-                                            ),
-                                            shape = CircleShape
-                                        )
-                                        .background(
-                                            Brush.verticalGradient(
-                                                colors = if (isDark) {
-                                                    listOf(Color(0xCC202632), Color(0xB310141D))
-                                                } else {
-                                                    listOf(Color(0xE6FFFFFF), Color(0xC9EAF1FC))
-                                                }
-                                            )
-                                        )
-                                        .then(
-                                            Modifier.background(
-                                                Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.White.copy(alpha = if (isDark) 0.10f else 0.28f),
-                                                        Color.White.copy(alpha = 0.02f)
-                                                    )
-                                                ),
-                                                CircleShape
-                                            )
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                        .height(70.dp),
+                                    shape = CircleShape,
+                                    color = if (isDark) Color(0xFF1E2638) else Color.White,
+                                    shadowElevation = 10.dp,
+                                    tonalElevation = 2.dp,
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)
+                                    )
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -422,20 +394,7 @@ class MainActivity : ComponentActivity() {
                                                     .width(tabWidth)
                                                     .fillMaxHeight()
                                                     .clip(CircleShape)
-                                                    .background(
-                                                        Brush.verticalGradient(
-                                                            colors = listOf(
-                                                                Color.White.copy(alpha = if (isDark) 0.24f else 0.78f),
-                                                                Color.White.copy(alpha = if (isDark) 0.10f else 0.42f)
-                                                            )
-                                                        )
-                                                    )
-                                                    .then(
-                                                        Modifier.background(
-                                                            Color.Transparent,
-                                                            CircleShape
-                                                        )
-                                                    )
+                                                    .background(indicatorColor)
                                             )
                                         }
 

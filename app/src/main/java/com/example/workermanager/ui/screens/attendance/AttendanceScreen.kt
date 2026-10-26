@@ -565,7 +565,7 @@ fun SiteChip(
                 maxLines = 1
             )
             Text(
-                text = "Present: $presentCount",
+                text = "$presentCount : Present",
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.90f) else MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.5.sp,

@@ -416,7 +416,7 @@ fun DashboardScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 16.dp)
                     .background(color = quickActionsHeaderBg, shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1085,14 +1085,14 @@ fun QuickActionGridCard(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(60.dp),
+        modifier = modifier.height(62.dp),
         shape = RoundedCornerShape(16.dp),
         color = cardBg,
         border = BorderStroke(1.dp, iconColor.copy(alpha = 0.2f)),
         shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -1100,24 +1100,31 @@ fun QuickActionGridCard(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = label,
-                    fontSize = 10.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = darkText,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 Spacer(modifier = Modifier.width(2.dp))
-                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = iconColor, modifier = Modifier.size(12.dp))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(12.dp)
+                )
             }
         }
     }

@@ -69,7 +69,7 @@ fun WorkCraftTopHeader(
                     }
 
                     Image(
-                        painter = painterResource(id = R.drawable.dashlogo),
+                        painter = painterResource(id = R.drawable.logo),
                         contentDescription = "WorkCraft Logo",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier

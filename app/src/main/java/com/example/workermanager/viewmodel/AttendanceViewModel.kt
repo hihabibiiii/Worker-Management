@@ -24,6 +24,11 @@ class AttendanceViewModel(
     val selectedSiteId: StateFlow<Long?> = _selectedSiteId
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val attendanceForSelectedDate: StateFlow<List<AttendanceEntity>> = _selectedDate
+        .flatMapLatest { date -> attendanceRepository.getAttendanceByDate(date) }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val workersWithAttendance: StateFlow<List<WorkerAttendance>> = combine(
         _selectedSiteId,
         _selectedDate

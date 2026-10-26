@@ -42,9 +42,25 @@ fun AttendanceScreen(
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
     val workersWithAttendance by viewModel.workersWithAttendance.collectAsState()
+    val attendanceForSelectedDate by viewModel.attendanceForSelectedDate.collectAsState()
     val context = LocalContext.current
 
     var searchQuery by remember { mutableStateOf("") }
+
+    val presentCountsBySite = remember(attendanceForSelectedDate) {
+        attendanceForSelectedDate
+            .filter { it.status == AttendanceStatus.PRESENT }
+            .groupBy { it.siteId }
+            .mapValues { entry -> entry.value.map { it.workerId }.distinct().size }
+    }
+
+    val totalPresentWorkers = remember(attendanceForSelectedDate) {
+        attendanceForSelectedDate
+            .filter { it.status == AttendanceStatus.PRESENT }
+            .map { it.workerId }
+            .distinct()
+            .size
+    }
 
     val datePickerDialog = DatePickerDialog(
         context,
@@ -73,6 +89,9 @@ fun AttendanceScreen(
             }
         }
     }
+
+    val currentSiteName = if (selectedSiteId == null) "All Sites" else sites.find { it.id == selectedSiteId }?.name ?: "Selected Site"
+    val currentPresentCount = if (selectedSiteId == null) totalPresentWorkers else (presentCountsBySite[selectedSiteId] ?: 0)
 
     Scaffold(
         topBar = {
@@ -122,18 +141,17 @@ fun AttendanceScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = Utils.formatDate(selectedDate),
+                                    text = "$currentSiteName • ${Utils.formatDate(selectedDate)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                                val isToday = selectedDate == LocalDate.now()
                                 Text(
-                                    text = if (isToday) "Today's Attendance" else "Past Date Attendance (${Utils.formatDate(selectedDate)})",
+                                    text = "Present: $currentPresentCount",
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
+                                    fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -154,13 +172,16 @@ fun AttendanceScreen(
                     item {
                         SiteChip(
                             name = "All Sites",
+                            presentCount = totalPresentWorkers,
                             isSelected = selectedSiteId == null,
                             onClick = { viewModel.updateSelectedSite(null) }
                         )
                     }
                     items(sites) { site ->
+                        val sitePresentCount = presentCountsBySite[site.id] ?: 0
                         SiteChip(
                             name = site.name,
+                            presentCount = sitePresentCount,
                             isSelected = selectedSiteId == site.id,
                             onClick = { viewModel.updateSelectedSite(site.id) }
                         )
@@ -514,23 +535,40 @@ fun OvertimeDialog(
 }
 
 @Composable
-fun SiteChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
+fun SiteChip(
+    name: String,
+    presentCount: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(12.dp),
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+        ),
         tonalElevation = 2.dp,
-        modifier = Modifier.height(36.dp)
+        modifier = Modifier.heightIn(min = 44.dp)
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(horizontal = 12.dp)
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
                 text = name,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Text(
+                text = "Present: $presentCount",
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.90f) else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold
             )
         }

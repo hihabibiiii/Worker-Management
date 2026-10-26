@@ -29,6 +29,18 @@ class SettingsViewModel(
         val payments = paymentRepository.allPayments.first()
         return Triple(workers, attendance, payments)
     }
+
+    suspend fun clearAllData(database: com.example.workermanager.data.database.AppDatabase): Boolean {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                database.clearAllTables()
+                true
+            } catch (e: Exception) {
+                android.util.Log.e("WorkCraftDB", "Error clearing database tables", e)
+                false
+            }
+        }
+    }
 }
 
 class SettingsViewModelFactory(

@@ -538,9 +538,11 @@ fun SettingsScreen(
             )
         }
 
+        var isClearingData by remember { mutableStateOf(false) }
+
         if (showDeleteDialog) {
             AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
+                onDismissRequest = { if (!isClearingData) showDeleteDialog = false },
                 title = { Text("Delete Everything?", fontWeight = FontWeight.Bold) },
                 text = { 
                     Text(
@@ -551,19 +553,34 @@ fun SettingsScreen(
                 },
                 confirmButton = {
                     TextButton(
+                        enabled = !isClearingData,
                         onClick = {
                             scope.launch {
-                                app.database.clearAllTables()
+                                isClearingData = true
+                                val success = viewModel.clearAllData(app.database)
+                                isClearingData = false
                                 showDeleteDialog = false
-                                onBack()
+                                if (success) {
+                                    android.widget.Toast.makeText(context, "All data deleted successfully.", android.widget.Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                } else {
+                                    android.widget.Toast.makeText(context, "Failed to clear data. Please try again.", android.widget.Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     ) {
-                        Text("Delete Everything", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                        if (isClearingData) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color(0xFFC62828))
+                        } else {
+                            Text("Delete Everything", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                        }
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
+                    TextButton(
+                        enabled = !isClearingData,
+                        onClick = { showDeleteDialog = false }
+                    ) {
                         Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }

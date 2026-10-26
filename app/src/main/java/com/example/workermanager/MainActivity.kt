@@ -347,7 +347,7 @@ class MainActivity : ComponentActivity() {
                                 // Solid, premium floating navbar Surface
                                 Surface(
                                     modifier = Modifier
-                                        .padding(horizontal = 16.dp)
+                                        .padding(horizontal = 10.dp)
                                         .widthIn(max = 420.dp)
                                         .fillMaxWidth()
                                         .height(70.dp),
@@ -363,58 +363,23 @@ class MainActivity : ComponentActivity() {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(horizontal = 6.dp, vertical = 6.dp)
+                                            .padding(horizontal = 2.dp, vertical = 4.dp)
                                     ) {
-                                        val totalTabs = primaryNavItems.size + 1
-                                        val targetSelectedIndex = if (isMoreSelected) {
-                                            primaryNavItems.size
-                                        } else {
-                                            primaryNavItems.indexOfFirst { screen ->
-                                                currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                            }.takeIf { it >= 0 } ?: 0
-                                        }
-
-                                        val animatedIndex by androidx.compose.animation.core.animateFloatAsState(
-                                            targetValue = targetSelectedIndex.toFloat(),
-                                            animationSpec = androidx.compose.animation.core.spring(
-                                                stiffness = androidx.compose.animation.core.Spring.StiffnessMedium,
-                                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy
-                                            ),
-                                            label = "animatedIndex"
-                                        )
-
-                                        BoxWithConstraints(modifier = Modifier.matchParentSize()) {
-                                            val tabWidth = maxWidth / totalTabs
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .offset {
-                                                        androidx.compose.ui.unit.IntOffset(
-                                                            (tabWidth * animatedIndex).roundToPx(),
-                                                            0
-                                                        )
-                                                    }
-                                                    .width(tabWidth)
-                                                    .fillMaxHeight()
-                                                    .clip(CircleShape)
-                                                    .background(indicatorColor)
-                                            )
-                                        }
-
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceEvenly,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            primaryNavItems.forEachIndexed { index, screen ->
-                                                val selectionFraction = (1.0f - kotlin.math.abs(animatedIndex - index)).coerceIn(0f, 1f)
+                                            primaryNavItems.forEach { screen ->
+                                                val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
 
                                                 AnimatedNavItem(
                                                     title = screen.title,
                                                     icon = screen.icon,
-                                                    selectionFraction = selectionFraction,
+                                                    isSelected = isSelected,
                                                     selectedContentColor = selectedContentColor,
                                                     unselectedContentColor = unselectedContentColor,
+                                                    indicatorColor = indicatorColor,
                                                     onClick = {
                                                         if (showMoreSheet) showMoreSheet = false
                                                         navigateToTab(screen.route)
@@ -424,14 +389,13 @@ class MainActivity : ComponentActivity() {
                                             }
 
                                             // More Tab
-                                            val moreSelectionFraction = (1.0f - kotlin.math.abs(animatedIndex - primaryNavItems.size)).coerceIn(0f, 1f)
-
                                             AnimatedNavItem(
                                                 title = "More",
                                                 icon = Icons.Default.GridView,
-                                                selectionFraction = moreSelectionFraction,
+                                                isSelected = isMoreSelected,
                                                 selectedContentColor = selectedContentColor,
                                                 unselectedContentColor = unselectedContentColor,
+                                                indicatorColor = indicatorColor,
                                                 onClick = { showMoreSheet = !showMoreSheet },
                                                 modifier = Modifier.weight(1f)
                                             )
@@ -441,13 +405,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = showMoreSheet,
-                            enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + androidx.compose.animation.fadeIn(),
-                            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + androidx.compose.animation.fadeOut(),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                        if (showMoreSheet) {
                             androidx.activity.compose.BackHandler { showMoreSheet = false }
 
                             Box(modifier = Modifier.fillMaxSize()) {
@@ -468,7 +426,7 @@ class MainActivity : ComponentActivity() {
                                         .widthIn(max = 420.dp)
                                         .navigationBarsPadding()
                                         .padding(bottom = 88.dp, start = 14.dp, end = 14.dp),
-                                    shape = RoundedCornerShape(24.dp),
+                                    shape = RoundedCornerShape(26.dp),
                                     color = MaterialTheme.colorScheme.surface,
                                     tonalElevation = 8.dp,
                                     shadowElevation = 16.dp,
@@ -480,7 +438,7 @@ class MainActivity : ComponentActivity() {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                                            .padding(horizontal = 16.dp, vertical = 14.dp)
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -491,47 +449,47 @@ class MainActivity : ComponentActivity() {
                                                 .align(Alignment.CenterHorizontally)
                                         )
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
 
                                         Text(
                                             text = "More Options",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
-                                            modifier = Modifier.padding(start = 6.dp),
+                                            fontSize = 16.sp,
+                                            modifier = Modifier.padding(start = 4.dp),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
 
-                                        // Single continuous vertical column: all 7 options top-to-bottom simultaneously
+                                        // Spacious single vertical column: all 7 options top-to-bottom simultaneously
                                         Column(
                                             modifier = Modifier.fillMaxWidth(),
-                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             moreNavItems.forEach { screen ->
                                                 Surface(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .height(40.dp)
-                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .height(48.dp)
+                                                        .clip(RoundedCornerShape(14.dp))
                                                         .clickable {
                                                             showMoreSheet = false
                                                             navigateToTab(screen.route)
                                                         },
-                                                    shape = RoundedCornerShape(12.dp),
+                                                    shape = RoundedCornerShape(14.dp),
                                                     color = Color.Transparent
                                                 ) {
                                                     Row(
                                                         modifier = Modifier
                                                             .fillMaxSize()
-                                                            .padding(horizontal = 10.dp),
+                                                            .padding(horizontal = 12.dp),
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                                                     ) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .size(28.dp)
+                                                                .size(32.dp)
                                                                 .background(
                                                                     if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD),
                                                                     CircleShape
@@ -543,7 +501,7 @@ class MainActivity : ComponentActivity() {
                                                                     imageVector = it,
                                                                     contentDescription = null,
                                                                     tint = MaterialTheme.colorScheme.primary,
-                                                                    modifier = Modifier.size(16.dp)
+                                                                    modifier = Modifier.size(18.dp)
                                                                 )
                                                             }
                                                         }
@@ -552,7 +510,7 @@ class MainActivity : ComponentActivity() {
                                                             text = screen.title,
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             fontWeight = FontWeight.SemiBold,
-                                                            fontSize = 13.sp,
+                                                            fontSize = 14.sp,
                                                             maxLines = 1,
                                                             overflow = TextOverflow.Ellipsis,
                                                             color = MaterialTheme.colorScheme.onSurface
@@ -576,20 +534,15 @@ class MainActivity : ComponentActivity() {
 fun AnimatedNavItem(
     title: String,
     icon: ImageVector?,
-    selectionFraction: Float,
+    isSelected: Boolean,
     selectedContentColor: Color,
     unselectedContentColor: Color,
+    indicatorColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = androidx.compose.ui.graphics.lerp(
-        unselectedContentColor,
-        selectedContentColor,
-        selectionFraction
-    )
-
-    val scale = 1.0f + 0.12f * selectionFraction
-    val isSelected = selectionFraction > 0.5f
+    val iconTint = if (isSelected) selectedContentColor else unselectedContentColor
+    val labelColor = if (isSelected) indicatorColor else unselectedContentColor
 
     Box(
         modifier = modifier
@@ -599,31 +552,43 @@ fun AnimatedNavItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = 8.dp, horizontal = 2.dp),
+            .padding(vertical = 2.dp, horizontal = 1.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = title,
-                    tint = contentColor,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                )
+            // Instant Highlight container ONLY behind the icon!
+            Box(
+                modifier = Modifier
+                    .width(44.dp)
+                    .height(28.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) indicatorColor else Color.Transparent),
+                contentAlignment = Alignment.Center
+            ) {
+                icon?.let {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = title,
+                        tint = iconTint,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
             }
+
             Spacer(modifier = Modifier.height(2.dp))
+
+            // Text label sits below with NO highlight pill/background behind it
             Text(
                 text = title,
-                fontSize = 10.sp,
+                fontSize = 9.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = contentColor,
+                color = labelColor,
                 maxLines = 1,
-                softWrap = false
+                softWrap = true,
+                overflow = TextOverflow.Visible
             )
         }
     }

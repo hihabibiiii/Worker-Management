@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workermanager.data.entity.AttendanceStatus
@@ -553,7 +554,7 @@ fun SiteChip(
         modifier = Modifier.heightIn(min = 44.dp)
     ) {
         Column(
-            horizontalAlignment = Alignment.Start,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
@@ -562,14 +563,16 @@ fun SiteChip(
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 maxLines = 1
             )
             Text(
-                text = "$presentCount : Present",
+                text = "Present: $presentCount",
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.90f) else MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
         }
     }

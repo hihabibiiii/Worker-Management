@@ -848,110 +848,117 @@ fun WorkerDetailChip(
 }
 
 // -----------------------------------------------------------------------------
-// COMPONENT 3: ATTENDANCE SUMMARY CARDS
+// COMPONENT 3: ATTENDANCE SUMMARY CARD
 // -----------------------------------------------------------------------------
 @Composable
 fun AttendanceSummaryRow(stats: WorkerStats) {
-    Row(
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else Color(0xFF087FE5).copy(alpha = 0.12f)
+
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        AttendanceSummaryCard(
-            title = "Present",
-            count = stats.presentDays.toString(),
-            icon = Icons.Default.CheckCircle,
-            bgColor = Color(0xFFF4FCF8),
-            darkBgColor = Color(0xFF0F2618),
-            iconBgColor = Color(0xFFE4F9ED),
-            contentColor = Color(0xFF0A963D),
-            borderColor = Color(0xFFD9F0E4),
-            modifier = Modifier.weight(1f)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AttendanceSummaryItemColumn(
+                title = "Present",
+                count = stats.presentDays.toString(),
+                icon = Icons.Default.CheckCircle,
+                color = Color(0xFF159653),
+                modifier = Modifier.weight(1f)
+            )
 
-        AttendanceSummaryCard(
-            title = "Half Day",
-            count = stats.halfDays.toString(),
-            icon = Icons.Default.Schedule,
-            bgColor = Color(0xFFFFFBF2),
-            darkBgColor = Color(0xFF28200F),
-            iconBgColor = Color(0xFFFFF1D2),
-            contentColor = Color(0xFFD99000),
-            borderColor = Color(0xFFF6EBD4),
-            modifier = Modifier.weight(1f)
-        )
+            HorizontalDivider(
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(1.dp),
+                color = if (isDark) Color(0xFF2C3E55) else Color(0xFFE2EDFB)
+            )
 
-        AttendanceSummaryCard(
-            title = "Absent",
-            count = stats.absentDays.toString(),
-            icon = Icons.Default.Cancel,
-            bgColor = Color(0xFFFFF6F7),
-            darkBgColor = Color(0xFF2B1015),
-            iconBgColor = Color(0xFFFFE3E7),
-            contentColor = Color(0xFFD7192D),
-            borderColor = Color(0xFFF7DDE1),
-            modifier = Modifier.weight(1f)
-        )
+            AttendanceSummaryItemColumn(
+                title = "Half Day",
+                count = stats.halfDays.toString(),
+                icon = Icons.Default.Schedule,
+                color = Color(0xFFD59A12),
+                modifier = Modifier.weight(1f)
+            )
+
+            HorizontalDivider(
+                modifier = Modifier
+                    .height(32.dp)
+                    .width(1.dp),
+                color = if (isDark) Color(0xFF2C3E55) else Color(0xFFE2EDFB)
+            )
+
+            AttendanceSummaryItemColumn(
+                title = "Absent",
+                count = stats.absentDays.toString(),
+                icon = Icons.Default.Cancel,
+                color = Color(0xFFD7193F),
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
 @Composable
-fun AttendanceSummaryCard(
+fun AttendanceSummaryItemColumn(
     title: String,
     count: String,
     icon: ImageVector,
-    bgColor: Color,
-    darkBgColor: Color,
-    iconBgColor: Color,
-    contentColor: Color,
-    borderColor: Color,
+    color: Color,
     modifier: Modifier = Modifier
 ) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val background = if (isDark) darkBgColor else bgColor
-    val border = if (isDark) contentColor.copy(alpha = 0.3f) else borderColor
-    val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF596580)
+    val labelColor = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF515B70)
 
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        color = background,
-        border = BorderStroke(1.dp, border)
+    Column(
+        modifier = modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .background(color.copy(alpha = 0.12f), CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(if (isDark) contentColor.copy(alpha = 0.2f) else iconBgColor, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = contentColor,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = title,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = labelColor,
-                maxLines = 1
-            )
-
-            Text(
-                text = count,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = contentColor
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = color,
+                modifier = Modifier.size(16.dp)
             )
         }
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = title,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = labelColor,
+            maxLines = 1
+        )
+
+        Spacer(modifier = Modifier.height(1.dp))
+
+        Text(
+            text = count,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }
 

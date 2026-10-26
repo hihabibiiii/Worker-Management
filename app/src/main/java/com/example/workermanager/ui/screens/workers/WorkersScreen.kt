@@ -493,6 +493,12 @@ fun WorkerCard(
                                     fontSize = 11.sp,
                                     color = textSecondary
                                 )
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Phone",
+                                    tint = Color(0xFF087FE5),
+                                    modifier = Modifier.size(16.dp)
+                                )
                                 Text(
                                     text = worker.phone,
                                     style = MaterialTheme.typography.bodyMedium,

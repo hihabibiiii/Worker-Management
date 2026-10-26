@@ -418,24 +418,28 @@ fun DashboardScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .background(color = quickActionsHeaderBg, shape = RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.FlashOn, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.FlashOn, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
                 }
 
-                TextButton(onClick = onNavigateToReports) {
-                    Text("More", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = dashPrimary)
+                TextButton(
+                    onClick = onNavigateToReports,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("Report", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = dashPrimary)
                     Spacer(modifier = Modifier.width(2.dp))
                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = dashPrimary, modifier = Modifier.size(16.dp))
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 

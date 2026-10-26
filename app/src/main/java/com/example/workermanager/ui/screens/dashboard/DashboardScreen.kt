@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.workermanager.data.entity.SiteEntity
+import com.example.workermanager.data.entity.*
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.ContractViewModel
 import com.example.workermanager.viewmodel.DashboardViewModel
@@ -69,6 +69,7 @@ fun DashboardScreen(
     var showAddSiteDialog by remember { mutableStateOf(false) }
     var showAddContractDialog by remember { mutableStateOf(false) }
     var showAddExpenseDialog by remember { mutableStateOf(false) }
+    var showAddMaterialDialog by remember { mutableStateOf(false) }
     var existingAutoBackup by remember { mutableStateOf<com.example.workermanager.util.BackupPayload?>(null) }
 
     val selectBackupFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -489,12 +490,12 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
-                        label = "Reports",
-                        icon = Icons.Default.BarChart,
+                        label = "Add Site Material",
+                        icon = Icons.Default.Inventory2,
                         cardBg = if (isDark) Color(0xFF1B323D) else Color(0xFFDFF5FC),
                         iconColor = if (isDark) Color(0xFF4DD0E1) else Color(0xFF08A3C7),
                         darkText = darkText,
-                        onClick = onNavigateToReports,
+                        onClick = { showAddMaterialDialog = true },
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
@@ -562,6 +563,41 @@ fun DashboardScreen(
                     siteExpenseViewModel.addExpense(siteId, date, cat, desc, qty, rate, amt, paidBy, method, notes, receiptPath, initialPaid)
                     showAddExpenseDialog = false
                     android.widget.Toast.makeText(context, "Expense recorded successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+
+        if (showAddMaterialDialog) {
+            com.example.workermanager.ui.screens.materials.AddMaterialDialog(
+                onDismiss = { showAddMaterialDialog = false },
+                onConfirm = { name, category, unit, initialQty, minStock, notes ->
+                    scope.launch {
+                        try {
+                            val mat = ContractorMaterialEntity(
+                                name = name,
+                                category = category,
+                                unit = unit,
+                                minStockLevel = minStock,
+                                notes = notes
+                            )
+                            val matId = app.contractorMaterialRepository.insertMaterial(mat)
+                            if (initialQty > 0.001) {
+                                val tx = ContractorMaterialTransactionEntity(
+                                    materialId = matId,
+                                    siteId = null,
+                                    transactionType = ContractorMaterialTransactionType.ADDED,
+                                    quantity = initialQty,
+                                    unit = unit.displayName,
+                                    reasonOrNotes = "Initial Stock Added"
+                                )
+                                app.contractorMaterialRepository.insertTransaction(tx)
+                            }
+                            android.widget.Toast.makeText(context, "Construction Material saved successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                            showAddMaterialDialog = false
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Error saving material: ${e.localizedMessage ?: "Database error"}", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             )
         }

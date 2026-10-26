@@ -17,11 +17,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -465,16 +465,22 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
                                         .fillMaxWidth()
-                                        .padding(bottom = 8.dp, start = 12.dp, end = 12.dp),
-                                    shape = RoundedCornerShape(28.dp),
+                                        .widthIn(max = 420.dp)
+                                        .navigationBarsPadding()
+                                        .padding(bottom = 88.dp, start = 14.dp, end = 14.dp),
+                                    shape = RoundedCornerShape(24.dp),
                                     color = MaterialTheme.colorScheme.surface,
                                     tonalElevation = 8.dp,
-                                    shadowElevation = 16.dp
+                                    shadowElevation = 16.dp,
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)
+                                    )
                                 ) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(top = 12.dp, bottom = 12.dp)
+                                            .padding(horizontal = 12.dp, vertical = 10.dp)
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -485,40 +491,75 @@ class MainActivity : ComponentActivity() {
                                                 .align(Alignment.CenterHorizontally)
                                         )
 
-                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
 
                                         Text(
                                             text = "More Options",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.padding(start = 6.dp),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                        moreNavItems.forEach { screen ->
-                                            ListItem(
-                                                headlineContent = {
-                                                    Text(
-                                                        screen.title,
-                                                        fontWeight = FontWeight.SemiBold
-                                                    )
-                                                },
-                                                leadingContent = {
-                                                    screen.icon?.let {
-                                                        Icon(
-                                                            it,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary
+                                        // Single continuous vertical column: all 7 options top-to-bottom simultaneously
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            moreNavItems.forEach { screen ->
+                                                Surface(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(40.dp)
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .clickable {
+                                                            showMoreSheet = false
+                                                            navigateToTab(screen.route)
+                                                        },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    color = Color.Transparent
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .padding(horizontal = 10.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(28.dp)
+                                                                .background(
+                                                                    if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD),
+                                                                    CircleShape
+                                                                ),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            screen.icon?.let {
+                                                                Icon(
+                                                                    imageVector = it,
+                                                                    contentDescription = null,
+                                                                    tint = MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.size(16.dp)
+                                                                )
+                                                            }
+                                                        }
+
+                                                        Text(
+                                                            text = screen.title,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            fontSize = 13.sp,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis,
+                                                            color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                     }
-                                                },
-                                                modifier = Modifier.clickable {
-                                                    showMoreSheet = false
-                                                    navigateToTab(screen.route)
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                 }

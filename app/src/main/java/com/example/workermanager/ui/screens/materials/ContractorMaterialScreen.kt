@@ -1619,12 +1619,22 @@ fun AddMaterialDialog(
         properties = androidx.compose.ui.window.DialogProperties(decorFitsSystemWindows = false),
         title = { Text("Add Construction Material", fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Material Name* (e.g. Bans, Patara, Shuttering Plate)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1635,6 +1645,7 @@ fun AddMaterialDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Category*") },
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().clickable { categoryExpanded = true }
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { categoryExpanded = true })
@@ -1652,6 +1663,7 @@ fun AddMaterialDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Unit*") },
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().clickable { unitExpanded = true }
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { unitExpanded = true })
@@ -1667,6 +1679,7 @@ fun AddMaterialDialog(
                     onValueChange = { initialQtyStr = it },
                     label = { Text("Initial Stock Quantity (Central)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1675,6 +1688,7 @@ fun AddMaterialDialog(
                     onValueChange = { minStockStr = it },
                     label = { Text("Minimum Stock Alert Level (Opt)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1682,6 +1696,7 @@ fun AddMaterialDialog(
                     value = notes,
                     onValueChange = { notes = it },
                     label = { Text("Notes (Opt)") },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -2233,9 +2248,15 @@ fun EditMaterialDialog(
         title = { Text("Edit Material / Stock", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).imePadding(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

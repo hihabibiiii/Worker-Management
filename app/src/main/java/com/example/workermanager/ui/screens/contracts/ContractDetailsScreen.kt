@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -88,11 +89,13 @@ fun ContractDetailsScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddPaymentDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text("Add Payment", fontWeight = FontWeight.Bold) },
-                modifier = Modifier.padding(bottom = 80.dp)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier.padding(bottom = 80.dp).height(42.dp)
             )
         }
     ) { padding ->

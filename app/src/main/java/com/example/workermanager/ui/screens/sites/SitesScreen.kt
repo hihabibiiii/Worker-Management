@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,11 +45,13 @@ fun SitesScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text("Add Site", fontWeight = FontWeight.Bold) },
-                modifier = Modifier.padding(bottom = 80.dp)
+                shape = RoundedCornerShape(28.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier.padding(bottom = 80.dp).height(42.dp)
             )
         }
     ) { padding ->
@@ -195,7 +198,11 @@ fun AddSiteDialog(
                         onConfirm(trimmedName, trimmedAddress, trimmedManager)
                     }
                 },
-                enabled = !isSubmitting
+                enabled = !isSubmitting,
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677F8), contentColor = Color.White),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                modifier = Modifier.height(42.dp)
             ) {
                 Text("Save Site", fontWeight = FontWeight.Bold)
             }

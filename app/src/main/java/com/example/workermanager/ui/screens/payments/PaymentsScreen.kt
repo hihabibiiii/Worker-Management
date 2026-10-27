@@ -76,12 +76,13 @@ fun PaymentsScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = Color(0xFF0875F5),
+                containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
-                shape = CircleShape,
                 icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
                 text = { Text("Add Payment", fontWeight = FontWeight.Bold, color = Color.White) },
-                modifier = Modifier.padding(bottom = 80.dp)
+                shape = RoundedCornerShape(28.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier.padding(bottom = 80.dp).height(42.dp)
             )
         },
         containerColor = screenBg
@@ -865,7 +866,11 @@ fun AddPaymentDialog(
                         onConfirm(selectedWorkerId!!, selectedSiteId!!, amountVal, selectedMethod, selectedType, selectedDate, note)
                     }
                 },
-                enabled = !isSaving && selectedSiteId != null && selectedWorkerId != null && (amount.toDoubleOrNull() ?: 0.0) > 0
+                enabled = !isSaving && selectedSiteId != null && selectedWorkerId != null && (amount.toDoubleOrNull() ?: 0.0) > 0,
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677F8), contentColor = Color.White),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                modifier = Modifier.height(42.dp)
             ) {
                 Text(buttonText, fontWeight = FontWeight.Bold)
             }
@@ -1036,7 +1041,11 @@ fun EditPaymentDialog(
                         )
                     }
                 },
-                enabled = !isSaving && selectedSiteId != null && (amount.toDoubleOrNull() ?: 0.0) > 0
+                enabled = !isSaving && selectedSiteId != null && (amount.toDoubleOrNull() ?: 0.0) > 0,
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677F8), contentColor = Color.White),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                modifier = Modifier.height(42.dp)
             ) {
                 Text(buttonText, fontWeight = FontWeight.Bold)
             }

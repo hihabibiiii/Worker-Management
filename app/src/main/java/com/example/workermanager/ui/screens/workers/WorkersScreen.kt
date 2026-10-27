@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Badge
@@ -447,13 +448,13 @@ fun WorkerCard(
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        color = cardBg,
-        border = BorderStroke(1.dp, if (isDark) Color(0xFF333A45) else Color(0xFF0965E8).copy(alpha = 0.15f)),
-        shadowElevation = 2.dp
+        shape = RoundedCornerShape(20.dp),
+        color = if (isDark) Color(0xFF1B2433) else cardBg,
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF2E3A4E) else Color(0xFF087FE5).copy(alpha = 0.15f)),
+        shadowElevation = 3.dp
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            // TOP ROW: Avatar, Name, Type, Site & Three-Dot Menu
+        Column(modifier = Modifier.padding(14.dp)) {
+            // TOP ROW: Avatar, Name, Phone Pill, Type, Site & Three-Dot Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -465,21 +466,22 @@ fun WorkerCard(
                 ) {
                     WorkerAvatar(
                         photoPath = worker.photoPath,
-                        name = worker.name
+                        name = worker.name,
+                        modifier = Modifier.size(46.dp)
                     )
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
                                 text = worker.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
+                                fontSize = 15.sp,
                                 color = textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -487,67 +489,93 @@ fun WorkerCard(
                             )
 
                             if (worker.phone.isNotBlank()) {
-                                Text(
-                                    text = "•",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
-                                    color = textSecondary
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = "Phone",
-                                    tint = Color(0xFF087FE5),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = worker.phone,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = textSecondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color(0xFF087FE5).copy(alpha = 0.10f),
+                                    modifier = Modifier.padding(start = 2.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Phone,
+                                            contentDescription = "Phone",
+                                            tint = Color(0xFF087FE5),
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = worker.phone,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF087FE5),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Construction,
-                                contentDescription = null,
-                                tint = textSecondary,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = worker.workerType.name,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 10.sp,
-                                color = textSecondary
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isDark) Color(0xFF2C3E55) else Color(0xFFE8F1FC)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Construction,
+                                        contentDescription = null,
+                                        tint = textSecondary,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = worker.workerType.name,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = textSecondary
+                                    )
+                                }
+                            }
 
-                            Text("•", style = MaterialTheme.typography.bodySmall, color = textSecondary, fontSize = 10.sp)
-
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = Color(0xFF0866E8),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = siteName,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0866E8),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isDark) Color(0xFF1E3A5F) else Color(0xFFE0EFFF)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = Color(0xFF087FE5),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = siteName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF087FE5),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -556,12 +584,12 @@ fun WorkerCard(
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "Options",
-                            tint = Color(0xFF536789)
+                            tint = textSecondary
                         )
                     }
 
@@ -575,7 +603,7 @@ fun WorkerCard(
                                 Icon(
                                     imageVector = Icons.Default.Phone,
                                     contentDescription = null,
-                                    tint = Color(0xFF0866E8),
+                                    tint = Color(0xFF087FE5),
                                     modifier = Modifier.size(18.dp)
                                 )
                             },
@@ -596,7 +624,7 @@ fun WorkerCard(
                         )
                         DropdownMenuItem(
                             text = { Text("View Details") },
-                            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(Icons.Default.Groups, contentDescription = null, tint = Color(0xFF087FE5), modifier = Modifier.size(18.dp)) },
                             onClick = {
                                 menuExpanded = false
                                 onClick()
@@ -604,13 +632,12 @@ fun WorkerCard(
                         )
                         DropdownMenuItem(
                             text = { Text("Edit Worker") },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF0866E8), modifier = Modifier.size(18.dp)) },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF087FE5), modifier = Modifier.size(18.dp)) },
                             onClick = {
                                 menuExpanded = false
                                 onEdit()
                             }
                         )
-
                         DropdownMenuItem(
                             text = { Text("Delete Worker", color = Color(0xFFC62828)) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(18.dp)) },
@@ -623,62 +650,112 @@ fun WorkerCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // BOTTOM ROW: CLEAN BALANCE BAR (TRANSPARENT BACKGROUND, NO SEPARATE COLORED FILL)
-            val (balColor, balText) = when {
-                pendingBalance > 0.001 -> Pair(
-                    if (isDark) Color(0xFFFF5252) else Color(0xFFD90016),
-                    "${Utils.formatCurrency(pendingBalance)} Due"
-                )
-                pendingBalance < -0.001 -> Pair(
-                    if (isDark) Color(0xFF2ECC71) else Color(0xFF078B35),
-                    "${Utils.formatCurrency(-pendingBalance)} Advance"
-                )
-                else -> Pair(
-                    textSecondary,
-                    "₹0.00"
-                )
+            HorizontalDivider(
+                color = if (isDark) Color(0xFF2E3A4E) else Color(0xFFE2E8F0),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // BOTTOM ROW: Balance on left, Advance button on right
+            val isPendingDue = pendingBalance > 0.001
+            val isAdvance = pendingBalance < -0.001
+            val balColor = when {
+                isPendingDue -> if (isDark) Color(0xFFFF5252) else Color(0xFFD90016)
+                isAdvance -> Color(0xFF16A36A)
+                else -> textSecondary
+            }
+            val balDisplayAmount = when {
+                isPendingDue -> Utils.formatCurrency(pendingBalance)
+                isAdvance -> Utils.formatCurrency(-pendingBalance)
+                else -> "₹0.00"
             }
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(28.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AccountBalanceWallet,
-                        contentDescription = null,
-                        tint = balColor,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Balance",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textSecondary
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                if (isAdvance) Color(0xFF16A36A).copy(alpha = 0.12f)
+                                else if (isPendingDue) Color(0xFFD90016).copy(alpha = 0.12f)
+                                else Color(0xFF087FE5).copy(alpha = 0.12f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = balColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = "Balance",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = textSecondary
+                        )
+                        Text(
+                            text = balDisplayAmount,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = balColor
+                        )
+                    }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = balText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = balColor
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = textSecondary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                // Dynamic Action Button (Due vs Advance)
+                val actionBtnLabel = when {
+                    isPendingDue -> "Due"
+                    else -> "Advance"
+                }
+                val actionBtnColor = when {
+                    isPendingDue -> if (isDark) Color(0xFFE53935) else Color(0xFFD90016)
+                    else -> Color(0xFF16A36A)
+                }
+                val actionBtnIcon = when {
+                    isPendingDue -> Icons.AutoMirrored.Filled.ReceiptLong
+                    else -> Icons.Default.Payments
+                }
+
+                Surface(
+                    onClick = onClick,
+                    shape = CircleShape,
+                    color = actionBtnColor,
+                    contentColor = Color.White,
+                    shadowElevation = 2.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = actionBtnIcon,
+                            contentDescription = actionBtnLabel,
+                            tint = Color.White,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = actionBtnLabel,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

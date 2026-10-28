@@ -38,6 +38,7 @@ import com.example.workermanager.data.preference.AutoBackupPreferenceManager
 import com.example.workermanager.data.preference.ThemeMode
 import com.example.workermanager.util.BackupManager
 import com.example.workermanager.util.BackupPayload
+import com.example.workermanager.util.OwnershipValidationResult
 import com.example.workermanager.util.ExcelExporter
 import com.example.workermanager.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -123,7 +124,12 @@ fun SettingsScreen(
                         BackupManager.validateAndParseBackup(stream)
                     }
                     if (payload != null) {
-                        pendingRestorePayload = payload
+                        val validation = BackupManager.validateBackupOwnership(payload)
+                        if (validation is OwnershipValidationResult.Invalid) {
+                            Toast.makeText(context, validation.userFacingErrorMessage, Toast.LENGTH_LONG).show()
+                        } else {
+                            pendingRestorePayload = payload
+                        }
                     } else {
                         Toast.makeText(context, "Invalid backup file format.", Toast.LENGTH_LONG).show()
                     }

@@ -82,7 +82,12 @@ fun DashboardScreen(
                         com.example.workermanager.util.BackupManager.validateAndParseBackup(stream)
                     }
                     if (payload != null) {
-                        existingAutoBackup = payload
+                        val validation = com.example.workermanager.util.BackupManager.validateBackupOwnership(payload)
+                        if (validation is com.example.workermanager.util.OwnershipValidationResult.Invalid) {
+                            android.widget.Toast.makeText(context, validation.userFacingErrorMessage, android.widget.Toast.LENGTH_LONG).show()
+                        } else {
+                            existingAutoBackup = payload
+                        }
                     } else {
                         android.widget.Toast.makeText(context, "Invalid backup file format.", android.widget.Toast.LENGTH_SHORT).show()
                     }
@@ -97,7 +102,10 @@ fun DashboardScreen(
         val prefManager = com.example.workermanager.data.preference.AutoBackupPreferenceManager(context)
         val backup = com.example.workermanager.util.BackupManager.findExistingAutoBackup(context, prefManager)
         if (backup != null && sites.isEmpty() && stats.totalContracts == 0) {
-            existingAutoBackup = backup
+            val validation = com.example.workermanager.util.BackupManager.validateBackupOwnership(backup)
+            if (validation is com.example.workermanager.util.OwnershipValidationResult.Valid) {
+                existingAutoBackup = backup
+            }
         }
     }
 

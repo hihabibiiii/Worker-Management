@@ -1,7 +1,6 @@
 package com.example.workermanager.util
 
 import android.content.ContentUris
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
@@ -16,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -25,9 +25,10 @@ import java.io.InputStream
 import java.io.OutputStream
 
 data class BackupPayload(
-    var version: Int = 1,
+    var version: Int = 2,
     var appName: String = "WorkCraft",
     var timestamp: Long = System.currentTimeMillis(),
+    var ownerUid: String? = null,
     var workers: List<WorkerEntity> = emptyList(),
     var sites: List<SiteEntity> = emptyList(),
     var attendance: List<AttendanceEntity> = emptyList(),
@@ -44,6 +45,11 @@ data class BackupPayload(
     var contractorMaterialTransactions: List<ContractorMaterialTransactionEntity> = emptyList()
 )
 
+sealed class OwnershipValidationResult {
+    object Valid : OwnershipValidationResult()
+    data class Invalid(val userFacingErrorMessage: String) : OwnershipValidationResult()
+}
+
 object BackupManager {
 
     private val backupMutex = Mutex()
@@ -56,11 +62,31 @@ object BackupManager {
         }
     }
 
-    suspend fun createBackupPayload(database: AppDatabase): BackupPayload = withContext(Dispatchers.IO) {
+    fun validateBackupOwnership(payloadOwnerUid: String?, currentFirebaseUid: String?): OwnershipValidationResult {
+        if (currentFirebaseUid.isNullOrBlank()) {
+            return OwnershipValidationResult.Invalid("No authenticated account found. Please sign in to restore backups.")
+        }
+        if (payloadOwnerUid.isNullOrBlank()) {
+            return OwnershipValidationResult.Invalid("This backup file does not contain owner account verification and cannot be restored safely.")
+        }
+        if (payloadOwnerUid != currentFirebaseUid) {
+            return OwnershipValidationResult.Invalid("This backup belongs to another account. Please sign in with the original account to restore it.")
+        }
+        return OwnershipValidationResult.Valid
+    }
+
+    fun validateBackupOwnership(payload: BackupPayload): OwnershipValidationResult {
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        return validateBackupOwnership(payload.ownerUid, currentUid)
+    }
+
+    suspend fun createBackupPayload(database: AppDatabase, ownerUid: String? = null): BackupPayload = withContext(Dispatchers.IO) {
+        val currentUid = ownerUid ?: FirebaseAuth.getInstance().currentUser?.uid
         BackupPayload(
-            version = 1,
+            version = 2,
             appName = "WorkCraft",
             timestamp = System.currentTimeMillis(),
+            ownerUid = currentUid,
             workers = database.workerDao().getAllWorkersRaw(),
             sites = database.siteDao().getAllSitesRaw(),
             attendance = database.attendanceDao().getAllAttendanceRaw(),
@@ -92,7 +118,7 @@ object BackupManager {
         val mapper = getObjectMapper()
         val payload = mapper.readValue(json, BackupPayload::class.java)
         
-        if (payload.appName != "WorkCraft" || payload.version <= 0 || payload.version > 1) {
+        if (payload.appName != "WorkCraft" || payload.version <= 0 || payload.version > 2) {
             throw IllegalArgumentException("Incompatible or invalid WorkCraft backup file.")
         }
         payload
@@ -157,166 +183,87 @@ object BackupManager {
                                     stream.write(json.toByteArray(Charsets.UTF_8))
                                     stream.flush()
                                 }
-                                cleanupObsoleteAutoBackups(context, treeDir)
-                                prefManager.updateBackupStatus(System.currentTimeMillis(), "Success")
+                                prefManager.updateBackupStatus(System.currentTimeMillis(), "Success (Saved to Document Folder)")
                                 return@withContext true
                             }
                         }
                     } catch (e: Exception) {
-                        lastError = "SAF write: ${e.localizedMessage ?: "Permission denied"}"
-                        android.util.Log.w("WorkCraftAutoBackup", "SAF backup attempt failed", e)
+                        lastError = "SAF auto-backup error: ${e.localizedMessage}"
+                        android.util.Log.w("WorkCraftAutoBackup", lastError, e)
                     }
                 }
 
-                // Attempt 2: MediaStore API for public Documents/WorkCraftBackups
+                // Attempt 2: Internal Storage Fallback
                 try {
-                    val written = writeBackupViaMediaStore(context, "WorkCraft_AutoBackup.json", json)
-                    if (written) {
-                        cleanupObsoleteAutoBackups(context, null)
-                        prefManager.updateBackupStatus(System.currentTimeMillis(), "Success")
-                        return@withContext true
-                    }
-                } catch (e: Exception) {
-                    lastError = "MediaStore: ${e.localizedMessage ?: "Write error"}"
-                    android.util.Log.w("WorkCraftAutoBackup", "MediaStore backup attempt failed", e)
-                }
+                    val internalAutoFile = File(context.filesDir, "WorkCraft_AutoBackup.json")
+                    val internalPrevFile = File(context.filesDir, "WorkCraft_PreviousBackup.json")
 
-                // Attempt 3: Always-writable App External Shared Documents Directory
-                try {
-                    val externalDocDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "WorkCraftBackups")
-                    if (!externalDocDir.exists()) {
-                        externalDocDir.mkdirs()
-                    }
-
-                    val autoFile = File(externalDocDir, "WorkCraft_AutoBackup.json")
-                    val prevFile = File(externalDocDir, "WorkCraft_PreviousBackup.json")
-
-                    if (autoFile.exists()) {
+                    if (internalAutoFile.exists()) {
                         try {
-                            autoFile.copyTo(prevFile, overwrite = true)
+                            internalAutoFile.copyTo(internalPrevFile, overwrite = true)
                         } catch (e: Exception) {
-                            android.util.Log.w("WorkCraftAutoBackup", "File rotation copy failed", e)
+                            android.util.Log.w("WorkCraftAutoBackup", "Failed internal rotate to previous backup", e)
                         }
                     }
 
-                    val tempFile = File(externalDocDir, "WorkCraft_AutoBackup_temp.json")
-                    tempFile.writeText(json, Charsets.UTF_8)
-                    if (tempFile.exists() && tempFile.length() > 0) {
-                        if (autoFile.exists()) {
-                            autoFile.delete()
-                        }
-                        tempFile.renameTo(autoFile)
-                        cleanupObsoleteAutoBackups(context, null)
-                        prefManager.updateBackupStatus(System.currentTimeMillis(), "Success")
-                        return@withContext true
-                    }
+                    internalAutoFile.writeText(json, Charsets.UTF_8)
+                    prefManager.updateBackupStatus(System.currentTimeMillis(), "Success (Internal Storage)")
+                    return@withContext true
                 } catch (e: Exception) {
-                    lastError = "App external dir: ${e.localizedMessage ?: "Write error"}"
-                    android.util.Log.w("WorkCraftAutoBackup", "App external dir backup failed", e)
+                    lastError = "Internal auto-backup error: ${e.localizedMessage}"
+                    android.util.Log.w("WorkCraftAutoBackup", lastError, e)
                 }
 
-                prefManager.updateBackupStatus(System.currentTimeMillis(), "Backup Failed: ${lastError ?: "Storage access restricted"}")
+                // Attempt 3: Public Documents Folder
+                try {
+                    val docDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "WorkCraftBackups")
+                    if (!docDir.exists()) docDir.mkdirs()
+
+                    val publicAutoFile = File(docDir, "WorkCraft_AutoBackup.json")
+                    val publicPrevFile = File(docDir, "WorkCraft_PreviousBackup.json")
+
+                    if (publicAutoFile.exists()) {
+                        try {
+                            publicAutoFile.copyTo(publicPrevFile, overwrite = true)
+                        } catch (e: Exception) {
+                            android.util.Log.w("WorkCraftAutoBackup", "Failed public dir rotate to previous backup", e)
+                        }
+                    }
+
+                    publicAutoFile.writeText(json, Charsets.UTF_8)
+                    prefManager.updateBackupStatus(System.currentTimeMillis(), "Success (Documents Folder)")
+                    return@withContext true
+                } catch (e: Exception) {
+                    lastError = "Public dir auto-backup error: ${e.localizedMessage}"
+                    android.util.Log.w("WorkCraftAutoBackup", lastError, e)
+                }
+
+                prefManager.updateBackupStatus(System.currentTimeMillis(), lastError ?: "Failed to write backup file")
                 false
             } catch (e: Exception) {
-                android.util.Log.e("WorkCraftAutoBackup", "performAutoBackup unexpected error", e)
-                prefManager.updateBackupStatus(System.currentTimeMillis(), "Backup Failed: ${e.localizedMessage ?: "Unexpected error"}")
+                prefManager.updateBackupStatus(System.currentTimeMillis(), "Error: ${e.localizedMessage ?: "Unknown error"}")
                 false
             }
         }
     }
 
-    private fun cleanupObsoleteAutoBackups(context: Context, treeDir: DocumentFile?) {
-        try {
-            if (treeDir != null && treeDir.exists()) {
-                treeDir.listFiles().forEach { file ->
-                    val name = file.name ?: ""
-                    if ((name.startsWith("WorkCraft_AutoBackup_") || name.startsWith("WorkCraft_PreviousBackup_")) &&
-                        name != "WorkCraft_AutoBackup.json" && name != "WorkCraft_PreviousBackup.json"
-                    ) {
-                        try { file.delete() } catch (e: Exception) { /* ignore */ }
-                    }
-                }
-            }
+    suspend fun findExistingAutoBackup(
+        context: Context,
+        prefManager: AutoBackupPreferenceManager
+    ): BackupPayload? = withContext(Dispatchers.IO) {
+        val fileNames = listOf("WorkCraft_AutoBackup.json", "WorkCraft_PreviousBackup.json")
 
-            listOf(
-                File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "WorkCraftBackups"),
-                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "WorkCraftBackups")
-            ).forEach { dir ->
-                if (dir.exists() && dir.isDirectory) {
-                    dir.listFiles()?.forEach { file ->
-                        val name = file.name
-                        if ((name.startsWith("WorkCraft_AutoBackup_") || name.startsWith("WorkCraft_PreviousBackup_")) &&
-                            name != "WorkCraft_AutoBackup.json" && name != "WorkCraft_PreviousBackup.json"
-                        ) {
-                            try { file.delete() } catch (e: Exception) { /* ignore */ }
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.w("WorkCraftAutoBackup", "cleanupObsoleteAutoBackups error", e)
-        }
-    }
-
-    private fun writeBackupViaMediaStore(context: Context, fileName: String, json: String): Boolean {
-        return try {
-            val resolver = context.contentResolver
-            val existingUri = findBackupViaMediaStore(context, fileName)
-
-            // Rotate existing auto backup to previous backup
-            if (fileName == "WorkCraft_AutoBackup.json" && existingUri != null) {
-                try {
-                    val existingJson = resolver.openInputStream(existingUri)?.use {
-                        it.bufferedReader(Charsets.UTF_8).readText()
-                    }
-                    if (!existingJson.isNullOrBlank()) {
-                        writeBackupViaMediaStore(context, "WorkCraft_PreviousBackup.json", existingJson)
-                    }
-                } catch (ex: Exception) {
-                    android.util.Log.w("WorkCraftAutoBackup", "Failed to rotate previous backup in MediaStore", ex)
-                }
-            }
-
-            val targetUri = if (existingUri != null) {
-                existingUri
-            } else {
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, "Documents/WorkCraftBackups")
-                }
-                resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
-            }
-
-            if (targetUri != null) {
-                resolver.openOutputStream(targetUri, "wt")?.use { stream ->
-                    stream.write(json.toByteArray(Charsets.UTF_8))
-                    stream.flush()
-                }
-                true
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("WorkCraftAutoBackup", "writeBackupViaMediaStore error for $fileName", e)
-            false
-        }
-    }
-
-    suspend fun findExistingAutoBackup(context: Context, prefManager: AutoBackupPreferenceManager): BackupPayload? = withContext(Dispatchers.IO) {
-        val candidateFileNames = listOf("WorkCraft_AutoBackup.json", "WorkCraft_PreviousBackup.json")
-
-        for (fileName in candidateFileNames) {
+        for (fileName in fileNames) {
             try {
-                // 1. Try SAF persisted URI if configured
+                // 1. Try User-selected SAF Tree URI
                 val uriString = prefManager.backupUri.value
                 if (!uriString.isNullOrBlank()) {
                     try {
                         val treeUri = Uri.parse(uriString)
                         val treeDir = DocumentFile.fromTreeUri(context, treeUri)
-                        val autoFile = treeDir?.findFile(fileName)
-                        if (autoFile != null && autoFile.exists()) {
-                            context.contentResolver.openInputStream(autoFile.uri)?.use { stream ->
+                        val targetFile = treeDir?.findFile(fileName)
+                        if (targetFile != null && targetFile.exists()) {
+                            context.contentResolver.openInputStream(targetFile.uri)?.use { stream ->
                                 return@withContext validateAndParseBackup(stream)
                             }
                         }
@@ -325,7 +272,19 @@ object BackupManager {
                     }
                 }
 
-                // 2. Query MediaStore API for Documents/WorkCraftBackups/ (Android 10+)
+                // 2. Try Internal App Storage
+                val internalAutoFile = File(context.filesDir, fileName)
+                if (internalAutoFile.exists()) {
+                    try {
+                        internalAutoFile.inputStream().use { stream ->
+                            return@withContext validateAndParseBackup(stream)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("WorkCraftAutoBackup", "Internal read auto backup failed for $fileName", e)
+                    }
+                }
+
+                // 3. Try MediaStore Documents File
                 val mediaStoreUri = findBackupViaMediaStore(context, fileName)
                 if (mediaStoreUri != null) {
                     try {
@@ -334,19 +293,6 @@ object BackupManager {
                         }
                     } catch (e: Exception) {
                         android.util.Log.w("WorkCraftAutoBackup", "MediaStore read auto backup failed for $fileName", e)
-                    }
-                }
-
-                // 3. Try App External Shared Documents Directory
-                val externalDocDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "WorkCraftBackups")
-                val autoFile = File(externalDocDir, fileName)
-                if (autoFile.exists()) {
-                    try {
-                        autoFile.inputStream().use { stream ->
-                            return@withContext validateAndParseBackup(stream)
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.w("WorkCraftAutoBackup", "External dir read auto backup failed for $fileName", e)
                     }
                 }
 
@@ -390,6 +336,11 @@ object BackupManager {
     }
 
     suspend fun restoreBackup(database: AppDatabase, payload: BackupPayload) = withContext(Dispatchers.IO) {
+        val validation = validateBackupOwnership(payload)
+        if (validation is OwnershipValidationResult.Invalid) {
+            throw IllegalStateException(validation.userFacingErrorMessage)
+        }
+
         database.withTransaction {
             database.clearAllTables()
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestorePage
 import androidx.compose.material.icons.filled.Settings
@@ -51,7 +52,8 @@ import java.util.Locale
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
-    onOpenRecycleBin: () -> Unit = {}
+    onOpenRecycleBin: () -> Unit = {},
+    onOpenProfile: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
@@ -209,6 +211,38 @@ fun SettingsScreen(
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
             
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+            Text(
+                "Account", 
+                style = MaterialTheme.typography.titleMedium, 
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("My Profile", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        "Manage display name and Google Account logout",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    Icon(
+                        imageVector = Icons.Default.Person, 
+                        contentDescription = "Profile", 
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                modifier = Modifier.clickable { onOpenProfile() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
             Text(

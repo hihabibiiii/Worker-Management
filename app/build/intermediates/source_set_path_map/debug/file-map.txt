@@ -1,63 +1,72 @@
-com.example.workermanager.app-core-1.12.0-0 C:\Users\Habibullah\.gradle\caches\transforms-3\05365192e8c93a127ae620124358980f\transformed\core-1.12.0\res
-com.example.workermanager.app-lifecycle-runtime-compose-2.7.0-1 C:\Users\Habibullah\.gradle\caches\transforms-3\086599aa7b9d6f2f6fba17f89c309aae\transformed\lifecycle-runtime-compose-2.7.0\res
-com.example.workermanager.app-ui-graphics-release-2 C:\Users\Habibullah\.gradle\caches\transforms-3\096061d43026076eef2a5df16cddb8c7\transformed\ui-graphics-release\res
-com.example.workermanager.app-foundation-release-3 C:\Users\Habibullah\.gradle\caches\transforms-3\14cced0a953dac0f5ca9ea612aacb880\transformed\foundation-release\res
-com.example.workermanager.app-navigation-runtime-ktx-2.7.7-4 C:\Users\Habibullah\.gradle\caches\transforms-3\1ceb47985bfc9af24a7115a0b35a179e\transformed\navigation-runtime-ktx-2.7.7\res
-com.example.workermanager.app-core-runtime-2.2.0-5 C:\Users\Habibullah\.gradle\caches\transforms-3\252b688098bf2657d782684bf6b37c73\transformed\core-runtime-2.2.0\res
-com.example.workermanager.app-lifecycle-viewmodel-2.7.0-6 C:\Users\Habibullah\.gradle\caches\transforms-3\27fffcffbc8070378c9ce31fe8f59dec\transformed\lifecycle-viewmodel-2.7.0\res
-com.example.workermanager.app-work-runtime-2.9.0-7 C:\Users\Habibullah\.gradle\caches\transforms-3\2bd553ea6212e987323af6bea1aa1554\transformed\work-runtime-2.9.0\res
-com.example.workermanager.app-activity-compose-1.8.2-8 C:\Users\Habibullah\.gradle\caches\transforms-3\2c7616037ba1065851970ca14c541569\transformed\activity-compose-1.8.2\res
-com.example.workermanager.app-ui-geometry-release-9 C:\Users\Habibullah\.gradle\caches\transforms-3\2cadabcc5fd38f1dadebecfb00b6a239\transformed\ui-geometry-release\res
-com.example.workermanager.app-ui-release-10 C:\Users\Habibullah\.gradle\caches\transforms-3\2cc6271d2b764ab89bfdd43b132325fa\transformed\ui-release\res
-com.example.workermanager.app-savedstate-1.2.1-11 C:\Users\Habibullah\.gradle\caches\transforms-3\309c05ea582d94d01c6ee988cfa77b91\transformed\savedstate-1.2.1\res
-com.example.workermanager.app-customview-poolingcontainer-1.0.0-12 C:\Users\Habibullah\.gradle\caches\transforms-3\33d77efa15d2e2613ac115a20b5c6307\transformed\customview-poolingcontainer-1.0.0\res
-com.example.workermanager.app-lifecycle-livedata-core-2.7.0-13 C:\Users\Habibullah\.gradle\caches\transforms-3\3dfeffd36e8b2cb5f39020000d0e42ba\transformed\lifecycle-livedata-core-2.7.0\res
-com.example.workermanager.app-annotation-experimental-1.4.0-14 C:\Users\Habibullah\.gradle\caches\transforms-3\41de2c1b11eb407e9b5fd7531b4c4f21\transformed\annotation-experimental-1.4.0\res
-com.example.workermanager.app-lifecycle-viewmodel-compose-2.7.0-15 C:\Users\Habibullah\.gradle\caches\transforms-3\469ffc9edc2bae9ad6983c255714c7d0\transformed\lifecycle-viewmodel-compose-2.7.0\res
-com.example.workermanager.app-runtime-release-16 C:\Users\Habibullah\.gradle\caches\transforms-3\47ca813e23e0951ffe628bf400e93dc2\transformed\runtime-release\res
-com.example.workermanager.app-ui-test-manifest-1.6.1-17 C:\Users\Habibullah\.gradle\caches\transforms-3\4841e2b2a2647abad2f54f94ca319022\transformed\ui-test-manifest-1.6.1\res
-com.example.workermanager.app-lifecycle-runtime-ktx-2.7.0-18 C:\Users\Habibullah\.gradle\caches\transforms-3\4aae9911e679b41eaa6b5a36e359b947\transformed\lifecycle-runtime-ktx-2.7.0\res
-com.example.workermanager.app-ui-unit-release-19 C:\Users\Habibullah\.gradle\caches\transforms-3\535b1ed9b2665e780059041ee064bb66\transformed\ui-unit-release\res
-com.example.workermanager.app-lifecycle-viewmodel-savedstate-2.7.0-20 C:\Users\Habibullah\.gradle\caches\transforms-3\5534b4ac55b208a1b05072588e5f5672\transformed\lifecycle-viewmodel-savedstate-2.7.0\res
-com.example.workermanager.app-animation-release-21 C:\Users\Habibullah\.gradle\caches\transforms-3\565de678c3026fc660b37bb510ddd12f\transformed\animation-release\res
-com.example.workermanager.app-lifecycle-runtime-2.7.0-22 C:\Users\Habibullah\.gradle\caches\transforms-3\56a17571f823274c2af15e7dde5c3b9a\transformed\lifecycle-runtime-2.7.0\res
-com.example.workermanager.app-animation-core-release-23 C:\Users\Habibullah\.gradle\caches\transforms-3\58ce6a78213da7c37767b1a7dbc1e595\transformed\animation-core-release\res
-com.example.workermanager.app-sqlite-framework-2.4.0-24 C:\Users\Habibullah\.gradle\caches\transforms-3\6295552184921b12935fe6393906872f\transformed\sqlite-framework-2.4.0\res
-com.example.workermanager.app-sqlite-2.4.0-25 C:\Users\Habibullah\.gradle\caches\transforms-3\6728ff84a12097cb2075f97adb509f3b\transformed\sqlite-2.4.0\res
-com.example.workermanager.app-room-ktx-2.6.1-26 C:\Users\Habibullah\.gradle\caches\transforms-3\6b881cca6159bc416e48bf3e46349dc1\transformed\room-ktx-2.6.1\res
-com.example.workermanager.app-profileinstaller-1.3.0-27 C:\Users\Habibullah\.gradle\caches\transforms-3\711a527c07c5d7f146ab93115698532f\transformed\profileinstaller-1.3.0\res
-com.example.workermanager.app-ui-tooling-data-release-28 C:\Users\Habibullah\.gradle\caches\transforms-3\714ae6190042721a75b0f0b000d7caf4\transformed\ui-tooling-data-release\res
-com.example.workermanager.app-material-release-29 C:\Users\Habibullah\.gradle\caches\transforms-3\73a828f190eedd74abf90504b6e0fa34\transformed\material-release\res
-com.example.workermanager.app-activity-ktx-1.8.2-30 C:\Users\Habibullah\.gradle\caches\transforms-3\904b63528a5c0793d2b6fe10e89097a6\transformed\activity-ktx-1.8.2\res
-com.example.workermanager.app-work-runtime-ktx-2.9.0-31 C:\Users\Habibullah\.gradle\caches\transforms-3\910becc43a4494fbd4a71b8607382156\transformed\work-runtime-ktx-2.9.0\res
-com.example.workermanager.app-material-icons-extended-release-32 C:\Users\Habibullah\.gradle\caches\transforms-3\9c975b7283a2d081935920918a2f2e5c\transformed\material-icons-extended-release\res
-com.example.workermanager.app-navigation-common-ktx-2.7.7-33 C:\Users\Habibullah\.gradle\caches\transforms-3\9e079e7d4c44764505d961c947d33c76\transformed\navigation-common-ktx-2.7.7\res
-com.example.workermanager.app-ui-tooling-preview-release-34 C:\Users\Habibullah\.gradle\caches\transforms-3\a99202de65425f7a80dcf79a33db5075\transformed\ui-tooling-preview-release\res
-com.example.workermanager.app-navigation-common-2.7.7-35 C:\Users\Habibullah\.gradle\caches\transforms-3\ab217a3a4fb363f5cebab4e7522a4cac\transformed\navigation-common-2.7.7\res
-com.example.workermanager.app-core-ktx-1.12.0-36 C:\Users\Habibullah\.gradle\caches\transforms-3\acdb17279b5f376ade4cda4554d3f1a6\transformed\core-ktx-1.12.0\res
-com.example.workermanager.app-lifecycle-process-2.7.0-37 C:\Users\Habibullah\.gradle\caches\transforms-3\b5aa617bebe5bc4c2ae6066dd8ccfdbb\transformed\lifecycle-process-2.7.0\res
-com.example.workermanager.app-emoji2-1.3.0-38 C:\Users\Habibullah\.gradle\caches\transforms-3\b6f178862473c4a857126cf1f271810c\transformed\emoji2-1.3.0\res
-com.example.workermanager.app-lifecycle-viewmodel-ktx-2.7.0-39 C:\Users\Habibullah\.gradle\caches\transforms-3\bb15a68eaa27a702c74c411b29cd3dab\transformed\lifecycle-viewmodel-ktx-2.7.0\res
-com.example.workermanager.app-room-runtime-2.6.1-40 C:\Users\Habibullah\.gradle\caches\transforms-3\c2cd43fde83dd9a1a88da93eb036147e\transformed\room-runtime-2.6.1\res
-com.example.workermanager.app-runtime-saveable-release-41 C:\Users\Habibullah\.gradle\caches\transforms-3\c42bf1c63773556faf636070db0c981b\transformed\runtime-saveable-release\res
-com.example.workermanager.app-ui-util-release-42 C:\Users\Habibullah\.gradle\caches\transforms-3\ce13375f0b5bc893215ec2fe2022dc99\transformed\ui-util-release\res
-com.example.workermanager.app-lifecycle-livedata-core-ktx-2.7.0-43 C:\Users\Habibullah\.gradle\caches\transforms-3\d64b0c791d6e535a5ddaa802b13ee659\transformed\lifecycle-livedata-core-ktx-2.7.0\res
-com.example.workermanager.app-material-ripple-release-44 C:\Users\Habibullah\.gradle\caches\transforms-3\d86fe5ea2a3eb20754529a97e5a87cbb\transformed\material-ripple-release\res
-com.example.workermanager.app-lifecycle-livedata-2.7.0-45 C:\Users\Habibullah\.gradle\caches\transforms-3\d967a84d41ba3aa022a0892df2e835c1\transformed\lifecycle-livedata-2.7.0\res
-com.example.workermanager.app-navigation-compose-2.7.7-46 C:\Users\Habibullah\.gradle\caches\transforms-3\e00df48be917bbb57546ef4f5ac67b6e\transformed\navigation-compose-2.7.7\res
-com.example.workermanager.app-activity-1.8.2-47 C:\Users\Habibullah\.gradle\caches\transforms-3\e013323023ae21a52cd28e6dfc69827b\transformed\activity-1.8.2\res
-com.example.workermanager.app-ui-text-release-48 C:\Users\Habibullah\.gradle\caches\transforms-3\e0d3a49ac714560862b07e1506603510\transformed\ui-text-release\res
-com.example.workermanager.app-savedstate-ktx-1.2.1-49 C:\Users\Habibullah\.gradle\caches\transforms-3\e212d6daf7437ae4cee342febb5553a2\transformed\savedstate-ktx-1.2.1\res
-com.example.workermanager.app-material3-release-50 C:\Users\Habibullah\.gradle\caches\transforms-3\ea667bcb90406e9916ab2433f670e134\transformed\material3-release\res
-com.example.workermanager.app-material-icons-core-release-51 C:\Users\Habibullah\.gradle\caches\transforms-3\ea6cd37a46e9b32a813cf4ba69a26c5a\transformed\material-icons-core-release\res
-com.example.workermanager.app-navigation-runtime-2.7.7-52 C:\Users\Habibullah\.gradle\caches\transforms-3\f3f329525182701c2aac4f26f90d42ec\transformed\navigation-runtime-2.7.7\res
-com.example.workermanager.app-ui-tooling-release-53 C:\Users\Habibullah\.gradle\caches\transforms-3\f6a91301caeac5523b7440e943c9d626\transformed\ui-tooling-release\res
-com.example.workermanager.app-startup-runtime-1.1.1-54 C:\Users\Habibullah\.gradle\caches\transforms-3\f8cb9787eceb83514347ac70f11d88ce\transformed\startup-runtime-1.1.1\res
-com.example.workermanager.app-foundation-layout-release-55 C:\Users\Habibullah\.gradle\caches\transforms-3\fa0302387d37343ca685f50db9af4443\transformed\foundation-layout-release\res
-com.example.workermanager.app-lifecycle-service-2.7.0-56 C:\Users\Habibullah\.gradle\caches\transforms-3\fc2f858c1337fd7d491c03ef4c193af0\transformed\lifecycle-service-2.7.0\res
-com.example.workermanager.app-resValues-57 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\generated\res\resValues\debug
-com.example.workermanager.app-packageDebugResources-58 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.example.workermanager.app-packageDebugResources-59 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.example.workermanager.app-merged_res-60 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\merged_res\debug
-com.example.workermanager.app-debug-61 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\debug\res
-com.example.workermanager.app-main-62 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\res
+com.example.workermanager.app-room-runtime-2.6.1-0 C:\Users\Habibullah\.gradle\caches\transforms-3\03a7a7798ec4d96e0e7a6fb839d75e42\transformed\room-runtime-2.6.1\res
+com.example.workermanager.app-lifecycle-runtime-2.7.0-1 C:\Users\Habibullah\.gradle\caches\transforms-3\0547b2cbc339646a5dbdf2e50615be9c\transformed\lifecycle-runtime-2.7.0\res
+com.example.workermanager.app-navigation-common-ktx-2.7.7-2 C:\Users\Habibullah\.gradle\caches\transforms-3\0de2610441ac4d26d47461ef5b67bda7\transformed\navigation-common-ktx-2.7.7\res
+com.example.workermanager.app-browser-1.4.0-3 C:\Users\Habibullah\.gradle\caches\transforms-3\106a3e6b213962792d9c2a5896072f3e\transformed\browser-1.4.0\res
+com.example.workermanager.app-core-1.12.0-4 C:\Users\Habibullah\.gradle\caches\transforms-3\1411dbe2657e24b95991364757c0b06b\transformed\core-1.12.0\res
+com.example.workermanager.app-lifecycle-livedata-2.7.0-5 C:\Users\Habibullah\.gradle\caches\transforms-3\2321220a58ce39e3ee2ce408f3919094\transformed\lifecycle-livedata-2.7.0\res
+com.example.workermanager.app-activity-compose-1.8.2-6 C:\Users\Habibullah\.gradle\caches\transforms-3\2c11e89f8f2b405ed844712f88ec729b\transformed\activity-compose-1.8.2\res
+com.example.workermanager.app-savedstate-1.2.1-7 C:\Users\Habibullah\.gradle\caches\transforms-3\2c3c101747dd28827db5a7030f4c7a0a\transformed\savedstate-1.2.1\res
+com.example.workermanager.app-ui-util-release-8 C:\Users\Habibullah\.gradle\caches\transforms-3\345474a7e217f3666e5119b4486d5a10\transformed\ui-util-release\res
+com.example.workermanager.app-core-runtime-2.2.0-9 C:\Users\Habibullah\.gradle\caches\transforms-3\36df8f453bb10d37f3499c27a30bfcbd\transformed\core-runtime-2.2.0\res
+com.example.workermanager.app-room-ktx-2.6.1-10 C:\Users\Habibullah\.gradle\caches\transforms-3\3987d6adbe2806dd8c801655b24a1bfe\transformed\room-ktx-2.6.1\res
+com.example.workermanager.app-animation-core-release-11 C:\Users\Habibullah\.gradle\caches\transforms-3\3da011bcffae4c7147824d71b5879a83\transformed\animation-core-release\res
+com.example.workermanager.app-navigation-compose-2.7.7-12 C:\Users\Habibullah\.gradle\caches\transforms-3\3f247417169dede03544cfe35e282cb9\transformed\navigation-compose-2.7.7\res
+com.example.workermanager.app-animation-release-13 C:\Users\Habibullah\.gradle\caches\transforms-3\43b4e8cfd5efdb40b999beebd1e9ff24\transformed\animation-release\res
+com.example.workermanager.app-ui-geometry-release-14 C:\Users\Habibullah\.gradle\caches\transforms-3\44010693ca34d4e9bf4dbe1a2aff4d93\transformed\ui-geometry-release\res
+com.example.workermanager.app-navigation-runtime-2.7.7-15 C:\Users\Habibullah\.gradle\caches\transforms-3\443b03a634acc84002515aa34158477f\transformed\navigation-runtime-2.7.7\res
+com.example.workermanager.app-credentials-play-services-auth-1.2.1-16 C:\Users\Habibullah\.gradle\caches\transforms-3\45140cf9fe2de6691132efa2de35badf\transformed\credentials-play-services-auth-1.2.1\res
+com.example.workermanager.app-fragment-1.5.7-17 C:\Users\Habibullah\.gradle\caches\transforms-3\49d9aafc5223ecef37522efb854d69a3\transformed\fragment-1.5.7\res
+com.example.workermanager.app-activity-1.8.2-18 C:\Users\Habibullah\.gradle\caches\transforms-3\4a843004980aa4ed5cb637b3548a1a0e\transformed\activity-1.8.2\res
+com.example.workermanager.app-lifecycle-viewmodel-compose-2.7.0-19 C:\Users\Habibullah\.gradle\caches\transforms-3\4d75bda31f309ac21955b1e236101548\transformed\lifecycle-viewmodel-compose-2.7.0\res
+com.example.workermanager.app-activity-ktx-1.8.2-20 C:\Users\Habibullah\.gradle\caches\transforms-3\508e23a9bb7e7e8f21737ed21433f4e3\transformed\activity-ktx-1.8.2\res
+com.example.workermanager.app-lifecycle-livedata-core-2.7.0-21 C:\Users\Habibullah\.gradle\caches\transforms-3\521bcce0eda7a5c0090a59802de3d8f9\transformed\lifecycle-livedata-core-2.7.0\res
+com.example.workermanager.app-material-ripple-release-22 C:\Users\Habibullah\.gradle\caches\transforms-3\53df2f051e9765393013c54aed62b100\transformed\material-ripple-release\res
+com.example.workermanager.app-profileinstaller-1.3.0-23 C:\Users\Habibullah\.gradle\caches\transforms-3\54833122b303eb592f6d0bb113069027\transformed\profileinstaller-1.3.0\res
+com.example.workermanager.app-lifecycle-runtime-ktx-2.7.0-24 C:\Users\Habibullah\.gradle\caches\transforms-3\5e2b35a113263922b99e9b96cdc9c018\transformed\lifecycle-runtime-ktx-2.7.0\res
+com.example.workermanager.app-work-runtime-2.9.0-25 C:\Users\Habibullah\.gradle\caches\transforms-3\662c0a5e7bb24c11f8175e1891cc7d2c\transformed\work-runtime-2.9.0\res
+com.example.workermanager.app-ui-graphics-release-26 C:\Users\Habibullah\.gradle\caches\transforms-3\6b0ad72a4f518c3eac2d98ab18a564b9\transformed\ui-graphics-release\res
+com.example.workermanager.app-credentials-1.2.1-27 C:\Users\Habibullah\.gradle\caches\transforms-3\7329b6ca18c4c8e09425ad80686b3f29\transformed\credentials-1.2.1\res
+com.example.workermanager.app-lifecycle-service-2.7.0-28 C:\Users\Habibullah\.gradle\caches\transforms-3\74e04aa53e92c3b5ee018a45bd781061\transformed\lifecycle-service-2.7.0\res
+com.example.workermanager.app-material-icons-extended-release-29 C:\Users\Habibullah\.gradle\caches\transforms-3\884baf95a5795f30d0ff290fef052503\transformed\material-icons-extended-release\res
+com.example.workermanager.app-core-ktx-1.12.0-30 C:\Users\Habibullah\.gradle\caches\transforms-3\8b1b48d901a6231f002c81c4b34ce371\transformed\core-ktx-1.12.0\res
+com.example.workermanager.app-ui-test-manifest-1.6.1-31 C:\Users\Habibullah\.gradle\caches\transforms-3\8edb6106a0857ed1db2216cd1522b08c\transformed\ui-test-manifest-1.6.1\res
+com.example.workermanager.app-play-services-auth-21.0.0-32 C:\Users\Habibullah\.gradle\caches\transforms-3\8f49ed9000ba8451e44d680623b12616\transformed\play-services-auth-21.0.0\res
+com.example.workermanager.app-ui-text-release-33 C:\Users\Habibullah\.gradle\caches\transforms-3\931949658473b669dc538a5110e68880\transformed\ui-text-release\res
+com.example.workermanager.app-lifecycle-process-2.7.0-34 C:\Users\Habibullah\.gradle\caches\transforms-3\97c7d0a2ff65c904692a60c68d8064a5\transformed\lifecycle-process-2.7.0\res
+com.example.workermanager.app-sqlite-framework-2.4.0-35 C:\Users\Habibullah\.gradle\caches\transforms-3\9ac4dd284741cda968190565e516cca6\transformed\sqlite-framework-2.4.0\res
+com.example.workermanager.app-ui-tooling-release-36 C:\Users\Habibullah\.gradle\caches\transforms-3\a3c6089c3984f265d8057c89ac2037f8\transformed\ui-tooling-release\res
+com.example.workermanager.app-customview-poolingcontainer-1.0.0-37 C:\Users\Habibullah\.gradle\caches\transforms-3\a45d620fad9455f7c2e70bc2f4bd2f60\transformed\customview-poolingcontainer-1.0.0\res
+com.example.workermanager.app-lifecycle-runtime-compose-2.7.0-38 C:\Users\Habibullah\.gradle\caches\transforms-3\ac951fab23bb415117c05c8133b8c469\transformed\lifecycle-runtime-compose-2.7.0\res
+com.example.workermanager.app-play-services-base-18.0.1-39 C:\Users\Habibullah\.gradle\caches\transforms-3\b37aee2ece798d5a319eef30f32aebb1\transformed\play-services-base-18.0.1\res
+com.example.workermanager.app-lifecycle-viewmodel-savedstate-2.7.0-40 C:\Users\Habibullah\.gradle\caches\transforms-3\b4090d574945eff8909a86f66518f981\transformed\lifecycle-viewmodel-savedstate-2.7.0\res
+com.example.workermanager.app-lifecycle-viewmodel-ktx-2.7.0-41 C:\Users\Habibullah\.gradle\caches\transforms-3\b8a11f75214278eefb318031d048f601\transformed\lifecycle-viewmodel-ktx-2.7.0\res
+com.example.workermanager.app-navigation-common-2.7.7-42 C:\Users\Habibullah\.gradle\caches\transforms-3\bd00143fb22ebbb8d767b1e421e8fccc\transformed\navigation-common-2.7.7\res
+com.example.workermanager.app-annotation-experimental-1.4.0-43 C:\Users\Habibullah\.gradle\caches\transforms-3\bda831896665335549347e7c3c0f9e8f\transformed\annotation-experimental-1.4.0\res
+com.example.workermanager.app-ui-tooling-preview-release-44 C:\Users\Habibullah\.gradle\caches\transforms-3\bf8fde7b921a94ab309334a077a01dde\transformed\ui-tooling-preview-release\res
+com.example.workermanager.app-navigation-runtime-ktx-2.7.7-45 C:\Users\Habibullah\.gradle\caches\transforms-3\c249b5eb5805a945ea4f2e1d7638d43d\transformed\navigation-runtime-ktx-2.7.7\res
+com.example.workermanager.app-material3-release-46 C:\Users\Habibullah\.gradle\caches\transforms-3\c8a6b6b8feb2278211c970bcf0a7e130\transformed\material3-release\res
+com.example.workermanager.app-ui-release-47 C:\Users\Habibullah\.gradle\caches\transforms-3\c8d15ad58bfa931ed181fc3881c8abe1\transformed\ui-release\res
+com.example.workermanager.app-firebase-common-20.4.2-48 C:\Users\Habibullah\.gradle\caches\transforms-3\ca1d9717657e185611d0052770826c16\transformed\firebase-common-20.4.2\res
+com.example.workermanager.app-foundation-layout-release-49 C:\Users\Habibullah\.gradle\caches\transforms-3\ca954b3748c94ff583b72855afc728bb\transformed\foundation-layout-release\res
+com.example.workermanager.app-emoji2-1.3.0-50 C:\Users\Habibullah\.gradle\caches\transforms-3\ccb0652efdee009cc74937e8605dd8c1\transformed\emoji2-1.3.0\res
+com.example.workermanager.app-runtime-release-51 C:\Users\Habibullah\.gradle\caches\transforms-3\cfb6b4067990526f23a0231af77b8288\transformed\runtime-release\res
+com.example.workermanager.app-startup-runtime-1.1.1-52 C:\Users\Habibullah\.gradle\caches\transforms-3\d1eb4d74ef98f7b2525bc15dc326cb02\transformed\startup-runtime-1.1.1\res
+com.example.workermanager.app-sqlite-2.4.0-53 C:\Users\Habibullah\.gradle\caches\transforms-3\d3436539b47bb1fe1e9fcf0ed1cf9884\transformed\sqlite-2.4.0\res
+com.example.workermanager.app-material-release-54 C:\Users\Habibullah\.gradle\caches\transforms-3\d708d1de0c3b38875b808d8a13ccc0bf\transformed\material-release\res
+com.example.workermanager.app-lifecycle-viewmodel-2.7.0-55 C:\Users\Habibullah\.gradle\caches\transforms-3\da5234b5cfbc14923f9452766e424ed9\transformed\lifecycle-viewmodel-2.7.0\res
+com.example.workermanager.app-savedstate-ktx-1.2.1-56 C:\Users\Habibullah\.gradle\caches\transforms-3\e00ef4e3228e0b8fbca48f5416165800\transformed\savedstate-ktx-1.2.1\res
+com.example.workermanager.app-work-runtime-ktx-2.9.0-57 C:\Users\Habibullah\.gradle\caches\transforms-3\e0a4bb6d82983b3ddcd74231a9bd98cf\transformed\work-runtime-ktx-2.9.0\res
+com.example.workermanager.app-play-services-basement-18.2.0-58 C:\Users\Habibullah\.gradle\caches\transforms-3\e125d2f33e15d778b11fc2955c77b38d\transformed\play-services-basement-18.2.0\res
+com.example.workermanager.app-ui-tooling-data-release-59 C:\Users\Habibullah\.gradle\caches\transforms-3\e13cea8a4f379e57731ec152332f154d\transformed\ui-tooling-data-release\res
+com.example.workermanager.app-lifecycle-livedata-core-ktx-2.7.0-60 C:\Users\Habibullah\.gradle\caches\transforms-3\e732ca6b09553044edda834d4f118886\transformed\lifecycle-livedata-core-ktx-2.7.0\res
+com.example.workermanager.app-foundation-release-61 C:\Users\Habibullah\.gradle\caches\transforms-3\e85262ab9a4cf1aa78b09ada748a7178\transformed\foundation-release\res
+com.example.workermanager.app-ui-unit-release-62 C:\Users\Habibullah\.gradle\caches\transforms-3\ed56ff05aa346864d428077e08dd0dc7\transformed\ui-unit-release\res
+com.example.workermanager.app-runtime-saveable-release-63 C:\Users\Habibullah\.gradle\caches\transforms-3\f9020650812727d3e73db27453172906\transformed\runtime-saveable-release\res
+com.example.workermanager.app-material-icons-core-release-64 C:\Users\Habibullah\.gradle\caches\transforms-3\fd0471e49ad4c4947c400d2526bfcc1a\transformed\material-icons-core-release\res
+com.example.workermanager.app-res-65 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\generated\res\processDebugGoogleServices
+com.example.workermanager.app-resValues-66 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\generated\res\resValues\debug
+com.example.workermanager.app-packageDebugResources-67 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.workermanager.app-packageDebugResources-68 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.workermanager.app-merged_res-69 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\build\intermediates\merged_res\debug
+com.example.workermanager.app-debug-70 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\debug\res
+com.example.workermanager.app-main-71 C:\Users\Habibullah\OneDrive\Desktop\Working Site\worker attendace\app\src\main\res

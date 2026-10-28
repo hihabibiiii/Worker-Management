@@ -11,6 +11,8 @@ class WorkerApplication : Application() {
     
     val themePreferenceManager by lazy { ThemePreferenceManager(this) }
 
+    val authPreferenceManager by lazy { com.example.workermanager.data.preference.AuthPreferenceManager(this) }
+
     val siteRepository by lazy { SiteRepository(database.siteDao()) }
     
     val workerRepository by lazy { 

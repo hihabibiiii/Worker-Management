@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
+    data object Login : Screen("login", "Sign In")
+    data object Profile : Screen("profile", "My Profile")
     data object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
     data object Sites : Screen("sites", "All Sites", Icons.Default.LocationOn)
     data object Workers : Screen("workers", "Workers", Icons.Default.Groups)

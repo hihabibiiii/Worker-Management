@@ -104,6 +104,11 @@ class MainActivity : ComponentActivity() {
                 val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
                     factory = SiteExpenseViewModelFactory(app.siteExpenseRepository, app.siteRepository)
                 )
+                val authViewModel: AuthViewModel = viewModel(
+                    factory = AuthViewModelFactory(app.authPreferenceManager)
+                )
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                val startDestination = if (isLoggedIn) Screen.Dashboard.route else Screen.Login.route
 
                 val primaryNavItems = listOf(
                     Screen.Dashboard,
@@ -172,9 +177,30 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize()) {
                         NavHost(
                             navController = navController,
-                            startDestination = Screen.Dashboard.route,
+                            startDestination = startDestination,
                             modifier = Modifier.fillMaxSize()
                         ) {
+                            composable(Screen.Login.route) {
+                                com.example.workermanager.ui.screens.auth.LoginScreen(
+                                    authViewModel = authViewModel,
+                                    onLoginSuccess = {
+                                        navController.navigate(Screen.Dashboard.route) {
+                                            popUpTo(Screen.Login.route) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
+                            composable(Screen.Profile.route) {
+                                com.example.workermanager.ui.screens.profile.ProfileScreen(
+                                    authViewModel = authViewModel,
+                                    onBack = { navController.popBackStack() },
+                                    onLogout = {
+                                        navController.navigate(Screen.Login.route) {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
                             composable(Screen.Dashboard.route) {
                                 DashboardScreen(
                                     viewModel = dashboardViewModel,
@@ -324,7 +350,8 @@ class MainActivity : ComponentActivity() {
                                 SettingsScreen(
                                     viewModel = settingsViewModel,
                                     onBack = { navController.popBackStack() },
-                                    onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) }
+                                    onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
+                                    onOpenProfile = { navController.navigate(Screen.Profile.route) }
                                 )
                             }
                         }

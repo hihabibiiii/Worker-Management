@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-68:/values-af/values-af.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-af/values-af.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c8d15ad58bfa931ed181fc3881c8abe1\\transformed\\ui-release\\res\\values-af\\values-af.xml",

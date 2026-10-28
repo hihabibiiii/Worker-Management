@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-68:/values-ka/values-ka.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-ka/values-ka.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\e85262ab9a4cf1aa78b09ada748a7178\\transformed\\foundation-release\\res\\values-ka\\values-ka.xml",

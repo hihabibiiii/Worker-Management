@@ -26,12 +26,22 @@ class AuthPreferenceManager(context: Context) {
         FirebaseAuth.getInstance().addAuthStateListener { firebaseAuth ->
             val user = firebaseAuth.currentUser
             if (user != null) {
-                val profile = UserProfile(
-                    userId = user.uid,
-                    email = user.email ?: "",
-                    displayName = user.displayName ?: (user.email?.substringBefore("@") ?: "User"),
-                    photoUrl = user.photoUrl?.toString() ?: ""
-                )
+                val existing = getSavedUserProfile()
+                val profile = if (existing != null && (existing.userId == user.uid || existing.userId.isBlank())) {
+                    existing.copy(
+                        userId = user.uid,
+                        email = existing.email.ifBlank { user.email ?: "" },
+                        displayName = existing.displayName.ifBlank { user.displayName ?: (user.email?.substringBefore("@") ?: "User") },
+                        photoUrl = existing.photoUrl.ifBlank { user.photoUrl?.toString() ?: "" }
+                    )
+                } else {
+                    UserProfile(
+                        userId = user.uid,
+                        email = user.email ?: "",
+                        displayName = user.displayName ?: (user.email?.substringBefore("@") ?: "User"),
+                        photoUrl = user.photoUrl?.toString() ?: ""
+                    )
+                }
                 saveSession(profile)
             } else {
                 _isLoggedIn.value = false
@@ -45,8 +55,8 @@ class AuthPreferenceManager(context: Context) {
     }
 
     private fun getSavedUserProfile(): UserProfile? {
-        val fbUser = FirebaseAuth.getInstance().currentUser
-        if (fbUser != null) {
+        if (!prefs.getBoolean(KEY_IS_LOGGED_IN, false)) {
+            val fbUser = FirebaseAuth.getInstance().currentUser ?: return null
             return UserProfile(
                 userId = fbUser.uid,
                 email = fbUser.email ?: "",
@@ -54,13 +64,19 @@ class AuthPreferenceManager(context: Context) {
                 photoUrl = fbUser.photoUrl?.toString() ?: ""
             )
         }
-        if (!prefs.getBoolean(KEY_IS_LOGGED_IN, false)) return null
         val userId = prefs.getString(KEY_USER_ID, "") ?: ""
         val email = prefs.getString(KEY_USER_EMAIL, "") ?: ""
         val displayName = prefs.getString(KEY_DISPLAY_NAME, "") ?: ""
         val photoUrl = prefs.getString(KEY_PHOTO_URL, "") ?: ""
-        if (userId.isBlank() && email.isBlank()) return null
-        return UserProfile(userId, email, displayName, photoUrl)
+
+        val fbUser = FirebaseAuth.getInstance().currentUser
+        val finalUserId = userId.ifBlank { fbUser?.uid ?: "" }
+        val finalEmail = email.ifBlank { fbUser?.email ?: "" }
+        val finalDisplayName = displayName.ifBlank { fbUser?.displayName ?: (finalEmail.substringBefore("@").ifBlank { "User" }) }
+        val finalPhotoUrl = photoUrl.ifBlank { fbUser?.photoUrl?.toString() ?: "" }
+
+        if (finalUserId.isBlank() && finalEmail.isBlank()) return null
+        return UserProfile(finalUserId, finalEmail, finalDisplayName, finalPhotoUrl)
     }
 
     fun saveSession(userProfile: UserProfile) {

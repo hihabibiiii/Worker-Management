@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-68:/values-en-rIN/values-en-rIN.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-en-rIN/values-en-rIN.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\7329b6ca18c4c8e09425ad80686b3f29\\transformed\\credentials-1.2.1\\res\\values-en-rIN\\values-en-rIN.xml",

@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -118,6 +119,7 @@ class MainActivity : ComponentActivity() {
                 )
 
                 val moreNavItems = listOf(
+                    Screen.Profile,
                     Screen.Sites,
                     Screen.Contracts,
                     Screen.SiteExpenses,
@@ -495,17 +497,23 @@ class MainActivity : ComponentActivity() {
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             moreNavItems.forEach { screen ->
+                                                val isProfile = screen == Screen.Profile
                                                 Surface(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .height(48.dp)
+                                                        .height(if (isProfile) 56.dp else 48.dp)
                                                         .clip(RoundedCornerShape(14.dp))
                                                         .clickable {
                                                             showMoreSheet = false
                                                             navigateToTab(screen.route)
                                                         },
                                                     shape = RoundedCornerShape(14.dp),
-                                                    color = Color.Transparent
+                                                    color = if (isProfile) {
+                                                        if (isDark) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color(0xFFEBF3FF)
+                                                    } else Color.Transparent,
+                                                    border = if (isProfile) {
+                                                        BorderStroke(1.dp, Color(0xFF1677F8).copy(alpha = 0.3f))
+                                                    } else null
                                                 ) {
                                                     Row(
                                                         modifier = Modifier
@@ -516,9 +524,9 @@ class MainActivity : ComponentActivity() {
                                                     ) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .size(32.dp)
+                                                                .size(if (isProfile) 36.dp else 32.dp)
                                                                 .background(
-                                                                    if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD),
+                                                                    if (isProfile) Color(0xFF1677F8) else (if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF1F6FD)),
                                                                     CircleShape
                                                                 ),
                                                             contentAlignment = Alignment.Center
@@ -527,20 +535,42 @@ class MainActivity : ComponentActivity() {
                                                                 Icon(
                                                                     imageVector = it,
                                                                     contentDescription = null,
-                                                                    tint = MaterialTheme.colorScheme.primary,
-                                                                    modifier = Modifier.size(18.dp)
+                                                                    tint = if (isProfile) Color.White else MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.size(if (isProfile) 20.dp else 18.dp)
                                                                 )
                                                             }
                                                         }
 
-                                                        Text(
-                                                            text = screen.title,
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            fontWeight = FontWeight.SemiBold,
-                                                            fontSize = 14.sp,
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis,
-                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        Column(
+                                                            modifier = Modifier.weight(1f),
+                                                            verticalArrangement = Arrangement.Center
+                                                        ) {
+                                                            Text(
+                                                                text = screen.title,
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                fontWeight = if (isProfile) FontWeight.Bold else FontWeight.SemiBold,
+                                                                fontSize = 14.sp,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis,
+                                                                color = MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                            if (isProfile) {
+                                                                Text(
+                                                                    text = "Manage your account",
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    fontSize = 11.sp,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis
+                                                                )
+                                                            }
+                                                        }
+
+                                                        Icon(
+                                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                            contentDescription = null,
+                                                            tint = if (isProfile) Color(0xFF1677F8) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                            modifier = Modifier.size(20.dp)
                                                         )
                                                     }
                                                 }

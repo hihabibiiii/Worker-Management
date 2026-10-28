@@ -95,6 +95,9 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
     implementation("com.google.android.gms:play-services-auth:21.0.0")
 
+    // Image Loading
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth-ktx")

@@ -45,6 +45,7 @@ object PaymentSyncEngine {
                 if (resolvedWorkerId == null || resolvedSiteId == null) continue
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = PaymentMapper.toEntity(
                         cloudDto,
                         localWorkerId = resolvedWorkerId,
@@ -80,8 +81,13 @@ object PaymentSyncEngine {
 
                     val dto = PaymentMapper.toDTO(localItem, workerSyncId = workerSyncId, siteSyncId = siteSyncId)
                     payRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    paymentDao.updatePayment(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed payment: ${localItem.amount} (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        paymentDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged payment tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        paymentDao.updatePayment(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed payment: ${localItem.amount} (${localItem.syncId})")
+                    }
                 }
             }
 

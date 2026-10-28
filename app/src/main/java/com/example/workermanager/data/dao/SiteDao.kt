@@ -33,18 +33,24 @@ interface SiteDao {
     @Delete
     suspend fun deleteSite(site: SiteEntity)
 
-    @Query("UPDATE sites SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE sites SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
     suspend fun softDeleteSite(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE sites SET isDeleted = 0, deletedAt = NULL WHERE id = :id")
-    suspend fun restoreSite(id: Long)
+    @Query("UPDATE sites SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    suspend fun restoreSite(id: Long, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM sites WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    @Query("SELECT * FROM sites WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedSites(): Flow<List<SiteEntity>>
+
+    @Query("UPDATE sites SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM sites WHERE id = :id AND isDeleted = 1")
     suspend fun permanentlyDeleteSite(id: Long)
 
-    @Query("DELETE FROM sites WHERE isDeleted = 1")
+    @Query("DELETE FROM sites WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
+
+    @Query("DELETE FROM sites WHERE isDeleted = 1 AND syncOrigin = 0")
     suspend fun emptySiteTrash()
 }

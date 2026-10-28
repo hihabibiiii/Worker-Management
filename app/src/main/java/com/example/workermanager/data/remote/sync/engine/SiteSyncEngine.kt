@@ -37,7 +37,7 @@ object SiteSyncEngine {
                 val existingLocal = localSitesMap[cloudDto.syncId]
 
                 if (existingLocal == null) {
-                    // New cloud record -> Insert into local Room
+                    if (cloudDto.isDeleted) continue
                     val entity = SiteMapper.toEntity(cloudDto).copy(isPendingSync = false)
                     siteDao.insertSite(entity)
                     Log.d(TAG, "Pulled new site from cloud: ${cloudDto.name} (${cloudDto.syncId})")
@@ -62,8 +62,13 @@ object SiteSyncEngine {
                 if (cloudDto == null || localSite.updatedAt > cloudDto.updatedAt) {
                     val dto = SiteMapper.toDTO(localSite)
                     sitesRef.document(localSite.syncId).set(dto, SetOptions.merge()).await()
-                    siteDao.updateSite(localSite.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed local site to cloud: ${localSite.name} (${localSite.syncId})")
+                    if (localSite.deletedAt == -1L) {
+                        siteDao.deleteBySyncId(localSite.syncId)
+                        Log.d(TAG, "Permanently purged site tombstone after cloud ack: ${localSite.syncId}")
+                    } else {
+                        siteDao.updateSite(localSite.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed local site to cloud: ${localSite.name} (${localSite.syncId})")
+                    }
                 }
             }
 

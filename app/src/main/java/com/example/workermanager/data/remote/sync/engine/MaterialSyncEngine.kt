@@ -35,6 +35,7 @@ object MaterialSyncEngine {
                 val existingLocal = localMaterialsMap[cloudDto.syncId]
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = MaterialMapper.toEntity(cloudDto)
                     materialDao.insertMaterial(entity)
                     Log.d(TAG, "Pulled new material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
@@ -58,8 +59,13 @@ object MaterialSyncEngine {
                 if (cloudDto == null || localMaterial.updatedAt > cloudDto.updatedAt) {
                     val dto = MaterialMapper.toDTO(localMaterial)
                     materialsRef.document(localMaterial.syncId).set(dto, SetOptions.merge()).await()
-                    materialDao.updateMaterial(localMaterial.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed local material to cloud: ${localMaterial.name} (${localMaterial.syncId})")
+                    if (localMaterial.deletedAt == -1L) {
+                        materialDao.deleteBySyncId(localMaterial.syncId)
+                        Log.d(TAG, "Permanently purged material tombstone after cloud ack: ${localMaterial.syncId}")
+                    } else {
+                        materialDao.updateMaterial(localMaterial.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed local material to cloud: ${localMaterial.name} (${localMaterial.syncId})")
+                    }
                 }
             }
 

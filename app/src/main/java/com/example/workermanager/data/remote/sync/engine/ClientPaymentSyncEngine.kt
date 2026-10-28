@@ -41,6 +41,7 @@ object ClientPaymentSyncEngine {
                 if (resolvedContractId == null) continue
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = ClientPaymentMapper.toEntity(cloudDto, localContractId = resolvedContractId).copy(isPendingSync = false)
                     clientPaymentDao.insertPayment(entity)
                     Log.d(TAG, "Pulled client payment: ${cloudDto.amount} (${cloudDto.syncId})")
@@ -66,8 +67,13 @@ object ClientPaymentSyncEngine {
 
                     val dto = ClientPaymentMapper.toDTO(localItem, contractSyncId = contractSyncId)
                     cPayRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    clientPaymentDao.updatePayment(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed client payment: ${localItem.amount} (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        clientPaymentDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged client payment tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        clientPaymentDao.updatePayment(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed client payment: ${localItem.amount} (${localItem.syncId})")
+                    }
                 }
             }
 

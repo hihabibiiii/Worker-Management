@@ -30,18 +30,24 @@ interface ClientPaymentDao {
     @Delete
     suspend fun deletePayment(payment: ClientPaymentEntity)
 
-    @Query("UPDATE client_payments SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE client_payments SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
     suspend fun softDeleteClientPayment(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE client_payments SET isDeleted = 0, deletedAt = NULL WHERE id = :id")
-    suspend fun restoreClientPayment(id: Long)
+    @Query("UPDATE client_payments SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    suspend fun restoreClientPayment(id: Long, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM client_payments WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    @Query("SELECT * FROM client_payments WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedClientPayments(): Flow<List<ClientPaymentEntity>>
+
+    @Query("UPDATE client_payments SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM client_payments WHERE id = :id AND isDeleted = 1")
     suspend fun permanentlyDeleteClientPayment(id: Long)
 
-    @Query("DELETE FROM client_payments WHERE isDeleted = 1")
+    @Query("DELETE FROM client_payments WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
+
+    @Query("DELETE FROM client_payments WHERE isDeleted = 1 AND syncOrigin = 0")
     suspend fun emptyClientPaymentTrash()
 }

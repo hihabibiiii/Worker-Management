@@ -52,7 +52,11 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
 
   private final SharedSQLiteStatement __preparedStmtOfRestoreClientPayment;
 
+  private final SharedSQLiteStatement __preparedStmtOfMarkPendingPermanentDelete;
+
   private final SharedSQLiteStatement __preparedStmtOfPermanentlyDeleteClientPayment;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteBySyncId;
 
   private final SharedSQLiteStatement __preparedStmtOfEmptyClientPaymentTrash;
 
@@ -154,7 +158,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE client_payments SET isDeleted = 1, deletedAt = ? WHERE id = ?";
+        final String _query = "UPDATE client_payments SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
         return _query;
       }
     };
@@ -162,7 +166,15 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE client_payments SET isDeleted = 0, deletedAt = NULL WHERE id = ?";
+        final String _query = "UPDATE client_payments SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfMarkPendingPermanentDelete = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE client_payments SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ? AND syncOrigin != 0";
         return _query;
       }
     };
@@ -174,11 +186,19 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
         return _query;
       }
     };
+    this.__preparedStmtOfDeleteBySyncId = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM client_payments WHERE syncId = ?";
+        return _query;
+      }
+    };
     this.__preparedStmtOfEmptyClientPaymentTrash = new SharedSQLiteStatement(__db) {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "DELETE FROM client_payments WHERE isDeleted = 1";
+        final String _query = "DELETE FROM client_payments WHERE isDeleted = 1 AND syncOrigin = 0";
         return _query;
       }
     };
@@ -252,6 +272,8 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, deletedAt);
         _argIndex = 2;
+        _stmt.bindLong(_argIndex, deletedAt);
+        _argIndex = 3;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -270,13 +292,16 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
   }
 
   @Override
-  public Object restoreClientPayment(final long id, final Continuation<? super Unit> $completion) {
+  public Object restoreClientPayment(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
       public Unit call() throws Exception {
         final SupportSQLiteStatement _stmt = __preparedStmtOfRestoreClientPayment.acquire();
         int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -289,6 +314,34 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
           }
         } finally {
           __preparedStmtOfRestoreClientPayment.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markPendingPermanentDelete(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfMarkPendingPermanentDelete.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfMarkPendingPermanentDelete.release(_stmt);
         }
       }
     }, $completion);
@@ -315,6 +368,31 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
           }
         } finally {
           __preparedStmtOfPermanentlyDeleteClientPayment.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteBySyncId(final String syncId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteBySyncId.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, syncId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteBySyncId.release(_stmt);
         }
       }
     }, $completion);
@@ -699,7 +777,7 @@ public final class ClientPaymentDao_Impl implements ClientPaymentDao {
 
   @Override
   public Flow<List<ClientPaymentEntity>> getDeletedClientPayments() {
-    final String _sql = "SELECT * FROM client_payments WHERE isDeleted = 1 ORDER BY deletedAt DESC";
+    final String _sql = "SELECT * FROM client_payments WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"client_payments"}, new Callable<List<ClientPaymentEntity>>() {
       @Override

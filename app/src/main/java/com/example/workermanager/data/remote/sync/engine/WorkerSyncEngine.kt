@@ -40,6 +40,7 @@ object WorkerSyncEngine {
                 } else null
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = WorkerMapper.toEntity(cloudDto, localSiteId = resolvedSiteId).copy(isPendingSync = false)
                     workerDao.insertWorker(entity)
                     Log.d(TAG, "Pulled new worker from cloud: ${cloudDto.name} (${cloudDto.syncId})")
@@ -67,8 +68,13 @@ object WorkerSyncEngine {
 
                     val dto = WorkerMapper.toDTO(localWorker, siteSyncId = siteSyncId)
                     workersRef.document(localWorker.syncId).set(dto, SetOptions.merge()).await()
-                    workerDao.updateWorker(localWorker.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed local worker to cloud: ${localWorker.name} (${localWorker.syncId})")
+                    if (localWorker.deletedAt == -1L) {
+                        workerDao.deleteBySyncId(localWorker.syncId)
+                        Log.d(TAG, "Permanently purged worker tombstone after cloud ack: ${localWorker.syncId}")
+                    } else {
+                        workerDao.updateWorker(localWorker.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed local worker to cloud: ${localWorker.name} (${localWorker.syncId})")
+                    }
                 }
             }
 

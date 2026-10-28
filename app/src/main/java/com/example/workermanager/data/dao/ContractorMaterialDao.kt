@@ -27,6 +27,21 @@ interface ContractorMaterialDao {
     @Query("UPDATE contractor_materials SET isActive = :active, updatedAt = :updatedAt WHERE id = :id")
     suspend fun setMaterialActiveStatus(id: Long, active: Boolean, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE contractor_materials SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE contractor_materials SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
     suspend fun softDeleteMaterial(id: Long, deletedAt: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM contractor_materials WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
+    fun getDeletedMaterials(): Flow<List<ContractorMaterialEntity>>
+
+    @Query("UPDATE contractor_materials SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM contractor_materials WHERE id = :id AND isDeleted = 1")
+    suspend fun permanentlyDeleteMaterial(id: Long)
+
+    @Query("DELETE FROM contractor_materials WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
+
+    @Query("DELETE FROM contractor_materials WHERE isDeleted = 1 AND syncOrigin = 0")
+    suspend fun emptyMaterialTrash()
 }

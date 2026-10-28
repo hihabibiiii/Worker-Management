@@ -41,6 +41,7 @@ object SiteExpenseSyncEngine {
                 if (resolvedSiteId == null) continue
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = SiteExpenseMapper.toEntity(cloudDto, localSiteId = resolvedSiteId).copy(isPendingSync = false)
                     expenseDao.insertExpense(entity)
                     Log.d(TAG, "Pulled expense: ${cloudDto.description} (${cloudDto.syncId})")
@@ -66,8 +67,13 @@ object SiteExpenseSyncEngine {
 
                     val dto = SiteExpenseMapper.toDTO(localItem, siteSyncId = siteSyncId)
                     expRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    expenseDao.updateExpense(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed expense: ${localItem.description} (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        expenseDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged expense tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        expenseDao.updateExpense(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed expense: ${localItem.description} (${localItem.syncId})")
+                    }
                 }
             }
 

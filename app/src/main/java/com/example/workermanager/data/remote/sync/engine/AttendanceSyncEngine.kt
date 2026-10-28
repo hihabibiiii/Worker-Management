@@ -45,6 +45,7 @@ object AttendanceSyncEngine {
                 if (resolvedWorkerId == null || resolvedSiteId == null) continue
 
                 if (existingLocal == null) {
+                    if (false) continue // AttendanceDTO does not have isDeleted flag
                     val entity = AttendanceMapper.toEntity(
                         cloudDto,
                         localWorkerId = resolvedWorkerId,

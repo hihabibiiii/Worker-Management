@@ -30,19 +30,25 @@ interface WorkerDao {
     @Delete
     suspend fun deleteWorker(worker: WorkerEntity)
 
-    @Query("UPDATE workers SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE workers SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
     suspend fun softDeleteWorker(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE workers SET isDeleted = 0, deletedAt = NULL WHERE id = :id")
-    suspend fun restoreWorker(id: Long)
+    @Query("UPDATE workers SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    suspend fun restoreWorker(id: Long, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM workers WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    @Query("SELECT * FROM workers WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedWorkers(): Flow<List<WorkerEntity>>
+
+    @Query("UPDATE workers SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM workers WHERE id = :id AND isDeleted = 1")
     suspend fun permanentlyDeleteWorker(id: Long)
 
-    @Query("DELETE FROM workers WHERE isDeleted = 1")
+    @Query("DELETE FROM workers WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
+
+    @Query("DELETE FROM workers WHERE isDeleted = 1 AND syncOrigin = 0")
     suspend fun emptyWorkerTrash()
 
     @Query("SELECT * FROM workers WHERE isDeleted = 0 AND (name LIKE '%' || :query || '%' OR phone LIKE '%' || :query || '%')")

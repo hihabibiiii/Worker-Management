@@ -35,6 +35,7 @@ object ContractorMaterialSyncEngine {
                 val existingLocal = localMaterialsMap[cloudDto.syncId]
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = ContractorMaterialMapper.toEntity(cloudDto)
                     contractorMaterialDao.insertMaterial(entity)
                     Log.d(TAG, "Pulled new contractor material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
@@ -58,8 +59,13 @@ object ContractorMaterialSyncEngine {
                 if (cloudDto == null || localMaterial.updatedAt > cloudDto.updatedAt) {
                     val dto = ContractorMaterialMapper.toDTO(localMaterial)
                     cMatRef.document(localMaterial.syncId).set(dto, SetOptions.merge()).await()
-                    contractorMaterialDao.updateMaterial(localMaterial.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed local contractor material to cloud: ${localMaterial.name} (${localMaterial.syncId})")
+                    if (localMaterial.deletedAt == -1L) {
+                        contractorMaterialDao.deleteBySyncId(localMaterial.syncId)
+                        Log.d(TAG, "Permanently purged contractor material tombstone after cloud ack: ${localMaterial.syncId}")
+                    } else {
+                        contractorMaterialDao.updateMaterial(localMaterial.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed local contractor material to cloud: ${localMaterial.name} (${localMaterial.syncId})")
+                    }
                 }
             }
 

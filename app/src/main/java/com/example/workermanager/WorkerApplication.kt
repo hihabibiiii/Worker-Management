@@ -56,21 +56,30 @@ class UserSessionManager(private val context: Application) {
                 closeSessionInternal(current)
             }
 
+            val syncTrigger = {
+                com.example.workermanager.util.CloudSyncWorker.scheduleImmediateSync(context)
+            }
+
             val db = AppDatabase.getDatabaseForUser(context, userId)
             val session = UserSession(
                 userId = userId,
                 database = db,
-                siteRepository = SiteRepository(db.siteDao()),
-                workerRepository = WorkerRepository(db.workerDao(), db.workerSiteHistoryDao(), db.siteDao()),
-                attendanceRepository = AttendanceRepository(db.attendanceDao(), db.siteAttendanceDao()),
-                paymentRepository = PaymentRepository(db.paymentDao()),
-                contractRepository = ContractRepository(db.contractDao()),
-                clientPaymentRepository = ClientPaymentRepository(db.clientPaymentDao()),
-                siteExpenseRepository = SiteExpenseRepository(db.siteExpenseDao(), db.siteExpensePaymentDao()),
-                materialRepository = MaterialRepository(db.materialDao(), db.materialTransactionDao()),
-                contractorMaterialRepository = ContractorMaterialRepository(db.contractorMaterialDao(), db.contractorMaterialTransactionDao())
+                siteRepository = SiteRepository(db.siteDao(), syncTrigger),
+                workerRepository = WorkerRepository(db.workerDao(), db.workerSiteHistoryDao(), db.siteDao(), syncTrigger),
+                attendanceRepository = AttendanceRepository(db.attendanceDao(), db.siteAttendanceDao(), syncTrigger),
+                paymentRepository = PaymentRepository(db.paymentDao(), syncTrigger),
+                contractRepository = ContractRepository(db.contractDao(), syncTrigger),
+                clientPaymentRepository = ClientPaymentRepository(db.clientPaymentDao(), syncTrigger),
+                siteExpenseRepository = SiteExpenseRepository(db.siteExpenseDao(), db.siteExpensePaymentDao(), syncTrigger),
+                materialRepository = MaterialRepository(db.materialDao(), db.materialTransactionDao(), syncTrigger),
+                contractorMaterialRepository = ContractorMaterialRepository(db.contractorMaterialDao(), db.contractorMaterialTransactionDao(), syncTrigger)
             )
             activeSession = session
+
+            // Attach real-time cloud listeners & schedule initial sync
+            com.example.workermanager.data.remote.sync.engine.FirestoreRealtimeSyncManager.startListening(session)
+            com.example.workermanager.util.CloudSyncWorker.scheduleImmediateSync(context)
+
             return session
         }
     }
@@ -87,6 +96,7 @@ class UserSessionManager(private val context: Application) {
 
     private fun closeSessionInternal(session: UserSession) {
         try {
+            com.example.workermanager.data.remote.sync.engine.FirestoreRealtimeSyncManager.stopListening()
             session.sessionScope.cancel()
         } catch (e: Exception) {
             Log.e("UserSessionManager", "Error cancelling session scope for ${session.userId}", e)

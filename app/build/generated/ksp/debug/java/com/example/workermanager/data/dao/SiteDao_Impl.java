@@ -51,7 +51,11 @@ public final class SiteDao_Impl implements SiteDao {
 
   private final SharedSQLiteStatement __preparedStmtOfRestoreSite;
 
+  private final SharedSQLiteStatement __preparedStmtOfMarkPendingPermanentDelete;
+
   private final SharedSQLiteStatement __preparedStmtOfPermanentlyDeleteSite;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteBySyncId;
 
   private final SharedSQLiteStatement __preparedStmtOfEmptySiteTrash;
 
@@ -147,7 +151,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE sites SET isDeleted = 1, deletedAt = ? WHERE id = ?";
+        final String _query = "UPDATE sites SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
         return _query;
       }
     };
@@ -155,7 +159,15 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE sites SET isDeleted = 0, deletedAt = NULL WHERE id = ?";
+        final String _query = "UPDATE sites SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfMarkPendingPermanentDelete = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE sites SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ? AND syncOrigin != 0";
         return _query;
       }
     };
@@ -167,11 +179,19 @@ public final class SiteDao_Impl implements SiteDao {
         return _query;
       }
     };
+    this.__preparedStmtOfDeleteBySyncId = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM sites WHERE syncId = ?";
+        return _query;
+      }
+    };
     this.__preparedStmtOfEmptySiteTrash = new SharedSQLiteStatement(__db) {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "DELETE FROM sites WHERE isDeleted = 1";
+        final String _query = "DELETE FROM sites WHERE isDeleted = 1 AND syncOrigin = 0";
         return _query;
       }
     };
@@ -242,6 +262,8 @@ public final class SiteDao_Impl implements SiteDao {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, deletedAt);
         _argIndex = 2;
+        _stmt.bindLong(_argIndex, deletedAt);
+        _argIndex = 3;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -260,13 +282,16 @@ public final class SiteDao_Impl implements SiteDao {
   }
 
   @Override
-  public Object restoreSite(final long id, final Continuation<? super Unit> $completion) {
+  public Object restoreSite(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
       public Unit call() throws Exception {
         final SupportSQLiteStatement _stmt = __preparedStmtOfRestoreSite.acquire();
         int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -279,6 +304,34 @@ public final class SiteDao_Impl implements SiteDao {
           }
         } finally {
           __preparedStmtOfRestoreSite.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markPendingPermanentDelete(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfMarkPendingPermanentDelete.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfMarkPendingPermanentDelete.release(_stmt);
         }
       }
     }, $completion);
@@ -304,6 +357,31 @@ public final class SiteDao_Impl implements SiteDao {
           }
         } finally {
           __preparedStmtOfPermanentlyDeleteSite.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteBySyncId(final String syncId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteBySyncId.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, syncId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteBySyncId.release(_stmt);
         }
       }
     }, $completion);
@@ -846,7 +924,7 @@ public final class SiteDao_Impl implements SiteDao {
 
   @Override
   public Flow<List<SiteEntity>> getDeletedSites() {
-    final String _sql = "SELECT * FROM sites WHERE isDeleted = 1 ORDER BY deletedAt DESC";
+    final String _sql = "SELECT * FROM sites WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"sites"}, new Callable<List<SiteEntity>>() {
       @Override

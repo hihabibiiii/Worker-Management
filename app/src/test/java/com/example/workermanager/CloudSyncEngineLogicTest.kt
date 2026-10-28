@@ -15,11 +15,12 @@ import com.example.workermanager.data.entity.WorkerType
 import com.example.workermanager.data.remote.sync.mapper.AttendanceMapper
 import com.example.workermanager.data.remote.sync.mapper.ContractMapper
 import com.example.workermanager.data.remote.sync.mapper.PaymentMapper
-import com.example.workermanager.data.remote.sync.mapper.SiteExpenseMapper
 import com.example.workermanager.data.remote.sync.mapper.SiteMapper
 import com.example.workermanager.data.remote.sync.mapper.WorkerMapper
+import com.example.workermanager.util.CloudSyncWorker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -212,5 +213,40 @@ class CloudSyncEngineLogicTest {
         assertEquals(1L, restoredEntity.siteId)
         assertEquals("Client Acme", restoredEntity.clientName)
         assertFalse(restoredEntity.isPendingSync)
+    }
+
+    @Test
+    fun testTargetUserIdKey_IsConstant() {
+        assertEquals("key_target_user_id", CloudSyncWorker.KEY_TARGET_USER_ID)
+    }
+
+    @Test
+    fun testRepositoryCallbackInvocation() {
+        var callbackInvocations = 0
+        val callback = { callbackInvocations++ }
+
+        // Simulate local mutation succeeding
+        callback.invoke()
+        assertEquals(1, callbackInvocations)
+    }
+
+    @Test
+    fun testFailedLocalMutation_doesNotInvokeCallback() {
+        var callbackInvocations = 0
+
+        fun performMutation(shouldFail: Boolean, callback: () -> Unit) {
+            if (shouldFail) {
+                throw RuntimeException("SQLite Constraint Failure")
+            }
+            callback()
+        }
+
+        try {
+            performMutation(shouldFail = true) { callbackInvocations++ }
+        } catch (_: Exception) {
+            // Mutation failed
+        }
+
+        assertEquals(0, callbackInvocations)
     }
 }

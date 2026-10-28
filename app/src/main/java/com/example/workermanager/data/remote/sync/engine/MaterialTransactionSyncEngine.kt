@@ -47,6 +47,7 @@ object MaterialTransactionSyncEngine {
                 val resolvedTargetSiteId = if (!cloudDto.targetSiteSyncId.isNullOrBlank()) siteDao.getSiteBySyncId(cloudDto.targetSiteSyncId!!)?.id else null
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = MaterialTransactionMapper.toEntity(
                         cloudDto,
                         localMaterialId = resolvedMaterialId,
@@ -91,8 +92,13 @@ object MaterialTransactionSyncEngine {
                         targetSiteSyncId = targetSiteSyncId
                     )
                     matTxRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    transactionDao.updateTransaction(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed material transaction: (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        transactionDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged material transaction tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        transactionDao.updateTransaction(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed material transaction: (${localItem.syncId})")
+                    }
                 }
             }
 

@@ -51,7 +51,11 @@ public final class ContractDao_Impl implements ContractDao {
 
   private final SharedSQLiteStatement __preparedStmtOfRestoreContract;
 
+  private final SharedSQLiteStatement __preparedStmtOfMarkPendingPermanentDelete;
+
   private final SharedSQLiteStatement __preparedStmtOfPermanentlyDeleteContract;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteBySyncId;
 
   private final SharedSQLiteStatement __preparedStmtOfEmptyContractTrash;
 
@@ -159,7 +163,7 @@ public final class ContractDao_Impl implements ContractDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE contracts SET isDeleted = 1, deletedAt = ? WHERE id = ?";
+        final String _query = "UPDATE contracts SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
         return _query;
       }
     };
@@ -167,7 +171,15 @@ public final class ContractDao_Impl implements ContractDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE contracts SET isDeleted = 0, deletedAt = NULL WHERE id = ?";
+        final String _query = "UPDATE contracts SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfMarkPendingPermanentDelete = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE contracts SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ? AND syncOrigin != 0";
         return _query;
       }
     };
@@ -179,11 +191,19 @@ public final class ContractDao_Impl implements ContractDao {
         return _query;
       }
     };
+    this.__preparedStmtOfDeleteBySyncId = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM contracts WHERE syncId = ?";
+        return _query;
+      }
+    };
     this.__preparedStmtOfEmptyContractTrash = new SharedSQLiteStatement(__db) {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "DELETE FROM contracts WHERE isDeleted = 1";
+        final String _query = "DELETE FROM contracts WHERE isDeleted = 1 AND syncOrigin = 0";
         return _query;
       }
     };
@@ -257,6 +277,8 @@ public final class ContractDao_Impl implements ContractDao {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, deletedAt);
         _argIndex = 2;
+        _stmt.bindLong(_argIndex, deletedAt);
+        _argIndex = 3;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -275,13 +297,16 @@ public final class ContractDao_Impl implements ContractDao {
   }
 
   @Override
-  public Object restoreContract(final long id, final Continuation<? super Unit> $completion) {
+  public Object restoreContract(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
       public Unit call() throws Exception {
         final SupportSQLiteStatement _stmt = __preparedStmtOfRestoreContract.acquire();
         int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
         _stmt.bindLong(_argIndex, id);
         try {
           __db.beginTransaction();
@@ -294,6 +319,34 @@ public final class ContractDao_Impl implements ContractDao {
           }
         } finally {
           __preparedStmtOfRestoreContract.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markPendingPermanentDelete(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfMarkPendingPermanentDelete.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfMarkPendingPermanentDelete.release(_stmt);
         }
       }
     }, $completion);
@@ -320,6 +373,31 @@ public final class ContractDao_Impl implements ContractDao {
           }
         } finally {
           __preparedStmtOfPermanentlyDeleteContract.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteBySyncId(final String syncId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteBySyncId.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, syncId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteBySyncId.release(_stmt);
         }
       }
     }, $completion);
@@ -831,7 +909,7 @@ public final class ContractDao_Impl implements ContractDao {
 
   @Override
   public Flow<List<ContractEntity>> getDeletedContracts() {
-    final String _sql = "SELECT * FROM contracts WHERE isDeleted = 1 ORDER BY deletedAt DESC";
+    final String _sql = "SELECT * FROM contracts WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"contracts"}, new Callable<List<ContractEntity>>() {
       @Override

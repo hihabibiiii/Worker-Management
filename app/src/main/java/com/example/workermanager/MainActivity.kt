@@ -618,6 +618,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (currentUser != null && currentUser.uid.isNotBlank()) {
+            com.example.workermanager.util.CloudSyncWorker.scheduleImmediateSync(applicationContext)
+        }
+    }
 }
 
 @Composable

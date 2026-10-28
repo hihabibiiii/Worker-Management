@@ -2,12 +2,14 @@ package com.example.workermanager.data.repository
 
 import com.example.workermanager.data.dao.AttendanceDao
 import com.example.workermanager.data.entity.AttendanceEntity
+import com.example.workermanager.data.entity.SyncOrigin
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 class AttendanceRepository(
     private val attendanceDao: AttendanceDao,
-    private val siteAttendanceDao: com.example.workermanager.data.dao.SiteAttendanceDao
+    private val siteAttendanceDao: com.example.workermanager.data.dao.SiteAttendanceDao,
+    private val onDataChanged: (() -> Unit)? = null
 ) {
     val allAttendance: Flow<List<AttendanceEntity>> = attendanceDao.getAllAttendance()
 
@@ -54,16 +56,22 @@ class AttendanceRepository(
     suspend fun insertAttendance(attendance: AttendanceEntity) {
         attendanceDao.insertAttendance(attendance)
         recalculateSiteAttendance(attendance.siteId, attendance.date)
+        onDataChanged?.invoke()
     }
 
     suspend fun updateAttendance(attendance: AttendanceEntity) {
-        attendanceDao.updateAttendance(attendance)
+        val updated = if (attendance.syncOrigin != SyncOrigin.LEGACY) {
+            attendance.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
+        } else attendance
+        attendanceDao.updateAttendance(updated)
         recalculateSiteAttendance(attendance.siteId, attendance.date)
+        onDataChanged?.invoke()
     }
 
     suspend fun deleteAttendance(attendance: AttendanceEntity) {
         attendanceDao.deleteAttendance(attendance)
         recalculateSiteAttendance(attendance.siteId, attendance.date)
+        onDataChanged?.invoke()
     }
 
     private suspend fun recalculateSiteAttendance(siteId: Long, date: LocalDate) {
@@ -76,7 +84,10 @@ class AttendanceRepository(
         
         val existing = siteAttendanceDao.getSiteAttendanceByDate(siteId, date)
         if (existing != null) {
-            siteAttendanceDao.insertSiteAttendance(existing.copy(isPresent = isPresent))
+            val updated = if (existing.syncOrigin != SyncOrigin.LEGACY) {
+                existing.copy(isPresent = isPresent, updatedAt = System.currentTimeMillis(), isPendingSync = true)
+            } else existing.copy(isPresent = isPresent)
+            siteAttendanceDao.insertSiteAttendance(updated)
         } else {
             siteAttendanceDao.insertSiteAttendance(
                 com.example.workermanager.data.entity.SiteAttendanceEntity(

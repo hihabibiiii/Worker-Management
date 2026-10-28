@@ -2,9 +2,13 @@ package com.example.workermanager.data.repository
 
 import com.example.workermanager.data.dao.ClientPaymentDao
 import com.example.workermanager.data.entity.ClientPaymentEntity
+import com.example.workermanager.data.entity.SyncOrigin
 import kotlinx.coroutines.flow.Flow
 
-class ClientPaymentRepository(private val clientPaymentDao: ClientPaymentDao) {
+class ClientPaymentRepository(
+    private val clientPaymentDao: ClientPaymentDao,
+    private val onDataChanged: (() -> Unit)? = null
+) {
     fun getPaymentsByContract(contractId: Long): Flow<List<ClientPaymentEntity>> = 
         clientPaymentDao.getPaymentsByContract(contractId)
 
@@ -13,17 +17,50 @@ class ClientPaymentRepository(private val clientPaymentDao: ClientPaymentDao) {
 
     fun getTotalReceivedAll(): Flow<Double?> = clientPaymentDao.getTotalReceivedAll()
 
-    suspend fun insertPayment(payment: ClientPaymentEntity) = clientPaymentDao.insertPayment(payment)
+    suspend fun insertPayment(payment: ClientPaymentEntity) {
+        clientPaymentDao.insertPayment(payment)
+        onDataChanged?.invoke()
+    }
 
-    suspend fun updatePayment(payment: ClientPaymentEntity) = clientPaymentDao.updatePayment(payment)
+    suspend fun updatePayment(payment: ClientPaymentEntity) {
+        val updated = if (payment.syncOrigin != SyncOrigin.LEGACY) {
+            payment.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
+        } else payment
+        clientPaymentDao.updatePayment(updated)
+        onDataChanged?.invoke()
+    }
 
-    suspend fun deletePayment(payment: ClientPaymentEntity) = clientPaymentDao.softDeleteClientPayment(payment.id)
+    suspend fun deletePayment(payment: ClientPaymentEntity) {
+        clientPaymentDao.softDeleteClientPayment(payment.id)
+        onDataChanged?.invoke()
+    }
 
-    suspend fun restoreClientPayment(id: Long) = clientPaymentDao.restoreClientPayment(id)
+    suspend fun restoreClientPayment(id: Long) {
+        clientPaymentDao.restoreClientPayment(id)
+        onDataChanged?.invoke()
+    }
 
     fun getDeletedClientPayments(): Flow<List<ClientPaymentEntity>> = clientPaymentDao.getDeletedClientPayments()
 
-    suspend fun permanentlyDeleteClientPayment(id: Long) = clientPaymentDao.permanentlyDeleteClientPayment(id)
+    suspend fun permanentlyDeleteClientPayment(id: Long) {
+        val item = clientPaymentDao.getAllClientPaymentsRaw().find { it.id == id }
+        if (item != null && item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+            clientPaymentDao.markPendingPermanentDelete(id)
+        } else {
+            clientPaymentDao.permanentlyDeleteClientPayment(id)
+        }
+        onDataChanged?.invoke()
+    }
 
-    suspend fun emptyClientPaymentTrash() = clientPaymentDao.emptyClientPaymentTrash()
+    suspend fun emptyClientPaymentTrash() {
+        val deleted = clientPaymentDao.getAllClientPaymentsRaw().filter { it.isDeleted }
+        for (item in deleted) {
+            if (item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+                clientPaymentDao.markPendingPermanentDelete(item.id)
+            } else {
+                clientPaymentDao.permanentlyDeleteClientPayment(item.id)
+            }
+        }
+        onDataChanged?.invoke()
+    }
 }

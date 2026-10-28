@@ -40,6 +40,7 @@ object ContractSyncEngine {
                 } else null
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = ContractMapper.toEntity(cloudDto, localSiteId = resolvedSiteId).copy(isPendingSync = false)
                     contractDao.insertContract(entity)
                     Log.d(TAG, "Pulled new contract: ${cloudDto.clientName} (${cloudDto.syncId})")
@@ -67,8 +68,13 @@ object ContractSyncEngine {
 
                     val dto = ContractMapper.toDTO(localItem, siteSyncId = siteSyncId)
                     contractsRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    contractDao.updateContract(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed contract: ${localItem.clientName} (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        contractDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged contract tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        contractDao.updateContract(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed contract: ${localItem.clientName} (${localItem.syncId})")
+                    }
                 }
             }
 

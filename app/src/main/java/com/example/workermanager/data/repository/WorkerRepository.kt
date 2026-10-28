@@ -2,6 +2,7 @@ package com.example.workermanager.data.repository
 
 import com.example.workermanager.data.dao.WorkerDao
 import com.example.workermanager.data.dao.WorkerSiteHistoryDao
+import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.entity.WorkerEntity
 import com.example.workermanager.data.entity.WorkerSiteHistoryEntity
 import kotlinx.coroutines.flow.Flow
@@ -11,7 +12,8 @@ import java.time.LocalDate
 class WorkerRepository(
     private val workerDao: WorkerDao,
     private val historyDao: WorkerSiteHistoryDao,
-    private val siteDao: com.example.workermanager.data.dao.SiteDao? = null
+    private val siteDao: com.example.workermanager.data.dao.SiteDao? = null,
+    private val onDataChanged: (() -> Unit)? = null
 ) {
     val allWorkers: Flow<List<WorkerEntity>> = workerDao.getAllWorkers()
     val activeWorkers: Flow<List<WorkerEntity>> = workerDao.getActiveWorkers()
@@ -31,20 +33,51 @@ class WorkerRepository(
             historyDao.insert(history)
             workerDao.updateWorker(worker.copy(id = workerId, currentSiteId = siteId))
         }
+        onDataChanged?.invoke()
         return workerId
     }
 
-    suspend fun updateWorker(worker: WorkerEntity) = workerDao.updateWorker(worker)
+    suspend fun updateWorker(worker: WorkerEntity) {
+        val updated = if (worker.syncOrigin != SyncOrigin.LEGACY) {
+            worker.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
+        } else worker
+        workerDao.updateWorker(updated)
+        onDataChanged?.invoke()
+    }
 
-    suspend fun deleteWorker(worker: WorkerEntity) = workerDao.softDeleteWorker(worker.id)
+    suspend fun deleteWorker(worker: WorkerEntity) {
+        workerDao.softDeleteWorker(worker.id)
+        onDataChanged?.invoke()
+    }
 
-    suspend fun restoreWorker(id: Long) = workerDao.restoreWorker(id)
+    suspend fun restoreWorker(id: Long) {
+        workerDao.restoreWorker(id)
+        onDataChanged?.invoke()
+    }
 
     fun getDeletedWorkers(): Flow<List<WorkerEntity>> = workerDao.getDeletedWorkers()
 
-    suspend fun permanentlyDeleteWorker(id: Long) = workerDao.permanentlyDeleteWorker(id)
+    suspend fun permanentlyDeleteWorker(id: Long) {
+        val worker = workerDao.getAllWorkersRaw().find { it.id == id }
+        if (worker != null && worker.syncOrigin != SyncOrigin.LEGACY && worker.syncId.isNotBlank()) {
+            workerDao.markPendingPermanentDelete(id)
+        } else {
+            workerDao.permanentlyDeleteWorker(id)
+        }
+        onDataChanged?.invoke()
+    }
 
-    suspend fun emptyWorkerTrash() = workerDao.emptyWorkerTrash()
+    suspend fun emptyWorkerTrash() {
+        val deleted = workerDao.getAllWorkersRaw().filter { it.isDeleted }
+        for (worker in deleted) {
+            if (worker.syncOrigin != SyncOrigin.LEGACY && worker.syncId.isNotBlank()) {
+                workerDao.markPendingPermanentDelete(worker.id)
+            } else {
+                workerDao.permanentlyDeleteWorker(worker.id)
+            }
+        }
+        onDataChanged?.invoke()
+    }
 
     suspend fun transferWorker(workerId: Long, newSiteId: Long, transferDate: LocalDate) {
         // 1. Close current history
@@ -61,8 +94,12 @@ class WorkerRepository(
         // 3. Update worker currentSiteId
         val worker = workerDao.getWorkerById(workerId).first()
         worker?.let {
-            workerDao.updateWorker(it.copy(currentSiteId = newSiteId))
+            val updated = if (it.syncOrigin != SyncOrigin.LEGACY) {
+                it.copy(currentSiteId = newSiteId, updatedAt = System.currentTimeMillis(), isPendingSync = true)
+            } else it.copy(currentSiteId = newSiteId)
+            workerDao.updateWorker(updated)
         }
+        onDataChanged?.invoke()
     }
 
     fun getWorkerSiteHistory(workerId: Long): Flow<List<WorkerSiteHistoryEntity>> = 

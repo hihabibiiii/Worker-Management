@@ -45,6 +45,7 @@ object ContractorMaterialTransactionSyncEngine {
                 if (resolvedMaterialId == null) continue
 
                 if (existingLocal == null) {
+                    if (cloudDto.isDeleted) continue
                     val entity = ContractorMaterialTransactionMapper.toEntity(
                         cloudDto,
                         localMaterialId = resolvedMaterialId,
@@ -85,8 +86,13 @@ object ContractorMaterialTransactionSyncEngine {
                         siteSyncId = siteSyncId
                     )
                     cMatTxRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    transactionDao.updateTransaction(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed contractor material transaction: (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        transactionDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged contractor material tx tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        transactionDao.updateTransaction(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed contractor material transaction: (${localItem.syncId})")
+                    }
                 }
             }
 

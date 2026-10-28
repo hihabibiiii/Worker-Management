@@ -12,6 +12,9 @@ interface SiteExpensePaymentDao {
     @Query("SELECT * FROM site_expense_payments")
     suspend fun getAllPaymentsRaw(): List<SiteExpensePaymentEntity>
 
+    @Query("SELECT * FROM site_expense_payments WHERE syncId = :syncId LIMIT 1")
+    suspend fun getPaymentBySyncId(syncId: String): SiteExpensePaymentEntity?
+
     @Query("SELECT * FROM site_expense_payments WHERE expenseId = :expenseId AND isDeleted = 0 ORDER BY paymentDate DESC, id DESC")
     fun getPaymentsForExpense(expenseId: Long): Flow<List<SiteExpensePaymentEntity>>
 

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
@@ -75,6 +76,7 @@ fun SettingsScreen(
     var isBackingUp by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
     var pendingRestorePayload by remember { mutableStateOf<BackupPayload?>(null) }
+    var isManualSyncing by remember { mutableStateOf(false) }
 
     val selectFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -246,6 +248,52 @@ fun SettingsScreen(
                     ) 
                 },
                 modifier = Modifier.clickable { onOpenProfile() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Sync Cloud Data Now", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        "Upload new local records and download cloud changes",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    if (isManualSyncing) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.CloudSync, 
+                            contentDescription = "Sync Now", 
+                            tint = MaterialTheme.colorScheme.primary
+                        ) 
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isManualSyncing) {
+                    scope.launch {
+                        isManualSyncing = true
+                        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                        if (currentUser != null && currentUser.uid.isNotBlank()) {
+                            val session = app.userSessionManager.getOrCreateSession(currentUser.uid)
+                            val res = com.example.workermanager.data.remote.sync.engine.MasterSyncEngine.performFullSync(session.database)
+                            isManualSyncing = false
+                            if (res.isSuccess) {
+                                Toast.makeText(context, "Cloud sync completed successfully!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Sync error: ${res.exceptionOrNull()?.localizedMessage ?: "Network error"}", Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            isManualSyncing = false
+                            Toast.makeText(context, "Please sign in to sync cloud data.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
 

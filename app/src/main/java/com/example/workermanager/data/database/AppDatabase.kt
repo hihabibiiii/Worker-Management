@@ -27,7 +27,7 @@ import com.example.workermanager.data.entity.*
         ContractorMaterialEntity::class,
         ContractorMaterialTransactionEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -253,6 +253,79 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE workers ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE workers ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE workers ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE workers ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE sites ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE sites ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE sites ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE sites ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE attendance ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE attendance ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE attendance ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE attendance ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE payments ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE payments ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE payments ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE payments ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE contracts ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE contracts ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE contracts ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE contracts ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE client_payments ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE client_payments ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE client_payments ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE client_payments ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE worker_site_history ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE worker_site_history ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE worker_site_history ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE worker_site_history ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE site_attendance ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_attendance ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE site_attendance ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_attendance ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE site_expenses ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_expenses ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE site_expenses ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_expenses ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE site_expense_payments ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_expense_payments ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE site_expense_payments ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE site_expense_payments ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE materials ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE materials ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE materials ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE materials ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE material_transactions ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE material_transactions ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE material_transactions ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE material_transactions ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE contractor_materials ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE contractor_materials ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE contractor_materials ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+
+                db.execSQL("ALTER TABLE contractor_material_transactions ADD COLUMN syncOrigin INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE contractor_material_transactions ADD COLUMN syncId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE contractor_material_transactions ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE contractor_material_transactions ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         private val userInstances = mutableMapOf<String, AppDatabase>()
 
         fun getDatabaseForUser(context: Context, firebaseUid: String): AppDatabase {
@@ -276,7 +349,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_6_7,
                         MIGRATION_7_8,
                         MIGRATION_8_9,
-                        MIGRATION_9_10
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .build()
                 }
@@ -314,7 +388,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_6_7,
                     MIGRATION_7_8,
                     MIGRATION_8_9,
-                    MIGRATION_9_10
+                    MIGRATION_9_10,
+                    MIGRATION_10_11
                 )
                 .build()
                 INSTANCE = instance

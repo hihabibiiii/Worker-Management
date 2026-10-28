@@ -12,6 +12,9 @@ interface ClientPaymentDao {
     @Query("SELECT * FROM client_payments")
     suspend fun getAllClientPaymentsRaw(): List<ClientPaymentEntity>
 
+    @Query("SELECT * FROM client_payments WHERE syncId = :syncId LIMIT 1")
+    suspend fun getClientPaymentBySyncId(syncId: String): ClientPaymentEntity?
+
     @Query("SELECT SUM(amount) FROM client_payments WHERE contractId = :contractId AND isDeleted = 0")
     fun getTotalReceivedByContract(contractId: Long): Flow<Double?>
 

@@ -12,6 +12,9 @@ interface ContractDao {
     @Query("SELECT * FROM contracts")
     suspend fun getAllContractsRaw(): List<ContractEntity>
 
+    @Query("SELECT * FROM contracts WHERE syncId = :syncId LIMIT 1")
+    suspend fun getContractBySyncId(syncId: String): ContractEntity?
+
     @Query("SELECT * FROM contracts WHERE id = :id")
     fun getContractById(id: Long): Flow<ContractEntity?>
 

@@ -61,7 +61,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `workers` (`id`,`name`,`phone`,`workerType`,`dailyRate`,`overtimeRate`,`joiningDate`,`currentSiteId`,`isActive`,`notes`,`photoPath`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `workers` (`id`,`name`,`phone`,`workerType`,`dailyRate`,`overtimeRate`,`joiningDate`,`currentSiteId`,`isActive`,`notes`,`photoPath`,`isDeleted`,`deletedAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -100,6 +100,11 @@ public final class WorkerDao_Impl implements WorkerDao {
         } else {
           statement.bindLong(13, entity.getDeletedAt());
         }
+        statement.bindLong(14, entity.getSyncOrigin());
+        statement.bindString(15, entity.getSyncId());
+        statement.bindLong(16, entity.getUpdatedAt());
+        final int _tmp_4 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(17, _tmp_4);
       }
     };
     this.__deletionAdapterOfWorkerEntity = new EntityDeletionOrUpdateAdapter<WorkerEntity>(__db) {
@@ -119,7 +124,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `workers` SET `id` = ?,`name` = ?,`phone` = ?,`workerType` = ?,`dailyRate` = ?,`overtimeRate` = ?,`joiningDate` = ?,`currentSiteId` = ?,`isActive` = ?,`notes` = ?,`photoPath` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `workers` SET `id` = ?,`name` = ?,`phone` = ?,`workerType` = ?,`dailyRate` = ?,`overtimeRate` = ?,`joiningDate` = ?,`currentSiteId` = ?,`isActive` = ?,`notes` = ?,`photoPath` = ?,`isDeleted` = ?,`deletedAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -158,7 +163,12 @@ public final class WorkerDao_Impl implements WorkerDao {
         } else {
           statement.bindLong(13, entity.getDeletedAt());
         }
-        statement.bindLong(14, entity.getId());
+        statement.bindLong(14, entity.getSyncOrigin());
+        statement.bindString(15, entity.getSyncId());
+        statement.bindLong(16, entity.getUpdatedAt());
+        final int _tmp_4 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(17, _tmp_4);
+        statement.bindLong(18, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeleteWorker = new SharedSQLiteStatement(__db) {
@@ -377,6 +387,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -435,7 +449,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -475,6 +499,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -533,7 +561,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -570,6 +608,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final WorkerEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -627,7 +669,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _result = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _result = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -642,6 +694,117 @@ public final class WorkerDao_Impl implements WorkerDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getWorkerBySyncId(final String syncId,
+      final Continuation<? super WorkerEntity> $completion) {
+    final String _sql = "SELECT * FROM workers WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<WorkerEntity>() {
+      @Override
+      @Nullable
+      public WorkerEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfPhone = CursorUtil.getColumnIndexOrThrow(_cursor, "phone");
+          final int _cursorIndexOfWorkerType = CursorUtil.getColumnIndexOrThrow(_cursor, "workerType");
+          final int _cursorIndexOfDailyRate = CursorUtil.getColumnIndexOrThrow(_cursor, "dailyRate");
+          final int _cursorIndexOfOvertimeRate = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeRate");
+          final int _cursorIndexOfJoiningDate = CursorUtil.getColumnIndexOrThrow(_cursor, "joiningDate");
+          final int _cursorIndexOfCurrentSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "currentSiteId");
+          final int _cursorIndexOfIsActive = CursorUtil.getColumnIndexOrThrow(_cursor, "isActive");
+          final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final WorkerEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpPhone;
+            _tmpPhone = _cursor.getString(_cursorIndexOfPhone);
+            final WorkerType _tmpWorkerType;
+            final String _tmp;
+            _tmp = _cursor.getString(_cursorIndexOfWorkerType);
+            _tmpWorkerType = __converters.toWorkerType(_tmp);
+            final double _tmpDailyRate;
+            _tmpDailyRate = _cursor.getDouble(_cursorIndexOfDailyRate);
+            final double _tmpOvertimeRate;
+            _tmpOvertimeRate = _cursor.getDouble(_cursorIndexOfOvertimeRate);
+            final LocalDate _tmpJoiningDate;
+            final String _tmp_1;
+            if (_cursor.isNull(_cursorIndexOfJoiningDate)) {
+              _tmp_1 = null;
+            } else {
+              _tmp_1 = _cursor.getString(_cursorIndexOfJoiningDate);
+            }
+            final LocalDate _tmp_2 = __converters.toLocalDate(_tmp_1);
+            if (_tmp_2 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpJoiningDate = _tmp_2;
+            }
+            final Long _tmpCurrentSiteId;
+            if (_cursor.isNull(_cursorIndexOfCurrentSiteId)) {
+              _tmpCurrentSiteId = null;
+            } else {
+              _tmpCurrentSiteId = _cursor.getLong(_cursorIndexOfCurrentSiteId);
+            }
+            final boolean _tmpIsActive;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsActive);
+            _tmpIsActive = _tmp_3 != 0;
+            final String _tmpNotes;
+            _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final String _tmpPhotoPath;
+            if (_cursor.isNull(_cursorIndexOfPhotoPath)) {
+              _tmpPhotoPath = null;
+            } else {
+              _tmpPhotoPath = _cursor.getString(_cursorIndexOfPhotoPath);
+            }
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _result = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override
@@ -669,6 +832,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -727,7 +894,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -766,6 +943,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -824,7 +1005,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -867,6 +1058,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -925,7 +1120,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -964,6 +1169,10 @@ public final class WorkerDao_Impl implements WorkerDao {
           final int _cursorIndexOfPhotoPath = CursorUtil.getColumnIndexOrThrow(_cursor, "photoPath");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerEntity> _result = new ArrayList<WorkerEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerEntity _item;
@@ -1022,7 +1231,17 @@ public final class WorkerDao_Impl implements WorkerDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerEntity(_tmpId,_tmpName,_tmpPhone,_tmpWorkerType,_tmpDailyRate,_tmpOvertimeRate,_tmpJoiningDate,_tmpCurrentSiteId,_tmpIsActive,_tmpNotes,_tmpPhotoPath,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;

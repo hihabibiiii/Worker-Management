@@ -101,6 +101,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
     // Excel Export - Using a more Android-compatible configuration of POI
     implementation("org.apache.poi:poi:5.2.2")

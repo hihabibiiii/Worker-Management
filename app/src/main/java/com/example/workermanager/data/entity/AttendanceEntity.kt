@@ -38,5 +38,9 @@ data class AttendanceEntity(
     val overtimeAmount: Double = 0.0,
     val amount: Double,
     val note: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val syncOrigin: Int = SyncOrigin.NEW_LOCAL,
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isPendingSync: Boolean = true
 )

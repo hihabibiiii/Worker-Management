@@ -28,5 +28,9 @@ data class WorkerSiteHistoryEntity(
     val siteId: Long,
     val startDate: LocalDate,
     val endDate: LocalDate? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val syncOrigin: Int = SyncOrigin.NEW_LOCAL,
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isPendingSync: Boolean = true
 )

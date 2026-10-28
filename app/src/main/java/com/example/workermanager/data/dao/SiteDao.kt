@@ -15,6 +15,9 @@ interface SiteDao {
     @Query("SELECT * FROM sites WHERE id = :siteId")
     fun getSiteById(siteId: Long): Flow<SiteEntity?>
 
+    @Query("SELECT * FROM sites WHERE syncId = :syncId LIMIT 1")
+    suspend fun getSiteBySyncId(syncId: String): SiteEntity?
+
     @Query("SELECT * FROM sites WHERE isDeleted = 0 ORDER BY name ASC")
     suspend fun getAllSitesList(): List<SiteEntity>
 

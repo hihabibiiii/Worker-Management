@@ -12,6 +12,9 @@ interface SiteExpenseDao {
     @Query("SELECT * FROM site_expenses")
     suspend fun getAllExpensesRaw(): List<SiteExpenseEntity>
 
+    @Query("SELECT * FROM site_expenses WHERE syncId = :syncId LIMIT 1")
+    suspend fun getExpenseBySyncId(syncId: String): SiteExpenseEntity?
+
     @Query("SELECT * FROM site_expenses WHERE id = :id AND isDeleted = 0")
     fun getExpenseById(id: Long): Flow<SiteExpenseEntity?>
 

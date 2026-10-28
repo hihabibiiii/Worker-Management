@@ -52,7 +52,7 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `worker_site_history` (`id`,`workerId`,`siteId`,`startDate`,`endDate`,`createdAt`) VALUES (nullif(?, 0),?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `worker_site_history` (`id`,`workerId`,`siteId`,`startDate`,`endDate`,`createdAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -74,13 +74,18 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           statement.bindString(5, _tmp_1);
         }
         statement.bindLong(6, entity.getCreatedAt());
+        statement.bindLong(7, entity.getSyncOrigin());
+        statement.bindString(8, entity.getSyncId());
+        statement.bindLong(9, entity.getUpdatedAt());
+        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(10, _tmp_2);
       }
     };
     this.__updateAdapterOfWorkerSiteHistoryEntity = new EntityDeletionOrUpdateAdapter<WorkerSiteHistoryEntity>(__db) {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `worker_site_history` SET `id` = ?,`workerId` = ?,`siteId` = ?,`startDate` = ?,`endDate` = ?,`createdAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `worker_site_history` SET `id` = ?,`workerId` = ?,`siteId` = ?,`startDate` = ?,`endDate` = ?,`createdAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -102,7 +107,12 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           statement.bindString(5, _tmp_1);
         }
         statement.bindLong(6, entity.getCreatedAt());
-        statement.bindLong(7, entity.getId());
+        statement.bindLong(7, entity.getSyncOrigin());
+        statement.bindString(8, entity.getSyncId());
+        statement.bindLong(9, entity.getUpdatedAt());
+        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(10, _tmp_2);
+        statement.bindLong(11, entity.getId());
       }
     };
     this.__preparedStmtOfCloseCurrentHistory = new SharedSQLiteStatement(__db) {
@@ -204,6 +214,10 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
           final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerSiteHistoryEntity> _result = new ArrayList<WorkerSiteHistoryEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerSiteHistoryEntity _item;
@@ -236,7 +250,17 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             _tmpEndDate = __converters.toLocalDate(_tmp_2);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -272,6 +296,10 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
           final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final WorkerSiteHistoryEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -303,7 +331,17 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             _tmpEndDate = __converters.toLocalDate(_tmp_2);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _result = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _result = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -349,6 +387,10 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
           final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerSiteHistoryEntity> _result = new ArrayList<WorkerSiteHistoryEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerSiteHistoryEntity _item;
@@ -381,7 +423,17 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             _tmpEndDate = __converters.toLocalDate(_tmp_4);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -427,6 +479,10 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
           final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerSiteHistoryEntity> _result = new ArrayList<WorkerSiteHistoryEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerSiteHistoryEntity _item;
@@ -459,7 +515,17 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             _tmpEndDate = __converters.toLocalDate(_tmp_4);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -540,6 +606,10 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
           final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
           final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<WorkerSiteHistoryEntity> _result = new ArrayList<WorkerSiteHistoryEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final WorkerSiteHistoryEntity _item;
@@ -572,8 +642,96 @@ public final class WorkerSiteHistoryDao_Impl implements WorkerSiteHistoryDao {
             _tmpEndDate = __converters.toLocalDate(_tmp_2);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getHistoryBySyncId(final String syncId,
+      final Continuation<? super WorkerSiteHistoryEntity> $completion) {
+    final String _sql = "SELECT * FROM worker_site_history WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<WorkerSiteHistoryEntity>() {
+      @Override
+      @Nullable
+      public WorkerSiteHistoryEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfEndDate = CursorUtil.getColumnIndexOrThrow(_cursor, "endDate");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final WorkerSiteHistoryEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final LocalDate _tmpEndDate;
+            final String _tmp_2;
+            if (_cursor.isNull(_cursorIndexOfEndDate)) {
+              _tmp_2 = null;
+            } else {
+              _tmp_2 = _cursor.getString(_cursorIndexOfEndDate);
+            }
+            _tmpEndDate = __converters.toLocalDate(_tmp_2);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _result = new WorkerSiteHistoryEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpStartDate,_tmpEndDate,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
           }
           return _result;
         } finally {

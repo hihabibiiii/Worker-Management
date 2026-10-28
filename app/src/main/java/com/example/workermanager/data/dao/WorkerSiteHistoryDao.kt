@@ -33,4 +33,7 @@ interface WorkerSiteHistoryDao {
 
     @Query("SELECT * FROM worker_site_history")
     suspend fun getAllHistory(): List<WorkerSiteHistoryEntity>
+
+    @Query("SELECT * FROM worker_site_history WHERE syncId = :syncId LIMIT 1")
+    suspend fun getHistoryBySyncId(syncId: String): WorkerSiteHistoryEntity?
 }

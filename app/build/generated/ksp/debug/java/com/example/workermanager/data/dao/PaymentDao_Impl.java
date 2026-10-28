@@ -63,7 +63,7 @@ public final class PaymentDao_Impl implements PaymentDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `payments` (`id`,`workerId`,`siteId`,`amount`,`date`,`method`,`paymentType`,`note`,`createdAt`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `payments` (`id`,`workerId`,`siteId`,`amount`,`date`,`method`,`paymentType`,`note`,`createdAt`,`isDeleted`,`deletedAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -92,6 +92,11 @@ public final class PaymentDao_Impl implements PaymentDao {
         } else {
           statement.bindLong(11, entity.getDeletedAt());
         }
+        statement.bindLong(12, entity.getSyncOrigin());
+        statement.bindString(13, entity.getSyncId());
+        statement.bindLong(14, entity.getUpdatedAt());
+        final int _tmp_4 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(15, _tmp_4);
       }
     };
     this.__deletionAdapterOfPaymentEntity = new EntityDeletionOrUpdateAdapter<PaymentEntity>(__db) {
@@ -111,7 +116,7 @@ public final class PaymentDao_Impl implements PaymentDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `payments` SET `id` = ?,`workerId` = ?,`siteId` = ?,`amount` = ?,`date` = ?,`method` = ?,`paymentType` = ?,`note` = ?,`createdAt` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `payments` SET `id` = ?,`workerId` = ?,`siteId` = ?,`amount` = ?,`date` = ?,`method` = ?,`paymentType` = ?,`note` = ?,`createdAt` = ?,`isDeleted` = ?,`deletedAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -140,7 +145,12 @@ public final class PaymentDao_Impl implements PaymentDao {
         } else {
           statement.bindLong(11, entity.getDeletedAt());
         }
-        statement.bindLong(12, entity.getId());
+        statement.bindLong(12, entity.getSyncOrigin());
+        statement.bindString(13, entity.getSyncId());
+        statement.bindLong(14, entity.getUpdatedAt());
+        final int _tmp_4 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(15, _tmp_4);
+        statement.bindLong(16, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeletePayment = new SharedSQLiteStatement(__db) {
@@ -357,6 +367,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -403,7 +417,17 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -441,6 +465,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -487,8 +515,115 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getPaymentBySyncId(final String syncId,
+      final Continuation<? super PaymentEntity> $completion) {
+    final String _sql = "SELECT * FROM payments WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<PaymentEntity>() {
+      @Override
+      @Nullable
+      public PaymentEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfMethod = CursorUtil.getColumnIndexOrThrow(_cursor, "method");
+          final int _cursorIndexOfPaymentType = CursorUtil.getColumnIndexOrThrow(_cursor, "paymentType");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final PaymentEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final LocalDate _tmpDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_1;
+            }
+            final PaymentMethod _tmpMethod;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfMethod);
+            _tmpMethod = __converters.toPaymentMethod(_tmp_2);
+            final PaymentType _tmpPaymentType;
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfPaymentType);
+            _tmpPaymentType = __converters.toPaymentType(_tmp_3);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _result = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
           }
           return _result;
         } finally {
@@ -522,6 +657,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -568,7 +707,17 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -607,6 +756,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -653,7 +806,17 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -705,6 +868,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -751,7 +918,17 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_7;
+            _tmp_7 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_7 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -788,6 +965,10 @@ public final class PaymentDao_Impl implements PaymentDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<PaymentEntity> _result = new ArrayList<PaymentEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final PaymentEntity _item;
@@ -834,7 +1015,17 @@ public final class PaymentDao_Impl implements PaymentDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new PaymentEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpAmount,_tmpDate,_tmpMethod,_tmpPaymentType,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;

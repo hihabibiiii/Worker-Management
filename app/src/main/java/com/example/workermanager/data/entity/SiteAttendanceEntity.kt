@@ -22,5 +22,9 @@ data class SiteAttendanceEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val siteId: Long,
     val date: LocalDate,
-    val isPresent: Boolean
+    val isPresent: Boolean,
+    val syncOrigin: Int = SyncOrigin.NEW_LOCAL,
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isPendingSync: Boolean = true
 )

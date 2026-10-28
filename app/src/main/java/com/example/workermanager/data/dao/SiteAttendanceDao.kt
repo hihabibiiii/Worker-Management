@@ -24,4 +24,7 @@ interface SiteAttendanceDao {
 
     @Query("SELECT * FROM site_attendance")
     suspend fun getAllSiteAttendance(): List<SiteAttendanceEntity>
+
+    @Query("SELECT * FROM site_attendance WHERE syncId = :syncId LIMIT 1")
+    suspend fun getSiteAttendanceBySyncId(syncId: String): SiteAttendanceEntity?
 }

@@ -12,6 +12,9 @@ interface ContractorMaterialDao {
     @Query("SELECT * FROM contractor_materials")
     suspend fun getAllMaterialsRaw(): List<ContractorMaterialEntity>
 
+    @Query("SELECT * FROM contractor_materials WHERE syncId = :syncId LIMIT 1")
+    suspend fun getMaterialBySyncId(syncId: String): ContractorMaterialEntity?
+
     @Query("SELECT * FROM contractor_materials WHERE id = :id AND isDeleted = 0")
     fun getMaterialById(id: Long): Flow<ContractorMaterialEntity?>
 

@@ -45,7 +45,7 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `site_attendance` (`id`,`siteId`,`date`,`isPresent`) VALUES (nullif(?, 0),?,?,?)";
+        return "INSERT OR REPLACE INTO `site_attendance` (`id`,`siteId`,`date`,`isPresent`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -61,6 +61,11 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
         }
         final int _tmp_1 = entity.isPresent() ? 1 : 0;
         statement.bindLong(4, _tmp_1);
+        statement.bindLong(5, entity.getSyncOrigin());
+        statement.bindString(6, entity.getSyncId());
+        statement.bindLong(7, entity.getUpdatedAt());
+        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(8, _tmp_2);
       }
     };
   }
@@ -100,6 +105,10 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
           final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteAttendanceEntity> _result = new ArrayList<SiteAttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteAttendanceEntity _item;
@@ -124,7 +133,17 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
             final int _tmp_2;
             _tmp_2 = _cursor.getInt(_cursorIndexOfIsPresent);
             _tmpIsPresent = _tmp_2 != 0;
-            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -165,6 +184,10 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
           final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final SiteAttendanceEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -188,7 +211,17 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
             final int _tmp_3;
             _tmp_3 = _cursor.getInt(_cursorIndexOfIsPresent);
             _tmpIsPresent = _tmp_3 != 0;
-            _result = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -222,6 +255,10 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
           final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteAttendanceEntity> _result = new ArrayList<SiteAttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteAttendanceEntity _item;
@@ -246,7 +283,17 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
             final int _tmp_3;
             _tmp_3 = _cursor.getInt(_cursorIndexOfIsPresent);
             _tmpIsPresent = _tmp_3 != 0;
-            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -278,6 +325,10 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
           final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteAttendanceEntity> _result = new ArrayList<SiteAttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteAttendanceEntity _item;
@@ -302,8 +353,86 @@ public final class SiteAttendanceDao_Impl implements SiteAttendanceDao {
             final int _tmp_2;
             _tmp_2 = _cursor.getInt(_cursorIndexOfIsPresent);
             _tmpIsPresent = _tmp_2 != 0;
-            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getSiteAttendanceBySyncId(final String syncId,
+      final Continuation<? super SiteAttendanceEntity> $completion) {
+    final String _sql = "SELECT * FROM site_attendance WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<SiteAttendanceEntity>() {
+      @Override
+      @Nullable
+      public SiteAttendanceEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfIsPresent = CursorUtil.getColumnIndexOrThrow(_cursor, "isPresent");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final SiteAttendanceEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_1;
+            }
+            final boolean _tmpIsPresent;
+            final int _tmp_2;
+            _tmp_2 = _cursor.getInt(_cursorIndexOfIsPresent);
+            _tmpIsPresent = _tmp_2 != 0;
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _result = new SiteAttendanceEntity(_tmpId,_tmpSiteId,_tmpDate,_tmpIsPresent,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
           }
           return _result;
         } finally {

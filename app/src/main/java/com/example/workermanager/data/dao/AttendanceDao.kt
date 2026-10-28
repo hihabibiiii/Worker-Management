@@ -13,6 +13,9 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance")
     suspend fun getAllAttendanceRaw(): List<AttendanceEntity>
 
+    @Query("SELECT * FROM attendance WHERE syncId = :syncId LIMIT 1")
+    suspend fun getAttendanceBySyncId(syncId: String): AttendanceEntity?
+
     @Query("SELECT * FROM attendance WHERE date = :date")
     fun getAttendanceByDate(date: LocalDate): Flow<List<AttendanceEntity>>
 

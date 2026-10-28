@@ -61,7 +61,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `sites` (`id`,`name`,`address`,`manager`,`startDate`,`status`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `sites` (`id`,`name`,`address`,`manager`,`startDate`,`status`,`isDeleted`,`deletedAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -86,6 +86,11 @@ public final class SiteDao_Impl implements SiteDao {
         } else {
           statement.bindLong(8, entity.getDeletedAt());
         }
+        statement.bindLong(9, entity.getSyncOrigin());
+        statement.bindString(10, entity.getSyncId());
+        statement.bindLong(11, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(12, _tmp_3);
       }
     };
     this.__deletionAdapterOfSiteEntity = new EntityDeletionOrUpdateAdapter<SiteEntity>(__db) {
@@ -105,7 +110,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `sites` SET `id` = ?,`name` = ?,`address` = ?,`manager` = ?,`startDate` = ?,`status` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `sites` SET `id` = ?,`name` = ?,`address` = ?,`manager` = ?,`startDate` = ?,`status` = ?,`isDeleted` = ?,`deletedAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -130,7 +135,12 @@ public final class SiteDao_Impl implements SiteDao {
         } else {
           statement.bindLong(8, entity.getDeletedAt());
         }
-        statement.bindLong(9, entity.getId());
+        statement.bindLong(9, entity.getSyncOrigin());
+        statement.bindString(10, entity.getSyncId());
+        statement.bindLong(11, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(12, _tmp_3);
+        statement.bindLong(13, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeleteSite = new SharedSQLiteStatement(__db) {
@@ -340,6 +350,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteEntity> _result = new ArrayList<SiteEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteEntity _item;
@@ -378,7 +392,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -413,6 +437,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteEntity> _result = new ArrayList<SiteEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteEntity _item;
@@ -451,7 +479,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -483,6 +521,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final SiteEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -520,7 +562,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _result = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -535,6 +587,92 @@ public final class SiteDao_Impl implements SiteDao {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public Object getSiteBySyncId(final String syncId,
+      final Continuation<? super SiteEntity> $completion) {
+    final String _sql = "SELECT * FROM sites WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<SiteEntity>() {
+      @Override
+      @Nullable
+      public SiteEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfAddress = CursorUtil.getColumnIndexOrThrow(_cursor, "address");
+          final int _cursorIndexOfManager = CursorUtil.getColumnIndexOrThrow(_cursor, "manager");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final SiteEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpAddress;
+            _tmpAddress = _cursor.getString(_cursorIndexOfAddress);
+            final String _tmpManager;
+            _tmpManager = _cursor.getString(_cursorIndexOfManager);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final SiteStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toSiteStatus(_tmp_2);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
   }
 
   @Override
@@ -556,6 +694,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteEntity> _result = new ArrayList<SiteEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteEntity _item;
@@ -594,7 +736,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -628,6 +780,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final SiteEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -665,7 +821,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _result = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -696,6 +862,10 @@ public final class SiteDao_Impl implements SiteDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<SiteEntity> _result = new ArrayList<SiteEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final SiteEntity _item;
@@ -734,7 +904,17 @@ public final class SiteDao_Impl implements SiteDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new SiteEntity(_tmpId,_tmpName,_tmpAddress,_tmpManager,_tmpStartDate,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;

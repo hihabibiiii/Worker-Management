@@ -12,6 +12,9 @@ interface MaterialDao {
     @Query("SELECT * FROM materials")
     suspend fun getAllMaterialsRaw(): List<MaterialEntity>
 
+    @Query("SELECT * FROM materials WHERE syncId = :syncId LIMIT 1")
+    suspend fun getMaterialBySyncId(syncId: String): MaterialEntity?
+
     @Query("SELECT * FROM materials WHERE id = :id AND isDeleted = 0")
     fun getMaterialById(id: Long): Flow<MaterialEntity?>
 

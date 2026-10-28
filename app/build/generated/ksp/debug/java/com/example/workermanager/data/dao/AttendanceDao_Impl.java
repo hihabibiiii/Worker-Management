@@ -53,7 +53,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `attendance` (`id`,`workerId`,`siteId`,`date`,`status`,`overtimeHours`,`overtimeAmount`,`amount`,`note`,`createdAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `attendance` (`id`,`workerId`,`siteId`,`date`,`status`,`overtimeHours`,`overtimeAmount`,`amount`,`note`,`createdAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -75,6 +75,11 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         statement.bindDouble(8, entity.getAmount());
         statement.bindString(9, entity.getNote());
         statement.bindLong(10, entity.getCreatedAt());
+        statement.bindLong(11, entity.getSyncOrigin());
+        statement.bindString(12, entity.getSyncId());
+        statement.bindLong(13, entity.getUpdatedAt());
+        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(14, _tmp_2);
       }
     };
     this.__deletionAdapterOfAttendanceEntity = new EntityDeletionOrUpdateAdapter<AttendanceEntity>(__db) {
@@ -94,7 +99,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `attendance` SET `id` = ?,`workerId` = ?,`siteId` = ?,`date` = ?,`status` = ?,`overtimeHours` = ?,`overtimeAmount` = ?,`amount` = ?,`note` = ?,`createdAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `attendance` SET `id` = ?,`workerId` = ?,`siteId` = ?,`date` = ?,`status` = ?,`overtimeHours` = ?,`overtimeAmount` = ?,`amount` = ?,`note` = ?,`createdAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -116,7 +121,12 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         statement.bindDouble(8, entity.getAmount());
         statement.bindString(9, entity.getNote());
         statement.bindLong(10, entity.getCreatedAt());
-        statement.bindLong(11, entity.getId());
+        statement.bindLong(11, entity.getSyncOrigin());
+        statement.bindString(12, entity.getSyncId());
+        statement.bindLong(13, entity.getUpdatedAt());
+        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(14, _tmp_2);
+        statement.bindLong(15, entity.getId());
       }
     };
   }
@@ -198,6 +208,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -234,7 +248,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -272,6 +296,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -308,8 +336,104 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getAttendanceBySyncId(final String syncId,
+      final Continuation<? super AttendanceEntity> $completion) {
+    final String _sql = "SELECT * FROM attendance WHERE syncId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<AttendanceEntity>() {
+      @Override
+      @Nullable
+      public AttendanceEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOvertimeHours = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeHours");
+          final int _cursorIndexOfOvertimeAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeAmount");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final AttendanceEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_1;
+            }
+            final AttendanceStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toAttendanceStatus(_tmp_2);
+            final double _tmpOvertimeHours;
+            _tmpOvertimeHours = _cursor.getDouble(_cursorIndexOfOvertimeHours);
+            final double _tmpOvertimeAmount;
+            _tmpOvertimeAmount = _cursor.getDouble(_cursorIndexOfOvertimeAmount);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _result = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
           }
           return _result;
         } finally {
@@ -347,6 +471,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -383,7 +511,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -429,6 +567,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -465,7 +607,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -512,6 +664,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -548,7 +704,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -582,6 +748,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -618,7 +788,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -656,6 +836,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -692,7 +876,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_3 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -743,6 +937,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final AttendanceEntity _item;
@@ -779,7 +977,17 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;

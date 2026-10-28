@@ -22,5 +22,9 @@ data class WorkerEntity(
     val notes: String = "",
     val photoPath: String? = null,
     val isDeleted: Boolean = false,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncOrigin: Int = SyncOrigin.NEW_LOCAL,
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isPendingSync: Boolean = true
 )

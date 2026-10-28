@@ -61,7 +61,7 @@ public final class ContractDao_Impl implements ContractDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `contracts` (`id`,`clientName`,`mobile`,`siteId`,`totalAmount`,`startDate`,`notes`,`status`,`isDeleted`,`deletedAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `contracts` (`id`,`clientName`,`mobile`,`siteId`,`totalAmount`,`startDate`,`notes`,`status`,`isDeleted`,`deletedAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -92,6 +92,11 @@ public final class ContractDao_Impl implements ContractDao {
         } else {
           statement.bindLong(10, entity.getDeletedAt());
         }
+        statement.bindLong(11, entity.getSyncOrigin());
+        statement.bindString(12, entity.getSyncId());
+        statement.bindLong(13, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(14, _tmp_3);
       }
     };
     this.__deletionAdapterOfContractEntity = new EntityDeletionOrUpdateAdapter<ContractEntity>(__db) {
@@ -111,7 +116,7 @@ public final class ContractDao_Impl implements ContractDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `contracts` SET `id` = ?,`clientName` = ?,`mobile` = ?,`siteId` = ?,`totalAmount` = ?,`startDate` = ?,`notes` = ?,`status` = ?,`isDeleted` = ?,`deletedAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `contracts` SET `id` = ?,`clientName` = ?,`mobile` = ?,`siteId` = ?,`totalAmount` = ?,`startDate` = ?,`notes` = ?,`status` = ?,`isDeleted` = ?,`deletedAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -142,7 +147,12 @@ public final class ContractDao_Impl implements ContractDao {
         } else {
           statement.bindLong(10, entity.getDeletedAt());
         }
-        statement.bindLong(11, entity.getId());
+        statement.bindLong(11, entity.getSyncOrigin());
+        statement.bindString(12, entity.getSyncId());
+        statement.bindLong(13, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(14, _tmp_3);
+        statement.bindLong(15, entity.getId());
       }
     };
     this.__preparedStmtOfSoftDeleteContract = new SharedSQLiteStatement(__db) {
@@ -358,6 +368,10 @@ public final class ContractDao_Impl implements ContractDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<ContractEntity> _result = new ArrayList<ContractEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ContractEntity _item;
@@ -404,7 +418,17 @@ public final class ContractDao_Impl implements ContractDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -441,6 +465,10 @@ public final class ContractDao_Impl implements ContractDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<ContractEntity> _result = new ArrayList<ContractEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ContractEntity _item;
@@ -487,7 +515,17 @@ public final class ContractDao_Impl implements ContractDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -500,12 +538,14 @@ public final class ContractDao_Impl implements ContractDao {
   }
 
   @Override
-  public Flow<ContractEntity> getContractById(final long id) {
-    final String _sql = "SELECT * FROM contracts WHERE id = ?";
+  public Object getContractBySyncId(final String syncId,
+      final Continuation<? super ContractEntity> $completion) {
+    final String _sql = "SELECT * FROM contracts WHERE syncId = ? LIMIT 1";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
-    _statement.bindLong(_argIndex, id);
-    return CoroutinesRoom.createFlow(__db, false, new String[] {"contracts"}, new Callable<ContractEntity>() {
+    _statement.bindString(_argIndex, syncId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<ContractEntity>() {
       @Override
       @Nullable
       public ContractEntity call() throws Exception {
@@ -521,6 +561,10 @@ public final class ContractDao_Impl implements ContractDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final ContractEntity _result;
           if (_cursor.moveToFirst()) {
             final long _tmpId;
@@ -566,7 +610,111 @@ public final class ContractDao_Impl implements ContractDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _result = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Flow<ContractEntity> getContractById(final long id) {
+    final String _sql = "SELECT * FROM contracts WHERE id = ?";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, id);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"contracts"}, new Callable<ContractEntity>() {
+      @Override
+      @Nullable
+      public ContractEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfClientName = CursorUtil.getColumnIndexOrThrow(_cursor, "clientName");
+          final int _cursorIndexOfMobile = CursorUtil.getColumnIndexOrThrow(_cursor, "mobile");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfTotalAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "totalAmount");
+          final int _cursorIndexOfStartDate = CursorUtil.getColumnIndexOrThrow(_cursor, "startDate");
+          final int _cursorIndexOfNotes = CursorUtil.getColumnIndexOrThrow(_cursor, "notes");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final ContractEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpClientName;
+            _tmpClientName = _cursor.getString(_cursorIndexOfClientName);
+            final String _tmpMobile;
+            _tmpMobile = _cursor.getString(_cursorIndexOfMobile);
+            final Long _tmpSiteId;
+            if (_cursor.isNull(_cursorIndexOfSiteId)) {
+              _tmpSiteId = null;
+            } else {
+              _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            }
+            final double _tmpTotalAmount;
+            _tmpTotalAmount = _cursor.getDouble(_cursorIndexOfTotalAmount);
+            final LocalDate _tmpStartDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfStartDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfStartDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpStartDate = _tmp_1;
+            }
+            final String _tmpNotes;
+            _tmpNotes = _cursor.getString(_cursorIndexOfNotes);
+            final ContractStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toContractStatus(_tmp_2);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -605,6 +753,10 @@ public final class ContractDao_Impl implements ContractDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<ContractEntity> _result = new ArrayList<ContractEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ContractEntity _item;
@@ -651,7 +803,17 @@ public final class ContractDao_Impl implements ContractDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -687,6 +849,10 @@ public final class ContractDao_Impl implements ContractDao {
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
           final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
           final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
           final List<ContractEntity> _result = new ArrayList<ContractEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final ContractEntity _item;
@@ -733,7 +899,17 @@ public final class ContractDao_Impl implements ContractDao {
             } else {
               _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
             }
-            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt);
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new ContractEntity(_tmpId,_tmpClientName,_tmpMobile,_tmpSiteId,_tmpTotalAmount,_tmpStartDate,_tmpNotes,_tmpStatus,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;

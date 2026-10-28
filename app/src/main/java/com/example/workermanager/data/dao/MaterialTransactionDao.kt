@@ -12,6 +12,9 @@ interface MaterialTransactionDao {
     @Query("SELECT * FROM material_transactions")
     suspend fun getAllTransactionsRaw(): List<MaterialTransactionEntity>
 
+    @Query("SELECT * FROM material_transactions WHERE syncId = :syncId LIMIT 1")
+    suspend fun getTransactionBySyncId(syncId: String): MaterialTransactionEntity?
+
     @Query("SELECT * FROM material_transactions WHERE siteId = :siteId AND isDeleted = 0 ORDER BY transactionDate DESC, id DESC")
     fun getTransactionsBySite(siteId: Long): Flow<List<MaterialTransactionEntity>>
 

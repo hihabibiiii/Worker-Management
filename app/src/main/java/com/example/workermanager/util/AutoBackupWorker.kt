@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.workermanager.WorkerApplication
 import com.example.workermanager.data.preference.AutoBackupPreferenceManager
+import com.google.firebase.auth.FirebaseAuth
 
 class AutoBackupWorker(
     private val appContext: Context,
@@ -20,7 +21,16 @@ class AutoBackupWorker(
                 return Result.success()
             }
 
-            val success = BackupManager.performAutoBackup(appContext, app.database, prefManager)
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser == null || currentUser.uid.isBlank()) {
+                // Unauthenticated background task: exit safely without accessing user databases
+                return Result.success()
+            }
+
+            val targetUid = currentUser.uid
+            val userSession = app.userSessionManager.getOrCreateSession(targetUid)
+
+            val success = BackupManager.performAutoBackup(appContext, userSession.database, prefManager)
             if (success) {
                 Result.success()
             } else {

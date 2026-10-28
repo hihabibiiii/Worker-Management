@@ -253,6 +253,51 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val userInstances = mutableMapOf<String, AppDatabase>()
+
+        fun getDatabaseForUser(context: Context, firebaseUid: String): AppDatabase {
+            require(firebaseUid.isNotBlank()) { "Firebase UID cannot be blank for user database resolution" }
+            val sanitizedUid = firebaseUid.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+            val dbName = "worker_manager_db_$sanitizedUid.db"
+
+            return synchronized(userInstances) {
+                userInstances.getOrPut(sanitizedUid) {
+                    Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        dbName
+                    )
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
+                    )
+                    .build()
+                }
+            }
+        }
+
+        fun closeUserDatabase(firebaseUid: String) {
+            if (firebaseUid.isBlank()) return
+            val sanitizedUid = firebaseUid.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+            synchronized(userInstances) {
+                val db = userInstances.remove(sanitizedUid)
+                if (db != null && db.isOpen) {
+                    try {
+                        db.close()
+                    } catch (e: Exception) {
+                        android.util.Log.e("AppDatabase", "Error closing database for user $sanitizedUid", e)
+                    }
+                }
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(

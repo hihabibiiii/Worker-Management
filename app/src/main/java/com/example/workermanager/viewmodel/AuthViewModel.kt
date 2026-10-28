@@ -351,7 +351,8 @@ class AuthViewModel(
         }
     }
 
-    fun logout() {
+    fun logout(userSessionManager: com.example.workermanager.UserSessionManager? = null) {
+        userSessionManager?.closeActiveSession()
         authPreferenceManager.logout()
     }
 

@@ -51,7 +51,8 @@ class AuthPreferenceManager(context: Context) {
     }
 
     private fun checkIsLoggedIn(): Boolean {
-        return FirebaseAuth.getInstance().currentUser != null || getSavedUserProfile() != null
+        val user = FirebaseAuth.getInstance().currentUser
+        return user != null && user.uid.isNotBlank()
     }
 
     private fun getSavedUserProfile(): UserProfile? {

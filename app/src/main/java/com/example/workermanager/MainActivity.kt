@@ -69,6 +69,7 @@ import com.example.workermanager.ui.screens.sites.SiteDetailsScreen
 import com.example.workermanager.ui.screens.sites.SitesScreen
 import com.example.workermanager.ui.screens.workers.WorkerDetailsScreen
 import com.example.workermanager.ui.screens.workers.WorkersScreen
+import com.example.workermanager.data.repository.*
 import com.example.workermanager.ui.theme.WorkerManagerTheme
 import com.example.workermanager.viewmodel.*
 
@@ -84,32 +85,60 @@ class MainActivity : ComponentActivity() {
             WorkerManagerTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
 
-                val siteViewModel: SiteViewModel = viewModel(
-                    factory = SiteViewModelFactory(app.siteRepository)
-                )
-                val workerViewModel: WorkerViewModel = viewModel(
-                    factory = WorkerViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository)
-                )
-                val attendanceViewModel: AttendanceViewModel = viewModel(
-                    factory = AttendanceViewModelFactory(app.workerRepository, app.attendanceRepository)
-                )
-                val paymentViewModel: PaymentViewModel = viewModel(
-                    factory = PaymentViewModelFactory(app.paymentRepository, app.workerRepository, app.siteRepository)
-                )
-                val dashboardViewModel: DashboardViewModel = viewModel(
-                    factory = DashboardViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository, app.siteExpenseRepository)
-                )
-                val contractViewModel: ContractViewModel = viewModel(
-                    factory = ContractViewModelFactory(app.contractRepository, app.clientPaymentRepository, app.siteRepository)
-                )
-                val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
-                    factory = SiteExpenseViewModelFactory(app.siteExpenseRepository, app.siteRepository)
-                )
                 val authViewModel: AuthViewModel = viewModel(
                     factory = AuthViewModelFactory(app.authPreferenceManager)
                 )
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-                val startDestination = if (isLoggedIn) Screen.Dashboard.route else Screen.Login.route
+                val userProfile by authViewModel.userProfile.collectAsState()
+
+                val activeUserId = userProfile?.userId?.ifBlank { null }
+                    ?: com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid?.ifBlank { null }
+
+                val startDestination = if (isLoggedIn && !activeUserId.isNullOrBlank()) Screen.Dashboard.route else Screen.Login.route
+
+                val userSession = if (!activeUserId.isNullOrBlank()) {
+                    app.userSessionManager.getOrCreateSession(activeUserId)
+                } else null
+
+                val dummyDb = app.legacyDatabase
+                val activeSiteRepo = userSession?.siteRepository ?: SiteRepository(dummyDb.siteDao())
+                val activeWorkerRepo = userSession?.workerRepository ?: WorkerRepository(dummyDb.workerDao(), dummyDb.workerSiteHistoryDao(), dummyDb.siteDao())
+                val activeAttendanceRepo = userSession?.attendanceRepository ?: AttendanceRepository(dummyDb.attendanceDao(), dummyDb.siteAttendanceDao())
+                val activePaymentRepo = userSession?.paymentRepository ?: PaymentRepository(dummyDb.paymentDao())
+                val activeContractRepo = userSession?.contractRepository ?: ContractRepository(dummyDb.contractDao())
+                val activeClientPaymentRepo = userSession?.clientPaymentRepository ?: ClientPaymentRepository(dummyDb.clientPaymentDao())
+                val activeExpenseRepo = userSession?.siteExpenseRepository ?: SiteExpenseRepository(dummyDb.siteExpenseDao(), dummyDb.siteExpensePaymentDao())
+                val activeMaterialRepo = userSession?.materialRepository ?: MaterialRepository(dummyDb.materialDao(), dummyDb.materialTransactionDao())
+                val activeContractorMaterialRepo = userSession?.contractorMaterialRepository ?: ContractorMaterialRepository(dummyDb.contractorMaterialDao(), dummyDb.contractorMaterialTransactionDao())
+
+                val siteViewModel: SiteViewModel = viewModel(
+                    key = "SiteViewModel_${activeUserId ?: "none"}",
+                    factory = SiteViewModelFactory(activeSiteRepo)
+                )
+                val workerViewModel: WorkerViewModel = viewModel(
+                    key = "WorkerViewModel_${activeUserId ?: "none"}",
+                    factory = WorkerViewModelFactory(activeWorkerRepo, activeAttendanceRepo, activePaymentRepo)
+                )
+                val attendanceViewModel: AttendanceViewModel = viewModel(
+                    key = "AttendanceViewModel_${activeUserId ?: "none"}",
+                    factory = AttendanceViewModelFactory(activeWorkerRepo, activeAttendanceRepo)
+                )
+                val paymentViewModel: PaymentViewModel = viewModel(
+                    key = "PaymentViewModel_${activeUserId ?: "none"}",
+                    factory = PaymentViewModelFactory(activePaymentRepo, activeWorkerRepo, activeSiteRepo)
+                )
+                val dashboardViewModel: DashboardViewModel = viewModel(
+                    key = "DashboardViewModel_${activeUserId ?: "none"}",
+                    factory = DashboardViewModelFactory(activeWorkerRepo, activeAttendanceRepo, activePaymentRepo, activeContractRepo, activeClientPaymentRepo, activeExpenseRepo)
+                )
+                val contractViewModel: ContractViewModel = viewModel(
+                    key = "ContractViewModel_${activeUserId ?: "none"}",
+                    factory = ContractViewModelFactory(activeContractRepo, activeClientPaymentRepo, activeSiteRepo)
+                )
+                val siteExpenseViewModel: SiteExpenseViewModel = viewModel(
+                    key = "SiteExpenseViewModel_${activeUserId ?: "none"}",
+                    factory = SiteExpenseViewModelFactory(activeExpenseRepo, activeSiteRepo)
+                )
 
                 val primaryNavItems = listOf(
                     Screen.Dashboard,
@@ -301,7 +330,8 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(Screen.MaterialManagement.route) {
                                 val contractorMaterialViewModel: ContractorMaterialViewModel = viewModel(
-                                    factory = ContractorMaterialViewModelFactory(app.contractorMaterialRepository, app.siteRepository)
+                                    key = "ContractorMaterialViewModel_${activeUserId ?: "none"}",
+                                    factory = ContractorMaterialViewModelFactory(activeContractorMaterialRepo, activeSiteRepo)
                                 )
                                 com.example.workermanager.ui.screens.materials.ContractorMaterialScreen(
                                     viewModel = contractorMaterialViewModel,
@@ -322,7 +352,8 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(Screen.Reports.route) {
                                 val reportViewModel: ReportViewModel = viewModel(
-                                    factory = ReportViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.contractRepository, app.clientPaymentRepository)
+                                    key = "ReportViewModel_${activeUserId ?: "none"}",
+                                    factory = ReportViewModelFactory(activeWorkerRepo, activeAttendanceRepo, activePaymentRepo, activeContractRepo, activeClientPaymentRepo)
                                 )
                                 ReportsScreen(
                                     viewModel = reportViewModel,
@@ -332,12 +363,13 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(Screen.RecycleBin.route) {
                                 val recycleBinViewModel: RecycleBinViewModel = viewModel(
+                                    key = "RecycleBinViewModel_${activeUserId ?: "none"}",
                                     factory = RecycleBinViewModelFactory(
-                                        app.workerRepository,
-                                        app.siteRepository,
-                                        app.contractRepository,
-                                        app.paymentRepository,
-                                        app.clientPaymentRepository
+                                        activeWorkerRepo,
+                                        activeSiteRepo,
+                                        activeContractRepo,
+                                        activePaymentRepo,
+                                        activeClientPaymentRepo
                                     )
                                 )
                                 RecycleBinScreen(
@@ -347,7 +379,8 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(Screen.Settings.route) {
                                 val settingsViewModel: SettingsViewModel = viewModel(
-                                    factory = SettingsViewModelFactory(app.workerRepository, app.attendanceRepository, app.paymentRepository, app.themePreferenceManager)
+                                    key = "SettingsViewModel_${activeUserId ?: "none"}",
+                                    factory = SettingsViewModelFactory(activeWorkerRepo, activeAttendanceRepo, activePaymentRepo, app.themePreferenceManager)
                                 )
                                 SettingsScreen(
                                     viewModel = settingsViewModel,

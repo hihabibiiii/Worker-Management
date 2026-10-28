@@ -412,7 +412,8 @@ fun ProfileScreen(
                     Button(
                         onClick = {
                             showLogoutDialog = false
-                            authViewModel.logout()
+                            val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+                            authViewModel.logout(app?.userSessionManager)
                             onLogout()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),

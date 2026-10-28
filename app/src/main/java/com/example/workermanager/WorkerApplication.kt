@@ -1,44 +1,152 @@
 package com.example.workermanager
 
 import android.app.Application
+import android.util.Log
 import com.example.workermanager.data.database.AppDatabase
+import com.example.workermanager.data.preference.AuthPreferenceManager
 import com.example.workermanager.data.preference.AutoBackupPreferenceManager
 import com.example.workermanager.data.preference.ThemePreferenceManager
 import com.example.workermanager.data.repository.*
+import com.example.workermanager.util.BackupManager
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+
+data class UserSession(
+    val userId: String,
+    val database: AppDatabase,
+    val siteRepository: SiteRepository,
+    val workerRepository: WorkerRepository,
+    val attendanceRepository: AttendanceRepository,
+    val paymentRepository: PaymentRepository,
+    val contractRepository: ContractRepository,
+    val clientPaymentRepository: ClientPaymentRepository,
+    val siteExpenseRepository: SiteExpenseRepository,
+    val materialRepository: MaterialRepository,
+    val contractorMaterialRepository: ContractorMaterialRepository,
+    val sessionScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+)
+
+class UserSessionManager(private val context: Application) {
+    private val lock = Any()
+    @Volatile
+    private var activeSession: UserSession? = null
+
+    fun getActiveSession(expectedUserId: String? = null): UserSession? {
+        synchronized(lock) {
+            val session = activeSession ?: return null
+            if (expectedUserId != null && session.userId != expectedUserId) {
+                return null
+            }
+            return session
+        }
+    }
+
+    fun getOrCreateSession(userId: String): UserSession {
+        require(userId.isNotBlank()) { "Firebase UID cannot be blank for UserSession creation" }
+        synchronized(lock) {
+            val current = activeSession
+            if (current != null) {
+                if (current.userId == userId) {
+                    return current
+                }
+                closeSessionInternal(current)
+            }
+
+            val db = AppDatabase.getDatabaseForUser(context, userId)
+            val session = UserSession(
+                userId = userId,
+                database = db,
+                siteRepository = SiteRepository(db.siteDao()),
+                workerRepository = WorkerRepository(db.workerDao(), db.workerSiteHistoryDao(), db.siteDao()),
+                attendanceRepository = AttendanceRepository(db.attendanceDao(), db.siteAttendanceDao()),
+                paymentRepository = PaymentRepository(db.paymentDao()),
+                contractRepository = ContractRepository(db.contractDao()),
+                clientPaymentRepository = ClientPaymentRepository(db.clientPaymentDao()),
+                siteExpenseRepository = SiteExpenseRepository(db.siteExpenseDao(), db.siteExpensePaymentDao()),
+                materialRepository = MaterialRepository(db.materialDao(), db.materialTransactionDao()),
+                contractorMaterialRepository = ContractorMaterialRepository(db.contractorMaterialDao(), db.contractorMaterialTransactionDao())
+            )
+            activeSession = session
+            return session
+        }
+    }
+
+    fun closeActiveSession() {
+        synchronized(lock) {
+            val current = activeSession
+            if (current != null) {
+                closeSessionInternal(current)
+                activeSession = null
+            }
+        }
+    }
+
+    private fun closeSessionInternal(session: UserSession) {
+        try {
+            session.sessionScope.cancel()
+        } catch (e: Exception) {
+            Log.e("UserSessionManager", "Error cancelling session scope for ${session.userId}", e)
+        }
+        AppDatabase.closeUserDatabase(session.userId)
+    }
+}
 
 class WorkerApplication : Application() {
-    val database by lazy { AppDatabase.getDatabase(this) }
-    
     val themePreferenceManager by lazy { ThemePreferenceManager(this) }
+    val authPreferenceManager by lazy { AuthPreferenceManager(this) }
+    val userSessionManager by lazy { UserSessionManager(this) }
 
-    val authPreferenceManager by lazy { com.example.workermanager.data.preference.AuthPreferenceManager(this) }
+    // Legacy database accessor preserved strictly for safety backups and offline tools
+    val legacyDatabase by lazy { AppDatabase.getDatabase(this) }
 
-    val siteRepository by lazy { SiteRepository(database.siteDao()) }
-    
-    val workerRepository by lazy { 
-        WorkerRepository(database.workerDao(), database.workerSiteHistoryDao(), database.siteDao()) 
-    }
-    
-    val attendanceRepository by lazy { 
-        AttendanceRepository(database.attendanceDao(), database.siteAttendanceDao()) 
-    }
+    val database: AppDatabase
+        get() {
+            val user = FirebaseAuth.getInstance().currentUser
+            return if (user != null && user.uid.isNotBlank()) {
+                userSessionManager.getOrCreateSession(user.uid).database
+            } else {
+                legacyDatabase
+            }
+        }
 
-    val paymentRepository by lazy { PaymentRepository(database.paymentDao()) }
-
-    val contractRepository by lazy { ContractRepository(database.contractDao()) }
-
-    val clientPaymentRepository by lazy { ClientPaymentRepository(database.clientPaymentDao()) }
-
-    val siteExpenseRepository by lazy { SiteExpenseRepository(database.siteExpenseDao(), database.siteExpensePaymentDao()) }
-
-    val materialRepository by lazy { MaterialRepository(database.materialDao(), database.materialTransactionDao()) }
-
-    val contractorMaterialRepository by lazy {
-        ContractorMaterialRepository(database.contractorMaterialDao(), database.contractorMaterialTransactionDao())
-    }
+    val contractorMaterialRepository: ContractorMaterialRepository
+        get() {
+            val user = FirebaseAuth.getInstance().currentUser
+            return if (user != null && user.uid.isNotBlank()) {
+                userSessionManager.getOrCreateSession(user.uid).contractorMaterialRepository
+            } else {
+                ContractorMaterialRepository(legacyDatabase.contractorMaterialDao(), legacyDatabase.contractorMaterialTransactionDao())
+            }
+        }
 
     override fun onCreate() {
         super.onCreate()
+
+        // Safety Backup Verification of Legacy Database
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val legacyDb = legacyDatabase
+                val payload = BackupManager.createBackupPayload(legacyDb)
+                Log.i(
+                    "WorkCraftLegacyBackup",
+                    "Legacy Backup Verified. Counts: " +
+                    "Workers=${payload.workers.size}, Sites=${payload.sites.size}, " +
+                    "Attendance=${payload.attendance.size}, Payments=${payload.payments.size}, " +
+                    "Contracts=${payload.contracts.size}, ClientPayments=${payload.clientPayments.size}, " +
+                    "WorkerSiteHistory=${payload.workerSiteHistory.size}, SiteAttendance=${payload.siteAttendance.size}, " +
+                    "SiteExpenses=${payload.siteExpenses.size}, SiteExpensePayments=${payload.siteExpensePayments.size}, " +
+                    "Materials=${payload.materials.size}, MaterialTx=${payload.materialTransactions.size}, " +
+                    "ContractorMaterials=${payload.contractorMaterials.size}, ContractorMaterialTx=${payload.contractorMaterialTransactions.size}"
+                )
+            } catch (e: Exception) {
+                Log.e("WorkCraftLegacyBackup", "Error performing legacy backup verification", e)
+            }
+        }
+
         val autoBackupManager = AutoBackupPreferenceManager(this)
         if (autoBackupManager.isAutoBackupEnabled.value) {
             autoBackupManager.scheduleWorkManager()

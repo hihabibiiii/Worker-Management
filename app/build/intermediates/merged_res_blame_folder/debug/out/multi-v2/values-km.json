@@ -1,25 +1,8 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-km/values-km.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-71:/values-km/values-km.xml",
             "map": [
-                {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\b37aee2ece798d5a319eef30f32aebb1\\transformed\\play-services-base-18.0.1\\res\\values-km\\values.xml",
-                    "from": {
-                        "startLines": "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
-                        "startColumns": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
-                        "startOffsets": "193,291,442,559,660,818,938,1055,1160,1314,1427,1594,1715,1856,2010,2070,2124",
-                        "endColumns": "97,150,116,100,157,119,116,104,153,112,166,120,140,153,59,53,72",
-                        "endOffsets": "290,441,558,659,817,937,1054,1159,1313,1426,1593,1714,1855,2009,2069,2123,2196"
-                    },
-                    "to": {
-                        "startLines": "13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,29,30",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "1224,1326,1481,1602,1707,1869,1993,2114,2372,2530,2647,2818,2943,3088,3246,3310,3368",
-                        "endColumns": "101,154,120,104,161,123,120,108,157,116,170,124,144,157,63,57,76",
-                        "endOffsets": "1321,1476,1597,1702,1864,1988,2109,2218,2525,2642,2813,2938,3083,3241,3305,3363,3440"
-                    }
-                },
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\7329b6ca18c4c8e09425ad80686b3f29\\transformed\\credentials-1.2.1\\res\\values-km\\values-km.xml",
                     "from": {
@@ -35,6 +18,23 @@
                         "startOffsets": "105,221",
                         "endColumns": "115,116",
                         "endOffsets": "216,333"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c0df7ad043658b28f14cafaef78c51da\\transformed\\play-services-base-18.5.0\\res\\values-km\\values.xml",
+                    "from": {
+                        "startLines": "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
+                        "startColumns": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+                        "startOffsets": "193,291,442,559,660,818,938,1055,1160,1314,1427,1594,1715,1856,2010,2070,2124",
+                        "endColumns": "97,150,116,100,157,119,116,104,153,112,166,120,140,153,59,53,72",
+                        "endOffsets": "290,441,558,659,817,937,1054,1159,1313,1426,1593,1714,1855,2009,2069,2123,2196"
+                    },
+                    "to": {
+                        "startLines": "13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,29,30",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "1224,1326,1481,1602,1707,1869,1993,2114,2372,2530,2647,2818,2943,3088,3246,3310,3368",
+                        "endColumns": "101,154,120,104,161,123,120,108,157,116,170,124,144,157,63,57,76",
+                        "endOffsets": "1321,1476,1597,1702,1864,1988,2109,2218,2525,2642,2813,2938,3083,3241,3305,3363,3440"
                     }
                 },
                 {
@@ -89,7 +89,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\e125d2f33e15d778b11fc2955c77b38d\\transformed\\play-services-basement-18.2.0\\res\\values-km\\values.xml",
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\564eca82537bd403941b2a4b15e93e1d\\transformed\\play-services-basement-18.4.0\\res\\values-km\\values.xml",
                     "from": {
                         "startLines": "4",
                         "startColumns": "0",

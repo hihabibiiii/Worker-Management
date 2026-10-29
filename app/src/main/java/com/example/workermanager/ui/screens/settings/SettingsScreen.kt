@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestorePage
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,7 +56,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenRecycleBin: () -> Unit = {},
-    onOpenProfile: () -> Unit = {}
+    onOpenProfile: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
@@ -248,6 +250,30 @@ fun SettingsScreen(
                     ) 
                 },
                 modifier = Modifier.clickable { onOpenProfile() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("WorkCraft Pro Subscription", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        "Manage monthly and yearly Pro subscription plans",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    Icon(
+                        imageVector = Icons.Default.Star, 
+                        contentDescription = "Subscription", 
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                modifier = Modifier.clickable { onOpenSubscription() },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
 

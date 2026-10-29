@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-en-rCA/values-en-rCA.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-71:/values-en-rCA/values-en-rCA.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\106a3e6b213962792d9c2a5896072f3e\\transformed\\browser-1.4.0\\res\\values-en-rCA\\values-en-rCA.xml",

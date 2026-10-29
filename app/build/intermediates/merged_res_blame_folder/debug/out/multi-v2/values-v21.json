@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-v21/values-v21.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-71:/values-v21/values-v21.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\45140cf9fe2de6691132efa2de35badf\\transformed\\credentials-play-services-auth-1.2.1\\res\\values-v21\\values-v21.xml",

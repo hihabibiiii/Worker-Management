@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-as/values-as.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-71:/values-as/values-as.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c8d15ad58bfa931ed181fc3881c8abe1\\transformed\\ui-release\\res\\values-as\\values-as.xml",
@@ -38,6 +38,23 @@
                     }
                 },
                 {
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\564eca82537bd403941b2a4b15e93e1d\\transformed\\play-services-basement-18.4.0\\res\\values-as\\values.xml",
+                    "from": {
+                        "startLines": "4",
+                        "startColumns": "0",
+                        "startOffsets": "195",
+                        "endColumns": "121",
+                        "endOffsets": "316"
+                    },
+                    "to": {
+                        "startLines": "21",
+                        "startColumns": "4",
+                        "startOffsets": "2229",
+                        "endColumns": "125",
+                        "endOffsets": "2350"
+                    }
+                },
+                {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c8a6b6b8feb2278211c970bcf0a7e130\\transformed\\material3-release\\res\\values-as\\values-as.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57",
@@ -52,23 +69,6 @@
                         "startOffsets": "4282,4401,4521,4634,4752,4848,4942,5053,5197,5318,5460,5545,5643,5738,5837,5953,6081,6184,6315,6445,6574,6754,6874,6992,7116,7249,7345,7441,7562,7688,7785,7895,8003,8139,8283,8393,8495,8572,8673,8774,8865,8957,9066,9146,9231,9332,9437,9535,9637,9724,9831,9930,10034,10155,10235,10338",
                         "endColumns": "118,119,112,117,95,93,110,143,120,141,84,97,94,98,115,127,102,130,129,128,179,119,117,123,132,95,95,120,125,96,109,107,135,143,109,101,76,100,100,90,91,108,79,84,100,104,97,101,86,106,98,103,120,79,102,93",
                         "endOffsets": "4396,4516,4629,4747,4843,4937,5048,5192,5313,5455,5540,5638,5733,5832,5948,6076,6179,6310,6440,6569,6749,6869,6987,7111,7244,7340,7436,7557,7683,7780,7890,7998,8134,8278,8388,8490,8567,8668,8769,8860,8952,9061,9141,9226,9327,9432,9530,9632,9719,9826,9925,10029,10150,10230,10333,10427"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\e125d2f33e15d778b11fc2955c77b38d\\transformed\\play-services-basement-18.2.0\\res\\values-as\\values.xml",
-                    "from": {
-                        "startLines": "4",
-                        "startColumns": "0",
-                        "startOffsets": "195",
-                        "endColumns": "121",
-                        "endOffsets": "316"
-                    },
-                    "to": {
-                        "startLines": "21",
-                        "startColumns": "4",
-                        "startOffsets": "2229",
-                        "endColumns": "125",
-                        "endOffsets": "2350"
                     }
                 },
                 {
@@ -89,7 +89,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\b37aee2ece798d5a319eef30f32aebb1\\transformed\\play-services-base-18.0.1\\res\\values-as\\values.xml",
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c0df7ad043658b28f14cafaef78c51da\\transformed\\play-services-base-18.5.0\\res\\values-as\\values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
                         "startColumns": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",

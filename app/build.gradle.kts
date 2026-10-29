@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.workermanager"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.workermanager"
+        applicationId = "com.habibullahsalmani.workcraft"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -102,6 +102,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Google Play Billing Library v8.0.0
+    implementation("com.android.billingclient:billing:8.0.0")
 
     // Excel Export - Using a more Android-compatible configuration of POI
     implementation("org.apache.poi:poi:5.2.2")

@@ -41,4 +41,5 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     }
 
     data object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    data object Subscription : Screen("subscription", "WorkCraft Pro")
 }

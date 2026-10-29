@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.workermanager.app-mergeDebugResources-70:/values-pt-rBR/values-pt-rBR.xml",
+            "outputFile": "com.example.workermanager.app-mergeDebugResources-71:/values-pt-rBR/values-pt-rBR.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c8d15ad58bfa931ed181fc3881c8abe1\\transformed\\ui-release\\res\\values-pt-rBR\\values-pt-rBR.xml",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\b37aee2ece798d5a319eef30f32aebb1\\transformed\\play-services-base-18.0.1\\res\\values-pt-rBR\\values.xml",
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\c0df7ad043658b28f14cafaef78c51da\\transformed\\play-services-base-18.5.0\\res\\values-pt-rBR\\values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
                         "startColumns": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
@@ -69,23 +69,6 @@
                         "startOffsets": "3514,3911,4010,4122",
                         "endColumns": "114,98,111,105",
                         "endOffsets": "3624,4005,4117,4223"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\e125d2f33e15d778b11fc2955c77b38d\\transformed\\play-services-basement-18.2.0\\res\\values-pt-rBR\\values.xml",
-                    "from": {
-                        "startLines": "4",
-                        "startColumns": "0",
-                        "startOffsets": "199",
-                        "endColumns": "140",
-                        "endOffsets": "339"
-                    },
-                    "to": {
-                        "startLines": "21",
-                        "startColumns": "4",
-                        "startOffsets": "2264",
-                        "endColumns": "144",
-                        "endOffsets": "2404"
                     }
                 },
                 {
@@ -120,6 +103,23 @@
                         "startOffsets": "105,214",
                         "endColumns": "108,121",
                         "endOffsets": "209,331"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Habibullah\\.gradle\\caches\\transforms-3\\564eca82537bd403941b2a4b15e93e1d\\transformed\\play-services-basement-18.4.0\\res\\values-pt-rBR\\values.xml",
+                    "from": {
+                        "startLines": "4",
+                        "startColumns": "0",
+                        "startOffsets": "199",
+                        "endColumns": "140",
+                        "endOffsets": "339"
+                    },
+                    "to": {
+                        "startLines": "21",
+                        "startColumns": "4",
+                        "startOffsets": "2264",
+                        "endColumns": "144",
+                        "endOffsets": "2404"
                     }
                 },
                 {

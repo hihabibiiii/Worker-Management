@@ -386,7 +386,18 @@ class MainActivity : ComponentActivity() {
                                     viewModel = settingsViewModel,
                                     onBack = { navController.popBackStack() },
                                     onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
-                                    onOpenProfile = { navController.navigate(Screen.Profile.route) }
+                                    onOpenProfile = { navController.navigate(Screen.Profile.route) },
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) }
+                                )
+                            }
+                            composable(Screen.Subscription.route) {
+                                val subscriptionViewModel: SubscriptionViewModel = viewModel(
+                                    key = "SubscriptionViewModel_${activeUserId ?: "none"}",
+                                    factory = SubscriptionViewModelFactory(applicationContext)
+                                )
+                                com.example.workermanager.ui.screens.subscription.SubscriptionScreen(
+                                    viewModel = subscriptionViewModel,
+                                    onNavigateBack = { navController.popBackStack() }
                                 )
                             }
                         }

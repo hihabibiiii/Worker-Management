@@ -267,7 +267,9 @@ int layout notification_template_custom_big 0x7f0a0007
 int layout notification_template_icon_group 0x7f0a0008
 int layout notification_template_part_chronometer 0x7f0a0009
 int layout notification_template_part_time 0x7f0a000a
-int raw firebase_common_keep 0x7f0b0000
+int raw com_android_billingclient_heterodyne_info 0x7f0b0000
+int raw com_android_billingclient_registration_info 0x7f0b0001
+int raw firebase_common_keep 0x7f0b0002
 int string android_credentials_TYPE_PASSWORD_CREDENTIAL 0x7f0c0000
 int string androidx_credentials_TYPE_PUBLIC_KEY_CREDENTIAL 0x7f0c0001
 int string androidx_startup 0x7f0c0002
@@ -517,6 +519,7 @@ int styleable StateListDrawable_android_exitFadeDuration 5
 int[] styleable StateListDrawableItem { 0x01010199 }
 int styleable StateListDrawableItem_android_drawable 0
 int xml backup_rules 0x7f0f0000
-int xml data_extraction_rules 0x7f0f0001
-int xml image_share_filepaths 0x7f0f0002
-int xml provider_paths 0x7f0f0003
+int xml com_android_billingclient_phenotype 0x7f0f0001
+int xml data_extraction_rules 0x7f0f0002
+int xml image_share_filepaths 0x7f0f0003
+int xml provider_paths 0x7f0f0004

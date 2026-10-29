@@ -4,15 +4,15 @@
     "type": "PROCESSED_RES",
     "kind": "Directory"
   },
-  "applicationId": "com.example.workermanager",
+  "applicationId": "com.habibullahsalmani.workcraft",
   "variantName": "debug",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 2,
-      "versionName": "1.1",
+      "versionCode": 4,
+      "versionName": "1.2",
       "outputFile": "resources-debug.ap_"
     }
   ],

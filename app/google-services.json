@@ -49,6 +49,51 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352309331151:android:2b2618fa28b7849dc623ba",
+        "android_client_info": {
+          "package_name": "com.habibullahsalmani.workcraft"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "352309331151-13stfub4ijoaish7oep6kv3u02hi20b0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.habibullahsalmani.workcraft",
+            "certificate_hash": "4ea445b18dfd847b959bd233c84c7598ef689bdc"
+          }
+        },
+        {
+          "client_id": "352309331151-379c2srk99a3i2me1kcqrp50p1jecmtg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.habibullahsalmani.workcraft",
+            "certificate_hash": "40b6d14e661e2274d071c9e7d815f831a19cffbe"
+          }
+        },
+        {
+          "client_id": "352309331151-ir0ornr6sj71327s05c4iof6smp8im6h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCV167l9x6IOSbiRPFSdh1UM7KRVvOjwvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "352309331151-ir0ornr6sj71327s05c4iof6smp8im6h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

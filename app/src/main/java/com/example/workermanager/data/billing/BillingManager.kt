@@ -158,7 +158,8 @@ class BillingManager(
         activity: Activity,
         productId: String,
         targetOfferId: String? = null,
-        targetBasePlanId: String? = null
+        targetBasePlanId: String? = null,
+        obfuscatedAccountId: String? = null
     ): BillingResult {
         val productDetails = _productDetailsMap.value[productId]
         if (productDetails == null) {
@@ -170,13 +171,22 @@ class BillingManager(
         }
 
         val offerDetailsList = productDetails.subscriptionOfferDetails
+        val basePlanOffers = if (!targetBasePlanId.isNullOrBlank()) {
+            offerDetailsList?.filter { it.basePlanId == targetBasePlanId } ?: emptyList()
+        } else {
+            offerDetailsList ?: emptyList()
+        }
+
         val selectedOffer = if (!targetOfferId.isNullOrBlank()) {
-            offerDetailsList?.find { it.offerId == targetOfferId }
-                ?: offerDetailsList?.find { it.basePlanId == targetBasePlanId }
+            basePlanOffers.find { it.offerId == targetOfferId }
+                ?: basePlanOffers.find { offer ->
+                    offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
+                }
+                ?: basePlanOffers.firstOrNull()
+                ?: offerDetailsList?.find { it.offerId == targetOfferId }
                 ?: offerDetailsList?.firstOrNull()
         } else {
-            offerDetailsList?.find { it.basePlanId == targetBasePlanId }
-                ?: offerDetailsList?.firstOrNull()
+            basePlanOffers.firstOrNull() ?: offerDetailsList?.firstOrNull()
         }
 
         val offerToken = selectedOffer?.offerToken
@@ -195,11 +205,14 @@ class BillingManager(
                 .build()
         )
 
-        val billingFlowParams = BillingFlowParams.newBuilder()
+        val billingFlowParamsBuilder = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(productDetailsParamsList)
-            .build()
 
-        return billingClient.launchBillingFlow(activity, billingFlowParams)
+        if (!obfuscatedAccountId.isNullOrBlank()) {
+            billingFlowParamsBuilder.setObfuscatedAccountId(obfuscatedAccountId)
+        }
+
+        return billingClient.launchBillingFlow(activity, billingFlowParamsBuilder.build())
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
@@ -288,6 +301,10 @@ class BillingManager(
         private const val TAG = "BillingManager"
         const val PRODUCT_PRO_MONTHLY = "workcraft_pro_monthly"
         const val PRODUCT_PRO_YEARLY = "workcraft_pro_yearly"
+        const val BASE_PLAN_MONTHLY = "monthly-plan"
+        const val BASE_PLAN_YEARLY = "yearly-plan-v2"
+        const val OFFER_MONTHLY_TRIAL = "monthly-free-trial"
+        const val OFFER_YEARLY_TRIAL = "yearly-free-trial"
         private const val MAX_RECONNECT_ATTEMPTS = 3
         private const val BASE_RECONNECT_DELAY_MS = 1000L
     }

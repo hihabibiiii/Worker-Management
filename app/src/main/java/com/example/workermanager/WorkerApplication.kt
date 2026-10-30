@@ -109,6 +109,7 @@ class WorkerApplication : Application() {
     val themePreferenceManager by lazy { ThemePreferenceManager(this) }
     val authPreferenceManager by lazy { AuthPreferenceManager(this) }
     val userSessionManager by lazy { UserSessionManager(this) }
+    val subscriptionRepository by lazy { SubscriptionRepository(this) }
 
     // Legacy database accessor preserved strictly for safety backups and offline tools
     val legacyDatabase by lazy { AppDatabase.getDatabase(this) }
@@ -154,6 +155,17 @@ class WorkerApplication : Application() {
                 )
             } catch (e: Exception) {
                 Log.e("WorkCraftLegacyBackup", "Error performing legacy backup verification", e)
+            }
+        }
+
+        // Initialize and refresh subscription status on app startup
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (FirebaseAuth.getInstance().currentUser != null) {
+                    subscriptionRepository.refreshSubscriptionStatus()
+                }
+            } catch (e: Exception) {
+                Log.e("WorkerApplication", "Error refreshing subscription on startup", e)
             }
         }
 

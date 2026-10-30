@@ -38,9 +38,12 @@ class WorkerRepository(
     }
 
     suspend fun updateWorker(worker: WorkerEntity) {
-        val updated = if (worker.syncOrigin != SyncOrigin.LEGACY) {
-            worker.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else worker
+        val updated = worker.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (worker.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else worker.syncOrigin,
+            syncId = if (worker.syncId.isBlank()) java.util.UUID.randomUUID().toString() else worker.syncId
+        )
         workerDao.updateWorker(updated)
         onDataChanged?.invoke()
     }
@@ -59,7 +62,7 @@ class WorkerRepository(
 
     suspend fun permanentlyDeleteWorker(id: Long) {
         val worker = workerDao.getAllWorkersRaw().find { it.id == id }
-        if (worker != null && worker.syncOrigin != SyncOrigin.LEGACY && worker.syncId.isNotBlank()) {
+        if (worker != null && worker.syncId.isNotBlank()) {
             workerDao.markPendingPermanentDelete(id)
         } else {
             workerDao.permanentlyDeleteWorker(id)
@@ -70,7 +73,7 @@ class WorkerRepository(
     suspend fun emptyWorkerTrash() {
         val deleted = workerDao.getAllWorkersRaw().filter { it.isDeleted }
         for (worker in deleted) {
-            if (worker.syncOrigin != SyncOrigin.LEGACY && worker.syncId.isNotBlank()) {
+            if (worker.syncId.isNotBlank()) {
                 workerDao.markPendingPermanentDelete(worker.id)
             } else {
                 workerDao.permanentlyDeleteWorker(worker.id)
@@ -94,9 +97,13 @@ class WorkerRepository(
         // 3. Update worker currentSiteId
         val worker = workerDao.getWorkerById(workerId).first()
         worker?.let {
-            val updated = if (it.syncOrigin != SyncOrigin.LEGACY) {
-                it.copy(currentSiteId = newSiteId, updatedAt = System.currentTimeMillis(), isPendingSync = true)
-            } else it.copy(currentSiteId = newSiteId)
+            val updated = it.copy(
+                currentSiteId = newSiteId,
+                updatedAt = System.currentTimeMillis(),
+                isPendingSync = true,
+                syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+            )
             workerDao.updateWorker(updated)
         }
         onDataChanged?.invoke()

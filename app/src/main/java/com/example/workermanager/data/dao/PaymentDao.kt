@@ -34,16 +34,16 @@ interface PaymentDao {
     @Delete
     suspend fun deletePayment(payment: PaymentEntity)
 
-    @Query("UPDATE payments SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE payments SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun softDeletePayment(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE payments SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE payments SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun restorePayment(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("SELECT * FROM payments WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedPayments(): Flow<List<PaymentEntity>>
 
-    @Query("UPDATE payments SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    @Query("UPDATE payments SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM payments WHERE id = :id AND isDeleted = 1")

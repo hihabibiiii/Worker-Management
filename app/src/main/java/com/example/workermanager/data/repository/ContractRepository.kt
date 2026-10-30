@@ -22,9 +22,12 @@ class ContractRepository(
     }
 
     suspend fun updateContract(contract: ContractEntity) {
-        val updated = if (contract.syncOrigin != SyncOrigin.LEGACY) {
-            contract.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else contract
+        val updated = contract.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (contract.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else contract.syncOrigin,
+            syncId = if (contract.syncId.isBlank()) java.util.UUID.randomUUID().toString() else contract.syncId
+        )
         contractDao.updateContract(updated)
         onDataChanged?.invoke()
     }
@@ -43,7 +46,7 @@ class ContractRepository(
 
     suspend fun permanentlyDeleteContract(id: Long) {
         val item = contractDao.getAllContractsRaw().find { it.id == id }
-        if (item != null && item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+        if (item != null && item.syncId.isNotBlank()) {
             contractDao.markPendingPermanentDelete(id)
         } else {
             contractDao.permanentlyDeleteContract(id)
@@ -54,7 +57,7 @@ class ContractRepository(
     suspend fun emptyContractTrash() {
         val deleted = contractDao.getAllContractsRaw().filter { it.isDeleted }
         for (item in deleted) {
-            if (item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+            if (item.syncId.isNotBlank()) {
                 contractDao.markPendingPermanentDelete(item.id)
             } else {
                 contractDao.permanentlyDeleteContract(item.id)

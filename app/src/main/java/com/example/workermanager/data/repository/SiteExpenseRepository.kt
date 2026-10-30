@@ -26,9 +26,12 @@ class SiteExpenseRepository(
     }
 
     suspend fun updateExpense(expense: SiteExpenseEntity) {
-        val updated = if (expense.syncOrigin != SyncOrigin.LEGACY) {
-            expense.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else expense
+        val updated = expense.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (expense.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else expense.syncOrigin,
+            syncId = if (expense.syncId.isBlank()) java.util.UUID.randomUUID().toString() else expense.syncId
+        )
         expenseDao.updateExpense(updated)
         onDataChanged?.invoke()
     }
@@ -45,9 +48,12 @@ class SiteExpenseRepository(
     }
 
     suspend fun updatePayment(payment: SiteExpensePaymentEntity) {
-        val updated = if (payment.syncOrigin != SyncOrigin.LEGACY) {
-            payment.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else payment
+        val updated = payment.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (payment.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else payment.syncOrigin,
+            syncId = if (payment.syncId.isBlank()) java.util.UUID.randomUUID().toString() else payment.syncId
+        )
         paymentDao.updatePayment(updated)
         onDataChanged?.invoke()
     }

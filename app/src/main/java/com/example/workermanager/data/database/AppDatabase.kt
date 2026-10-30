@@ -27,7 +27,7 @@ import com.example.workermanager.data.entity.*
         ContractorMaterialEntity::class,
         ContractorMaterialTransactionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -326,6 +326,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE attendance ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE attendance ADD COLUMN deletedAt INTEGER DEFAULT NULL")
+            }
+        }
+
         private val userInstances = mutableMapOf<String, AppDatabase>()
 
         fun getDatabaseForUser(context: Context, firebaseUid: String): AppDatabase {
@@ -350,7 +357,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_7_8,
                         MIGRATION_8_9,
                         MIGRATION_9_10,
-                        MIGRATION_10_11
+                        MIGRATION_10_11,
+                        MIGRATION_11_12
                     )
                     .build()
                 }
@@ -389,7 +397,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_7_8,
                     MIGRATION_8_9,
                     MIGRATION_9_10,
-                    MIGRATION_10_11
+                    MIGRATION_10_11,
+                    MIGRATION_11_12
                 )
                 .build()
                 INSTANCE = instance

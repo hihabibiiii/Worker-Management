@@ -39,9 +39,12 @@ class SiteRepository(
     }
     
     suspend fun updateSite(site: SiteEntity) {
-        val updated = if (site.syncOrigin != SyncOrigin.LEGACY) {
-            site.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else site
+        val updated = site.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (site.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else site.syncOrigin,
+            syncId = if (site.syncId.isBlank()) java.util.UUID.randomUUID().toString() else site.syncId
+        )
         siteDao.updateSite(updated)
         onDataChanged?.invoke()
     }
@@ -60,7 +63,7 @@ class SiteRepository(
 
     suspend fun permanentlyDeleteSite(id: Long) {
         val site = siteDao.getAllSitesRaw().find { it.id == id }
-        if (site != null && site.syncOrigin != SyncOrigin.LEGACY && site.syncId.isNotBlank()) {
+        if (site != null && site.syncId.isNotBlank()) {
             siteDao.markPendingPermanentDelete(id)
         } else {
             siteDao.permanentlyDeleteSite(id)
@@ -71,7 +74,7 @@ class SiteRepository(
     suspend fun emptySiteTrash() {
         val deleted = siteDao.getAllSitesRaw().filter { it.isDeleted }
         for (site in deleted) {
-            if (site.syncOrigin != SyncOrigin.LEGACY && site.syncId.isNotBlank()) {
+            if (site.syncId.isNotBlank()) {
                 siteDao.markPendingPermanentDelete(site.id)
             } else {
                 siteDao.permanentlyDeleteSite(site.id)

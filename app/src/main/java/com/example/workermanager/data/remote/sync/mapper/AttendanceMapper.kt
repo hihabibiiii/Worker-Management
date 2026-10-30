@@ -19,6 +19,8 @@ object AttendanceMapper {
             amount = entity.amount,
             note = entity.note,
             createdAt = entity.createdAt,
+            isDeleted = entity.isDeleted,
+            deletedAt = entity.deletedAt,
             updatedAt = entity.updatedAt
         )
     }
@@ -38,6 +40,8 @@ object AttendanceMapper {
             amount = dto.amount,
             note = dto.note,
             createdAt = dto.createdAt,
+            isDeleted = dto.isDeleted,
+            deletedAt = dto.deletedAt,
             syncOrigin = SyncOrigin.CLOUD_SYNCED,
             syncId = dto.syncId,
             updatedAt = dto.updatedAt,

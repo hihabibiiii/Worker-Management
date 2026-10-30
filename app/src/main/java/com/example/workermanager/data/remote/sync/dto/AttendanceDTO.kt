@@ -11,5 +11,7 @@ data class AttendanceDTO(
     var amount: Double = 0.0,
     var note: String = "",
     var createdAt: Long = 0L,
+    var isDeleted: Boolean = false,
+    var deletedAt: Long? = null,
     var updatedAt: Long = 0L
 )

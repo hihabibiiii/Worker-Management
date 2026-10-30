@@ -24,13 +24,16 @@ interface MaterialDao {
     @Update
     suspend fun updateMaterial(material: MaterialEntity)
 
-    @Query("UPDATE materials SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE materials SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun softDeleteMaterial(id: Long, deletedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE materials SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
+    suspend fun restoreMaterial(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("SELECT * FROM materials WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedMaterials(): Flow<List<MaterialEntity>>
 
-    @Query("UPDATE materials SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    @Query("UPDATE materials SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM materials WHERE id = :id AND isDeleted = 1")

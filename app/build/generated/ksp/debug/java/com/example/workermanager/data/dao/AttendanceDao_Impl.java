@@ -9,6 +9,7 @@ import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
+import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
@@ -20,6 +21,7 @@ import java.lang.Double;
 import java.lang.Exception;
 import java.lang.IllegalStateException;
 import java.lang.Integer;
+import java.lang.Long;
 import java.lang.Object;
 import java.lang.Override;
 import java.lang.String;
@@ -47,13 +49,23 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   private final EntityDeletionOrUpdateAdapter<AttendanceEntity> __updateAdapterOfAttendanceEntity;
 
+  private final SharedSQLiteStatement __preparedStmtOfSoftDeleteAttendance;
+
+  private final SharedSQLiteStatement __preparedStmtOfRestoreAttendance;
+
+  private final SharedSQLiteStatement __preparedStmtOfMarkPendingPermanentDelete;
+
+  private final SharedSQLiteStatement __preparedStmtOfPermanentlyDeleteAttendance;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteBySyncId;
+
   public AttendanceDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
     this.__insertionAdapterOfAttendanceEntity = new EntityInsertionAdapter<AttendanceEntity>(__db) {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `attendance` (`id`,`workerId`,`siteId`,`date`,`status`,`overtimeHours`,`overtimeAmount`,`amount`,`note`,`createdAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `attendance` (`id`,`workerId`,`siteId`,`date`,`status`,`overtimeHours`,`overtimeAmount`,`amount`,`note`,`createdAt`,`isDeleted`,`deletedAt`,`syncOrigin`,`syncId`,`updatedAt`,`isPendingSync`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -75,11 +87,18 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         statement.bindDouble(8, entity.getAmount());
         statement.bindString(9, entity.getNote());
         statement.bindLong(10, entity.getCreatedAt());
-        statement.bindLong(11, entity.getSyncOrigin());
-        statement.bindString(12, entity.getSyncId());
-        statement.bindLong(13, entity.getUpdatedAt());
-        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
-        statement.bindLong(14, _tmp_2);
+        final int _tmp_2 = entity.isDeleted() ? 1 : 0;
+        statement.bindLong(11, _tmp_2);
+        if (entity.getDeletedAt() == null) {
+          statement.bindNull(12);
+        } else {
+          statement.bindLong(12, entity.getDeletedAt());
+        }
+        statement.bindLong(13, entity.getSyncOrigin());
+        statement.bindString(14, entity.getSyncId());
+        statement.bindLong(15, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(16, _tmp_3);
       }
     };
     this.__deletionAdapterOfAttendanceEntity = new EntityDeletionOrUpdateAdapter<AttendanceEntity>(__db) {
@@ -99,7 +118,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `attendance` SET `id` = ?,`workerId` = ?,`siteId` = ?,`date` = ?,`status` = ?,`overtimeHours` = ?,`overtimeAmount` = ?,`amount` = ?,`note` = ?,`createdAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `attendance` SET `id` = ?,`workerId` = ?,`siteId` = ?,`date` = ?,`status` = ?,`overtimeHours` = ?,`overtimeAmount` = ?,`amount` = ?,`note` = ?,`createdAt` = ?,`isDeleted` = ?,`deletedAt` = ?,`syncOrigin` = ?,`syncId` = ?,`updatedAt` = ?,`isPendingSync` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -121,12 +140,59 @@ public final class AttendanceDao_Impl implements AttendanceDao {
         statement.bindDouble(8, entity.getAmount());
         statement.bindString(9, entity.getNote());
         statement.bindLong(10, entity.getCreatedAt());
-        statement.bindLong(11, entity.getSyncOrigin());
-        statement.bindString(12, entity.getSyncId());
-        statement.bindLong(13, entity.getUpdatedAt());
-        final int _tmp_2 = entity.isPendingSync() ? 1 : 0;
-        statement.bindLong(14, _tmp_2);
-        statement.bindLong(15, entity.getId());
+        final int _tmp_2 = entity.isDeleted() ? 1 : 0;
+        statement.bindLong(11, _tmp_2);
+        if (entity.getDeletedAt() == null) {
+          statement.bindNull(12);
+        } else {
+          statement.bindLong(12, entity.getDeletedAt());
+        }
+        statement.bindLong(13, entity.getSyncOrigin());
+        statement.bindString(14, entity.getSyncId());
+        statement.bindLong(15, entity.getUpdatedAt());
+        final int _tmp_3 = entity.isPendingSync() ? 1 : 0;
+        statement.bindLong(16, _tmp_3);
+        statement.bindLong(17, entity.getId());
+      }
+    };
+    this.__preparedStmtOfSoftDeleteAttendance = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE attendance SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfRestoreAttendance = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE attendance SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfMarkPendingPermanentDelete = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE attendance SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfPermanentlyDeleteAttendance = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM attendance WHERE id = ? AND isDeleted = 1";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfDeleteBySyncId = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM attendance WHERE syncId = ?";
+        return _query;
       }
     };
   }
@@ -189,8 +255,145 @@ public final class AttendanceDao_Impl implements AttendanceDao {
   }
 
   @Override
+  public Object softDeleteAttendance(final long id, final long deletedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfSoftDeleteAttendance.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, deletedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, deletedAt);
+        _argIndex = 3;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfSoftDeleteAttendance.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object restoreAttendance(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfRestoreAttendance.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfRestoreAttendance.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markPendingPermanentDelete(final long id, final long updatedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfMarkPendingPermanentDelete.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, updatedAt);
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfMarkPendingPermanentDelete.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object permanentlyDeleteAttendance(final long id,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfPermanentlyDeleteAttendance.acquire();
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, id);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfPermanentlyDeleteAttendance.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteBySyncId(final String syncId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteBySyncId.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, syncId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteBySyncId.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Flow<List<AttendanceEntity>> getAllAttendance() {
-    final String _sql = "SELECT * FROM attendance ORDER BY date DESC";
+    final String _sql = "SELECT * FROM attendance WHERE isDeleted = 0 ORDER BY date DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<List<AttendanceEntity>>() {
       @Override
@@ -208,6 +411,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -248,6 +453,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -255,10 +470,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_3;
-            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_3 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -296,6 +511,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -336,6 +553,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -343,10 +570,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_3;
-            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_3 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -382,6 +609,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -421,6 +650,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -428,10 +667,117 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_3;
-            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_3 != 0;
-            _result = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _result = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getAttendanceByWorkerSiteAndDate(final long workerId, final long siteId,
+      final LocalDate date, final Continuation<? super AttendanceEntity> $completion) {
+    final String _sql = "SELECT * FROM attendance WHERE workerId = ? AND siteId = ? AND date = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 3);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, workerId);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, siteId);
+    _argIndex = 3;
+    final String _tmp = __converters.fromLocalDate(date);
+    if (_tmp == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, _tmp);
+    }
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<AttendanceEntity>() {
+      @Override
+      @Nullable
+      public AttendanceEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOvertimeHours = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeHours");
+          final int _cursorIndexOfOvertimeAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeAmount");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final AttendanceEntity _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp_1;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp_1 = null;
+            } else {
+              _tmp_1 = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_2 = __converters.toLocalDate(_tmp_1);
+            if (_tmp_2 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_2;
+            }
+            final AttendanceStatus _tmpStatus;
+            final String _tmp_3;
+            _tmp_3 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toAttendanceStatus(_tmp_3);
+            final double _tmpOvertimeHours;
+            _tmpOvertimeHours = _cursor.getDouble(_cursorIndexOfOvertimeHours);
+            final double _tmpOvertimeAmount;
+            _tmpOvertimeAmount = _cursor.getDouble(_cursorIndexOfOvertimeAmount);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _result = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
           } else {
             _result = null;
           }
@@ -446,7 +792,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<List<AttendanceEntity>> getAttendanceByDate(final LocalDate date) {
-    final String _sql = "SELECT * FROM attendance WHERE date = ?";
+    final String _sql = "SELECT * FROM attendance WHERE date = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     final String _tmp = __converters.fromLocalDate(date);
@@ -471,6 +817,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -511,6 +859,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -518,10 +876,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_4;
-            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_4 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -540,7 +898,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
   @Override
   public Flow<List<AttendanceEntity>> getAttendanceBySiteAndDate(final long siteId,
       final LocalDate date) {
-    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND date = ?";
+    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND date = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, siteId);
@@ -567,6 +925,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -607,6 +967,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -614,10 +984,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_4;
-            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_4 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -636,7 +1006,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
   @Override
   public Object getAttendanceListBySiteAndDate(final long siteId, final LocalDate date,
       final Continuation<? super List<AttendanceEntity>> $completion) {
-    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND date = ?";
+    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND date = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, siteId);
@@ -664,6 +1034,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -704,6 +1076,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_4 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -711,10 +1093,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_4;
-            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_4 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_5 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -728,7 +1110,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<List<AttendanceEntity>> getAttendanceByWorker(final long workerId) {
-    final String _sql = "SELECT * FROM attendance WHERE workerId = ? ORDER BY date DESC";
+    final String _sql = "SELECT * FROM attendance WHERE workerId = ? AND isDeleted = 0 ORDER BY date DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, workerId);
@@ -748,6 +1130,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -788,6 +1172,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -795,10 +1189,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_3;
-            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_3 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -816,7 +1210,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<List<AttendanceEntity>> getAttendanceBySite(final long siteId) {
-    final String _sql = "SELECT * FROM attendance WHERE siteId = ? ORDER BY date DESC";
+    final String _sql = "SELECT * FROM attendance WHERE siteId = ? AND isDeleted = 0 ORDER BY date DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, siteId);
@@ -836,6 +1230,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -876,6 +1272,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -883,10 +1289,10 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_3;
-            _tmp_3 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_3 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -905,7 +1311,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
   @Override
   public Flow<List<AttendanceEntity>> getAttendanceInRange(final LocalDate startDate,
       final LocalDate endDate) {
-    final String _sql = "SELECT * FROM attendance WHERE date BETWEEN ? AND ?";
+    final String _sql = "SELECT * FROM attendance WHERE date BETWEEN ? AND ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
     int _argIndex = 1;
     final String _tmp = __converters.fromLocalDate(startDate);
@@ -937,6 +1343,8 @@ public final class AttendanceDao_Impl implements AttendanceDao {
           final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
           final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
           final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
@@ -977,6 +1385,16 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             _tmpNote = _cursor.getString(_cursorIndexOfNote);
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_5;
+            _tmp_5 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_5 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
             final int _tmpSyncOrigin;
             _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
             final String _tmpSyncId;
@@ -984,10 +1402,108 @@ public final class AttendanceDao_Impl implements AttendanceDao {
             final long _tmpUpdatedAt;
             _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
             final boolean _tmpIsPendingSync;
-            final int _tmp_5;
-            _tmp_5 = _cursor.getInt(_cursorIndexOfIsPendingSync);
-            _tmpIsPendingSync = _tmp_5 != 0;
-            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            final int _tmp_6;
+            _tmp_6 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_6 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Flow<List<AttendanceEntity>> getDeletedAttendance() {
+    final String _sql = "SELECT * FROM attendance WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<List<AttendanceEntity>>() {
+      @Override
+      @NonNull
+      public List<AttendanceEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfWorkerId = CursorUtil.getColumnIndexOrThrow(_cursor, "workerId");
+          final int _cursorIndexOfSiteId = CursorUtil.getColumnIndexOrThrow(_cursor, "siteId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOvertimeHours = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeHours");
+          final int _cursorIndexOfOvertimeAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "overtimeAmount");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfIsDeleted = CursorUtil.getColumnIndexOrThrow(_cursor, "isDeleted");
+          final int _cursorIndexOfDeletedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "deletedAt");
+          final int _cursorIndexOfSyncOrigin = CursorUtil.getColumnIndexOrThrow(_cursor, "syncOrigin");
+          final int _cursorIndexOfSyncId = CursorUtil.getColumnIndexOrThrow(_cursor, "syncId");
+          final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
+          final int _cursorIndexOfIsPendingSync = CursorUtil.getColumnIndexOrThrow(_cursor, "isPendingSync");
+          final List<AttendanceEntity> _result = new ArrayList<AttendanceEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final AttendanceEntity _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpWorkerId;
+            _tmpWorkerId = _cursor.getLong(_cursorIndexOfWorkerId);
+            final long _tmpSiteId;
+            _tmpSiteId = _cursor.getLong(_cursorIndexOfSiteId);
+            final LocalDate _tmpDate;
+            final String _tmp;
+            if (_cursor.isNull(_cursorIndexOfDate)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getString(_cursorIndexOfDate);
+            }
+            final LocalDate _tmp_1 = __converters.toLocalDate(_tmp);
+            if (_tmp_1 == null) {
+              throw new IllegalStateException("Expected NON-NULL 'java.time.LocalDate', but it was NULL.");
+            } else {
+              _tmpDate = _tmp_1;
+            }
+            final AttendanceStatus _tmpStatus;
+            final String _tmp_2;
+            _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
+            _tmpStatus = __converters.toAttendanceStatus(_tmp_2);
+            final double _tmpOvertimeHours;
+            _tmpOvertimeHours = _cursor.getDouble(_cursorIndexOfOvertimeHours);
+            final double _tmpOvertimeAmount;
+            _tmpOvertimeAmount = _cursor.getDouble(_cursorIndexOfOvertimeAmount);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final String _tmpNote;
+            _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final boolean _tmpIsDeleted;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfIsDeleted);
+            _tmpIsDeleted = _tmp_3 != 0;
+            final Long _tmpDeletedAt;
+            if (_cursor.isNull(_cursorIndexOfDeletedAt)) {
+              _tmpDeletedAt = null;
+            } else {
+              _tmpDeletedAt = _cursor.getLong(_cursorIndexOfDeletedAt);
+            }
+            final int _tmpSyncOrigin;
+            _tmpSyncOrigin = _cursor.getInt(_cursorIndexOfSyncOrigin);
+            final String _tmpSyncId;
+            _tmpSyncId = _cursor.getString(_cursorIndexOfSyncId);
+            final long _tmpUpdatedAt;
+            _tmpUpdatedAt = _cursor.getLong(_cursorIndexOfUpdatedAt);
+            final boolean _tmpIsPendingSync;
+            final int _tmp_4;
+            _tmp_4 = _cursor.getInt(_cursorIndexOfIsPendingSync);
+            _tmpIsPendingSync = _tmp_4 != 0;
+            _item = new AttendanceEntity(_tmpId,_tmpWorkerId,_tmpSiteId,_tmpDate,_tmpStatus,_tmpOvertimeHours,_tmpOvertimeAmount,_tmpAmount,_tmpNote,_tmpCreatedAt,_tmpIsDeleted,_tmpDeletedAt,_tmpSyncOrigin,_tmpSyncId,_tmpUpdatedAt,_tmpIsPendingSync);
             _result.add(_item);
           }
           return _result;
@@ -1005,7 +1521,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Double> getTotalEarned() {
-    final String _sql = "SELECT SUM(amount) FROM attendance";
+    final String _sql = "SELECT SUM(amount) FROM attendance WHERE isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<Double>() {
       @Override
@@ -1040,7 +1556,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Double> getTotalEarnedByWorker(final long workerId) {
-    final String _sql = "SELECT SUM(amount) FROM attendance WHERE workerId = ?";
+    final String _sql = "SELECT SUM(amount) FROM attendance WHERE workerId = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, workerId);
@@ -1077,7 +1593,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Double> getTotalEarnedBySite(final long siteId) {
-    final String _sql = "SELECT SUM(amount) FROM attendance WHERE siteId = ?";
+    final String _sql = "SELECT SUM(amount) FROM attendance WHERE siteId = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, siteId);
@@ -1114,7 +1630,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Double> getTodayTotalWage(final LocalDate date) {
-    final String _sql = "SELECT SUM(amount) FROM attendance WHERE date = ?";
+    final String _sql = "SELECT SUM(amount) FROM attendance WHERE date = ? AND isDeleted = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     final String _tmp = __converters.fromLocalDate(date);
@@ -1156,7 +1672,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Integer> getSiteWorkingDays(final long siteId) {
-    final String _sql = "SELECT COUNT(DISTINCT date) FROM attendance WHERE siteId = ? AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME')";
+    final String _sql = "SELECT COUNT(DISTINCT date) FROM attendance WHERE siteId = ? AND isDeleted = 0 AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME')";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, siteId);
@@ -1189,7 +1705,7 @@ public final class AttendanceDao_Impl implements AttendanceDao {
 
   @Override
   public Flow<Integer> getTotalSiteWorkingDays() {
-    final String _sql = "SELECT COUNT(*) FROM (SELECT DISTINCT siteId, date FROM attendance WHERE status IN ('PRESENT', 'HALF_DAY', 'OVERTIME'))";
+    final String _sql = "SELECT COUNT(*) FROM (SELECT DISTINCT siteId, date FROM attendance WHERE isDeleted = 0 AND status IN ('PRESENT', 'HALF_DAY', 'OVERTIME'))";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     return CoroutinesRoom.createFlow(__db, false, new String[] {"attendance"}, new Callable<Integer>() {
       @Override

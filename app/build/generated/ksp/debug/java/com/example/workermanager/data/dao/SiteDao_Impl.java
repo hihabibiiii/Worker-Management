@@ -151,7 +151,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE sites SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        final String _query = "UPDATE sites SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };
@@ -159,7 +159,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE sites SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        final String _query = "UPDATE sites SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };
@@ -167,7 +167,7 @@ public final class SiteDao_Impl implements SiteDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE sites SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ? AND syncOrigin != 0";
+        final String _query = "UPDATE sites SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };

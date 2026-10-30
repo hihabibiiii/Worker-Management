@@ -24,10 +24,10 @@ interface SiteExpensePaymentDao {
     @Update
     suspend fun updatePayment(payment: SiteExpensePaymentEntity)
 
-    @Query("UPDATE site_expense_payments SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE site_expense_payments SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun softDeletePayment(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE site_expense_payments SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE site_expense_payments SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun restorePayment(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM site_expense_payments WHERE syncId = :syncId")

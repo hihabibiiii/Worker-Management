@@ -31,9 +31,12 @@ class PaymentRepository(
     }
 
     suspend fun updatePayment(payment: PaymentEntity) {
-        val updated = if (payment.syncOrigin != SyncOrigin.LEGACY) {
-            payment.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else payment
+        val updated = payment.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (payment.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else payment.syncOrigin,
+            syncId = if (payment.syncId.isBlank()) java.util.UUID.randomUUID().toString() else payment.syncId
+        )
         paymentDao.updatePayment(updated)
         onDataChanged?.invoke()
     }
@@ -52,7 +55,7 @@ class PaymentRepository(
 
     suspend fun permanentlyDeletePayment(id: Long) {
         val item = paymentDao.getAllPaymentsRaw().find { it.id == id }
-        if (item != null && item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+        if (item != null && item.syncId.isNotBlank()) {
             paymentDao.markPendingPermanentDelete(id)
         } else {
             paymentDao.permanentlyDeletePayment(id)
@@ -63,7 +66,7 @@ class PaymentRepository(
     suspend fun emptyPaymentTrash() {
         val deleted = paymentDao.getAllPaymentsRaw().filter { it.isDeleted }
         for (item in deleted) {
-            if (item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+            if (item.syncId.isNotBlank()) {
                 paymentDao.markPendingPermanentDelete(item.id)
             } else {
                 paymentDao.permanentlyDeletePayment(item.id)

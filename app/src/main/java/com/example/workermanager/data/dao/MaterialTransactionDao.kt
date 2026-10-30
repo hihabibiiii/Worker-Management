@@ -27,10 +27,10 @@ interface MaterialTransactionDao {
     @Update
     suspend fun updateTransaction(transaction: MaterialTransactionEntity)
 
-    @Query("UPDATE material_transactions SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE material_transactions SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun softDeleteTransaction(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE material_transactions SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE material_transactions SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun restoreTransaction(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM material_transactions WHERE syncId = :syncId")

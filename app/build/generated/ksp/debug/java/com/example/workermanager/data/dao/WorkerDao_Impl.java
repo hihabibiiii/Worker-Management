@@ -179,7 +179,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE workers SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        final String _query = "UPDATE workers SET isDeleted = 1, deletedAt = ?, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };
@@ -187,7 +187,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE workers SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = ?";
+        final String _query = "UPDATE workers SET isDeleted = 0, deletedAt = NULL, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };
@@ -195,7 +195,7 @@ public final class WorkerDao_Impl implements WorkerDao {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE workers SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ? AND syncOrigin != 0";
+        final String _query = "UPDATE workers SET deletedAt = -1, updatedAt = ?, isPendingSync = 1 WHERE id = ?";
         return _query;
       }
     };

@@ -28,9 +28,12 @@ class ContractorMaterialRepository(
     }
 
     suspend fun updateMaterial(material: ContractorMaterialEntity) {
-        val updated = if (material.syncOrigin != SyncOrigin.LEGACY) {
-            material.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else material
+        val updated = material.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (material.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else material.syncOrigin,
+            syncId = if (material.syncId.isBlank()) java.util.UUID.randomUUID().toString() else material.syncId
+        )
         materialDao.updateMaterial(updated)
         onDataChanged?.invoke()
     }
@@ -45,9 +48,14 @@ class ContractorMaterialRepository(
         onDataChanged?.invoke()
     }
 
+    suspend fun restoreMaterial(id: Long) {
+        materialDao.restoreMaterial(id)
+        onDataChanged?.invoke()
+    }
+
     suspend fun permanentlyDeleteMaterial(id: Long) {
         val item = materialDao.getAllMaterialsRaw().find { it.id == id }
-        if (item != null && item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+        if (item != null && item.syncId.isNotBlank()) {
             materialDao.markPendingPermanentDelete(id)
         } else {
             materialDao.permanentlyDeleteMaterial(id)
@@ -58,7 +66,7 @@ class ContractorMaterialRepository(
     suspend fun emptyMaterialTrash() {
         val deleted = materialDao.getAllMaterialsRaw().filter { it.isDeleted }
         for (item in deleted) {
-            if (item.syncOrigin != SyncOrigin.LEGACY && item.syncId.isNotBlank()) {
+            if (item.syncId.isNotBlank()) {
                 materialDao.markPendingPermanentDelete(item.id)
             } else {
                 materialDao.permanentlyDeleteMaterial(item.id)
@@ -74,9 +82,12 @@ class ContractorMaterialRepository(
     }
 
     suspend fun updateTransaction(transaction: ContractorMaterialTransactionEntity) {
-        val updated = if (transaction.syncOrigin != SyncOrigin.LEGACY) {
-            transaction.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else transaction
+        val updated = transaction.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (transaction.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else transaction.syncOrigin,
+            syncId = if (transaction.syncId.isBlank()) java.util.UUID.randomUUID().toString() else transaction.syncId
+        )
         transactionDao.updateTransaction(updated)
         onDataChanged?.invoke()
     }

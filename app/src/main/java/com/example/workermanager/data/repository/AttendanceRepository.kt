@@ -45,6 +45,9 @@ class AttendanceRepository(
     fun getTotalSiteWorkingDays(): Flow<Int> =
         attendanceDao.getTotalSiteWorkingDays()
 
+    fun getDeletedAttendance(): Flow<List<AttendanceEntity>> =
+        attendanceDao.getDeletedAttendance()
+
     fun getSiteAttendance(siteId: Long): Flow<List<com.example.workermanager.data.entity.SiteAttendanceEntity>> =
         siteAttendanceDao.getSiteAttendance(siteId)
 
@@ -54,23 +57,56 @@ class AttendanceRepository(
         }
 
     suspend fun insertAttendance(attendance: AttendanceEntity) {
-        attendanceDao.insertAttendance(attendance)
+        val existing = attendanceDao.getAttendanceByWorkerSiteAndDate(attendance.workerId, attendance.siteId, attendance.date)
+        if (existing != null) {
+            val toUpdate = attendance.copy(
+                id = existing.id,
+                syncId = if (existing.syncId.isNotBlank()) existing.syncId else attendance.syncId,
+                isDeleted = false,
+                deletedAt = null,
+                updatedAt = System.currentTimeMillis(),
+                isPendingSync = true,
+                syncOrigin = if (existing.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else existing.syncOrigin
+            )
+            attendanceDao.updateAttendance(toUpdate)
+        } else {
+            attendanceDao.insertAttendance(
+                attendance.copy(
+                    isDeleted = false,
+                    deletedAt = null,
+                    updatedAt = System.currentTimeMillis(),
+                    isPendingSync = true
+                )
+            )
+        }
         recalculateSiteAttendance(attendance.siteId, attendance.date)
         onDataChanged?.invoke()
     }
 
     suspend fun updateAttendance(attendance: AttendanceEntity) {
-        val updated = if (attendance.syncOrigin != SyncOrigin.LEGACY) {
-            attendance.copy(updatedAt = System.currentTimeMillis(), isPendingSync = true)
-        } else attendance
+        val updated = attendance.copy(
+            updatedAt = System.currentTimeMillis(),
+            isPendingSync = true,
+            syncOrigin = if (attendance.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else attendance.syncOrigin,
+            syncId = if (attendance.syncId.isBlank()) java.util.UUID.randomUUID().toString() else attendance.syncId
+        )
         attendanceDao.updateAttendance(updated)
         recalculateSiteAttendance(attendance.siteId, attendance.date)
         onDataChanged?.invoke()
     }
 
     suspend fun deleteAttendance(attendance: AttendanceEntity) {
-        attendanceDao.deleteAttendance(attendance)
+        attendanceDao.softDeleteAttendance(attendance.id)
         recalculateSiteAttendance(attendance.siteId, attendance.date)
+        onDataChanged?.invoke()
+    }
+
+    suspend fun restoreAttendance(id: Long) {
+        attendanceDao.restoreAttendance(id)
+        val restored = attendanceDao.getAllAttendanceRaw().find { it.id == id }
+        if (restored != null) {
+            recalculateSiteAttendance(restored.siteId, restored.date)
+        }
         onDataChanged?.invoke()
     }
 

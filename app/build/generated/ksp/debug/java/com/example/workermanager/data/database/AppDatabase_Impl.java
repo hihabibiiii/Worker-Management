@@ -86,11 +86,11 @@ public final class AppDatabase_Impl extends AppDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(11) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(12) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `workers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `phone` TEXT NOT NULL, `workerType` TEXT NOT NULL, `dailyRate` REAL NOT NULL, `overtimeRate` REAL NOT NULL, `joiningDate` TEXT NOT NULL, `currentSiteId` INTEGER, `isActive` INTEGER NOT NULL, `notes` TEXT NOT NULL, `photoPath` TEXT, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `status` TEXT NOT NULL, `overtimeHours` REAL NOT NULL, `overtimeAmount` REAL NOT NULL, `amount` REAL NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `date` TEXT NOT NULL, `status` TEXT NOT NULL, `overtimeHours` REAL NOT NULL, `overtimeAmount` REAL NOT NULL, `amount` REAL NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_attendance_workerId_siteId_date` ON `attendance` (`workerId`, `siteId`, `date`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `workerId` INTEGER NOT NULL, `siteId` INTEGER NOT NULL, `amount` REAL NOT NULL, `date` TEXT NOT NULL, `method` TEXT NOT NULL, `paymentType` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL, FOREIGN KEY(`workerId`) REFERENCES `workers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE TABLE IF NOT EXISTS `sites` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `address` TEXT NOT NULL, `manager` TEXT NOT NULL, `startDate` TEXT NOT NULL, `status` TEXT NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL)");
@@ -106,7 +106,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `contractor_materials` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `unit` TEXT NOT NULL, `minStockLevel` REAL NOT NULL, `notes` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `isPendingSync` INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `contractor_material_transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `materialId` INTEGER NOT NULL, `siteId` INTEGER, `transactionType` TEXT NOT NULL, `transactionDate` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT NOT NULL, `reasonOrNotes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, `deletedAt` INTEGER, `syncOrigin` INTEGER NOT NULL, `syncId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `isPendingSync` INTEGER NOT NULL, FOREIGN KEY(`materialId`) REFERENCES `contractor_materials`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`siteId`) REFERENCES `sites`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '361e7f1ea9c7142a36e6e4d5404d5682')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1f628c3601912f7b530b903c6f288533')");
       }
 
       @Override
@@ -196,7 +196,7 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoWorkers + "\n"
                   + " Found:\n" + _existingWorkers);
         }
-        final HashMap<String, TableInfo.Column> _columnsAttendance = new HashMap<String, TableInfo.Column>(14);
+        final HashMap<String, TableInfo.Column> _columnsAttendance = new HashMap<String, TableInfo.Column>(16);
         _columnsAttendance.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("workerId", new TableInfo.Column("workerId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("siteId", new TableInfo.Column("siteId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -207,6 +207,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         _columnsAttendance.put("amount", new TableInfo.Column("amount", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("note", new TableInfo.Column("note", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsAttendance.put("isDeleted", new TableInfo.Column("isDeleted", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsAttendance.put("deletedAt", new TableInfo.Column("deletedAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("syncOrigin", new TableInfo.Column("syncOrigin", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("syncId", new TableInfo.Column("syncId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsAttendance.put("updatedAt", new TableInfo.Column("updatedAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -529,7 +531,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "361e7f1ea9c7142a36e6e4d5404d5682", "0a79ce66cd3c65bb212101af2c16d6cf");
+    }, "1f628c3601912f7b530b903c6f288533", "5ce508dc5a621b2648de0aace27c02e7");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;

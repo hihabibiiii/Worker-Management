@@ -45,7 +45,7 @@ object AttendanceSyncEngine {
                 if (resolvedWorkerId == null || resolvedSiteId == null) continue
 
                 if (existingLocal == null) {
-                    if (false) continue // AttendanceDTO does not have isDeleted flag
+                    if (cloudDto.isDeleted) continue
                     val entity = AttendanceMapper.toEntity(
                         cloudDto,
                         localWorkerId = resolvedWorkerId,
@@ -61,7 +61,7 @@ object AttendanceSyncEngine {
                         localSiteId = resolvedSiteId
                     ).copy(isPendingSync = false)
                     attendanceDao.updateAttendance(updatedEntity)
-                    Log.d(TAG, "Updated attendance: ${cloudDto.date} (${cloudDto.syncId})")
+                    Log.d(TAG, "Updated attendance: ${cloudDto.date} (${cloudDto.syncId}) isDeleted=${cloudDto.isDeleted}")
                 }
             }
 
@@ -81,8 +81,13 @@ object AttendanceSyncEngine {
 
                     val dto = AttendanceMapper.toDTO(localItem, workerSyncId = workerSyncId, siteSyncId = siteSyncId)
                     attRef.document(localItem.syncId).set(dto, SetOptions.merge()).await()
-                    attendanceDao.updateAttendance(localItem.copy(isPendingSync = false))
-                    Log.d(TAG, "Pushed attendance: ${localItem.date} (${localItem.syncId})")
+                    if (localItem.deletedAt == -1L) {
+                        attendanceDao.deleteBySyncId(localItem.syncId)
+                        Log.d(TAG, "Permanently purged attendance tombstone after cloud ack: ${localItem.syncId}")
+                    } else {
+                        attendanceDao.updateAttendance(localItem.copy(isPendingSync = false))
+                        Log.d(TAG, "Pushed attendance: ${localItem.date} (${localItem.syncId}) isDeleted=${localItem.isDeleted}")
+                    }
                 }
             }
 

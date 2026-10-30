@@ -50,6 +50,11 @@ sealed class OwnershipValidationResult {
     data class Invalid(val userFacingErrorMessage: String) : OwnershipValidationResult()
 }
 
+sealed class IntegrityValidationResult {
+    object Valid : IntegrityValidationResult()
+    data class Invalid(val reason: String) : IntegrityValidationResult()
+}
+
 object BackupManager {
 
     private val backupMutex = Mutex()
@@ -78,6 +83,117 @@ object BackupManager {
     fun validateBackupOwnership(payload: BackupPayload): OwnershipValidationResult {
         val currentUid = FirebaseAuth.getInstance().currentUser?.uid
         return validateBackupOwnership(payload.ownerUid, currentUid)
+    }
+
+    fun validateBackupIntegrity(payload: BackupPayload): IntegrityValidationResult {
+        if (payload.appName != "WorkCraft") {
+            return IntegrityValidationResult.Invalid("Invalid app signature. Expected WorkCraft backup.")
+        }
+        if (payload.version <= 0 || payload.version > 2) {
+            return IntegrityValidationResult.Invalid("Unsupported backup version: ${payload.version}.")
+        }
+
+        // Validate Foreign Key Dependencies
+        val siteIds = payload.sites.map { it.id }.toSet()
+        val workerIds = payload.workers.map { it.id }.toSet()
+        val contractIds = payload.contracts.map { it.id }.toSet()
+        val expenseIds = payload.siteExpenses.map { it.id }.toSet()
+        val materialIds = payload.materials.map { it.id }.toSet()
+        val contractorMatIds = payload.contractorMaterials.map { it.id }.toSet()
+
+        // 1. Workers currentSiteId
+        for (w in payload.workers) {
+            if (w.currentSiteId != null && w.currentSiteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Worker '${w.name}' (id=${w.id}) references non-existent siteId=${w.currentSiteId}.")
+            }
+        }
+
+        // 2. Attendance
+        for (att in payload.attendance) {
+            if (att.workerId !in workerIds) {
+                return IntegrityValidationResult.Invalid("Attendance entry (id=${att.id}) references non-existent workerId=${att.workerId}.")
+            }
+            if (att.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Attendance entry (id=${att.id}) references non-existent siteId=${att.siteId}.")
+            }
+        }
+
+        // 3. Payments
+        for (p in payload.payments) {
+            if (p.workerId !in workerIds) {
+                return IntegrityValidationResult.Invalid("Payment (id=${p.id}) references non-existent workerId=${p.workerId}.")
+            }
+            if (p.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Payment (id=${p.id}) references non-existent siteId=${p.siteId}.")
+            }
+        }
+
+        // 4. Contracts
+        for (c in payload.contracts) {
+            if (c.siteId != null && c.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Contract '${c.clientName}' (id=${c.id}) references non-existent siteId=${c.siteId}.")
+            }
+        }
+
+        // 5. Client Payments
+        for (cp in payload.clientPayments) {
+            if (cp.contractId !in contractIds) {
+                return IntegrityValidationResult.Invalid("Client payment (id=${cp.id}) references non-existent contractId=${cp.contractId}.")
+            }
+        }
+
+        // 6. Worker Site History
+        for (h in payload.workerSiteHistory) {
+            if (h.workerId !in workerIds) {
+                return IntegrityValidationResult.Invalid("Worker history (id=${h.id}) references non-existent workerId=${h.workerId}.")
+            }
+            if (h.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Worker history (id=${h.id}) references non-existent siteId=${h.siteId}.")
+            }
+        }
+
+        // 7. Site Attendance
+        for (sa in payload.siteAttendance) {
+            if (sa.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Site attendance (id=${sa.id}) references non-existent siteId=${sa.siteId}.")
+            }
+        }
+
+        // 8. Site Expenses
+        for (e in payload.siteExpenses) {
+            if (e.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Site expense (id=${e.id}) references non-existent siteId=${e.siteId}.")
+            }
+        }
+
+        // 9. Site Expense Payments
+        for (ep in payload.siteExpensePayments) {
+            if (ep.expenseId !in expenseIds) {
+                return IntegrityValidationResult.Invalid("Expense payment (id=${ep.id}) references non-existent expenseId=${ep.expenseId}.")
+            }
+        }
+
+        // 10. Material Transactions
+        for (mt in payload.materialTransactions) {
+            if (mt.materialId !in materialIds) {
+                return IntegrityValidationResult.Invalid("Material transaction (id=${mt.id}) references non-existent materialId=${mt.materialId}.")
+            }
+            if (mt.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Material transaction (id=${mt.id}) references non-existent siteId=${mt.siteId}.")
+            }
+        }
+
+        // 11. Contractor Material Transactions
+        for (cmt in payload.contractorMaterialTransactions) {
+            if (cmt.materialId !in contractorMatIds) {
+                return IntegrityValidationResult.Invalid("Contractor material transaction (id=${cmt.id}) references non-existent materialId=${cmt.materialId}.")
+            }
+            if (cmt.siteId != null && cmt.siteId !in siteIds) {
+                return IntegrityValidationResult.Invalid("Contractor material transaction (id=${cmt.id}) references non-existent siteId=${cmt.siteId}.")
+            }
+        }
+
+        return IntegrityValidationResult.Valid
     }
 
     suspend fun createBackupPayload(database: AppDatabase, ownerUid: String? = null): BackupPayload = withContext(Dispatchers.IO) {
@@ -118,8 +234,9 @@ object BackupManager {
         val mapper = getObjectMapper()
         val payload = mapper.readValue(json, BackupPayload::class.java)
         
-        if (payload.appName != "WorkCraft" || payload.version <= 0 || payload.version > 2) {
-            throw IllegalArgumentException("Incompatible or invalid WorkCraft backup file.")
+        val integrity = validateBackupIntegrity(payload)
+        if (integrity is IntegrityValidationResult.Invalid) {
+            throw IllegalArgumentException(integrity.reason)
         }
         payload
     }
@@ -336,39 +453,198 @@ object BackupManager {
     }
 
     suspend fun restoreBackup(database: AppDatabase, payload: BackupPayload) = withContext(Dispatchers.IO) {
-        val validation = validateBackupOwnership(payload)
-        if (validation is OwnershipValidationResult.Invalid) {
-            throw IllegalStateException(validation.userFacingErrorMessage)
+        val ownership = validateBackupOwnership(payload)
+        if (ownership is OwnershipValidationResult.Invalid) {
+            throw IllegalStateException(ownership.userFacingErrorMessage)
+        }
+
+        val integrity = validateBackupIntegrity(payload)
+        if (integrity is IntegrityValidationResult.Invalid) {
+            throw IllegalArgumentException("Backup integrity check failed: ${integrity.reason}")
+        }
+
+        // Safety check: protect against restoring completely empty backup over populated database
+        val currentWorkers = database.workerDao().getAllWorkersRaw().size
+        val currentSites = database.siteDao().getAllSitesRaw().size
+        val currentAttendance = database.attendanceDao().getAllAttendanceRaw().size
+        val totalExisting = currentWorkers + currentSites + currentAttendance
+
+        val payloadTotal = payload.workers.size + payload.sites.size + payload.attendance.size
+        if (totalExisting > 0 && payloadTotal == 0) {
+            throw IllegalArgumentException("Refusing to restore an empty backup over an existing database containing $totalExisting records.")
         }
 
         database.withTransaction {
             database.clearAllTables()
 
+            val now = System.currentTimeMillis()
+
             // 1. Insert Parent Sites first
-            payload.sites.forEach { database.siteDao().insertSite(it) }
+            payload.sites.forEach { 
+                database.siteDao().insertSite(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
 
-            // 2. Insert Workers & Contracts (may reference Sites)
-            payload.workers.forEach { database.workerDao().insertWorker(it) }
-            payload.contracts.forEach { database.contractDao().insertContract(it) }
+            // 2. Insert Materials and Contractor Materials
+            payload.materials.forEach { 
+                database.materialDao().insertMaterial(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.contractorMaterials.forEach { 
+                database.contractorMaterialDao().insertMaterial(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
 
-            // 3. Insert Dependent Child Entities
-            payload.attendance.forEach { database.attendanceDao().insertAttendance(it) }
-            payload.payments.forEach { database.paymentDao().insertPayment(it) }
-            payload.clientPayments.forEach { database.clientPaymentDao().insertPayment(it) }
-            payload.workerSiteHistory.forEach { database.workerSiteHistoryDao().insert(it) }
-            payload.siteAttendance.forEach { database.siteAttendanceDao().insertSiteAttendance(it) }
+            // 3. Insert Workers & Contracts (may reference Sites)
+            payload.workers.forEach { 
+                database.workerDao().insertWorker(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.contracts.forEach { 
+                database.contractDao().insertContract(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
 
-            // 4. Insert Site Expenses and Expense Payments
-            payload.siteExpenses.forEach { database.siteExpenseDao().insertExpense(it) }
-            payload.siteExpensePayments.forEach { database.siteExpensePaymentDao().insertPayment(it) }
+            // 4. Insert Dependent Child Entities
+            payload.attendance.forEach { 
+                database.attendanceDao().insertAttendance(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.payments.forEach { 
+                database.paymentDao().insertPayment(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.clientPayments.forEach { 
+                database.clientPaymentDao().insertPayment(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.workerSiteHistory.forEach { 
+                database.workerSiteHistoryDao().insert(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.siteAttendance.forEach { 
+                database.siteAttendanceDao().insertSiteAttendance(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
 
-            // 5. Insert Materials and Material Transactions
-            payload.materials.forEach { database.materialDao().insertMaterial(it) }
-            payload.materialTransactions.forEach { database.materialTransactionDao().insertTransaction(it) }
+            // 5. Insert Site Expenses and Expense Payments
+            payload.siteExpenses.forEach { 
+                database.siteExpenseDao().insertExpense(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.siteExpensePayments.forEach { 
+                database.siteExpensePaymentDao().insertPayment(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
 
-            // 6. Insert Contractor Materials and Material Transactions
-            payload.contractorMaterials.forEach { database.contractorMaterialDao().insertMaterial(it) }
-            payload.contractorMaterialTransactions.forEach { database.contractorMaterialTransactionDao().insertTransaction(it) }
+            // 6. Insert Material Transactions and Contractor Material Transactions
+            payload.materialTransactions.forEach { 
+                database.materialTransactionDao().insertTransaction(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+            payload.contractorMaterialTransactions.forEach { 
+                database.contractorMaterialTransactionDao().insertTransaction(
+                    it.copy(
+                        isPendingSync = true, 
+                        updatedAt = maxOf(it.updatedAt, now),
+                        syncOrigin = if (it.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else it.syncOrigin,
+                        syncId = if (it.syncId.isBlank()) java.util.UUID.randomUUID().toString() else it.syncId
+                    )
+                ) 
+            }
+
+            // Verify count consistency
+            val sitesCount = database.siteDao().getAllSitesRaw().size
+            val workersCount = database.workerDao().getAllWorkersRaw().size
+            val attendanceCount = database.attendanceDao().getAllAttendanceRaw().size
+            val paymentsCount = database.paymentDao().getAllPaymentsRaw().size
+            val contractsCount = database.contractDao().getAllContractsRaw().size
+
+            if (sitesCount != payload.sites.size ||
+                workersCount != payload.workers.size ||
+                attendanceCount != payload.attendance.size ||
+                paymentsCount != payload.payments.size ||
+                contractsCount != payload.contracts.size) {
+                throw IllegalStateException("Restoration verification failed: record counts do not match payload.")
+            }
         }
     }
 }

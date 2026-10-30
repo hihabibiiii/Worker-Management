@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.workermanager"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.habibullahsalmani.workcraft"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 6
-        versionName = "1.2.2"
+        targetSdk = 36
+        versionCode = 8
+        versionName = "1.2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

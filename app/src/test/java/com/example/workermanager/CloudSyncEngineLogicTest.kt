@@ -163,6 +163,77 @@ class CloudSyncEngineLogicTest {
     }
 
     @Test
+    fun testAttendanceMapper_BidirectionalConversion_PreservesIsDeletedAndDeletedAt() {
+        val deletedAttendance = AttendanceEntity(
+            id = 16,
+            workerId = 2,
+            siteId = 1,
+            date = LocalDate.of(2024, 2, 2),
+            status = AttendanceStatus.PRESENT,
+            amount = 500.0,
+            isDeleted = true,
+            deletedAt = 1700000050000L,
+            syncOrigin = SyncOrigin.NEW_LOCAL,
+            syncId = "att_uuid_del_102",
+            isPendingSync = true,
+            updatedAt = 1700000050000L
+        )
+
+        val dto = AttendanceMapper.toDTO(deletedAttendance, workerSyncId = "worker_uuid_john", siteSyncId = "site_uuid_alpha")
+        assertTrue("AttendanceDTO must preserve isDeleted = true", dto.isDeleted)
+        assertEquals(1700000050000L, dto.deletedAt)
+
+        val restoredEntity = AttendanceMapper.toEntity(dto, localId = 16, localWorkerId = 2, localSiteId = 1)
+        assertTrue("Restored AttendanceEntity must preserve isDeleted = true", restoredEntity.isDeleted)
+        assertEquals(1700000050000L, restoredEntity.deletedAt)
+        assertEquals(SyncOrigin.CLOUD_SYNCED, restoredEntity.syncOrigin)
+        assertFalse(restoredEntity.isPendingSync)
+    }
+
+    @Test
+    fun testAttendanceSoftDeletion_IsEligibleForCloudTombstonePush() {
+        val softDeletedAttendance = AttendanceEntity(
+            id = 17,
+            workerId = 2,
+            siteId = 1,
+            date = LocalDate.of(2024, 2, 3),
+            status = AttendanceStatus.PRESENT,
+            amount = 500.0,
+            isDeleted = true,
+            deletedAt = 1700000060000L,
+            syncOrigin = SyncOrigin.CLOUD_SYNCED,
+            syncId = "att_uuid_103",
+            isPendingSync = true,
+            updatedAt = 1700000060000L
+        )
+        assertTrue("Soft-deleted attendance with pending sync must be eligible for cloud tombstone push",
+            isEligibleForCloudUpload(softDeletedAttendance.syncOrigin, softDeletedAttendance.syncId, softDeletedAttendance.isPendingSync))
+    }
+
+    @Test
+    fun testLegacyRecordUpgrade_BecomesEligibleForCloudUpload() {
+        val legacyRecord = SiteEntity(
+            id = 10,
+            name = "Legacy Site",
+            syncOrigin = SyncOrigin.LEGACY,
+            syncId = "",
+            isPendingSync = false
+        )
+        assertFalse("Raw un-upgraded legacy record must not be eligible for cloud upload",
+            isEligibleForCloudUpload(legacyRecord.syncOrigin, legacyRecord.syncId, legacyRecord.isPendingSync))
+
+        // Upgraded by repository edit or LegacySyncBootstrapper:
+        val upgradedRecord = legacyRecord.copy(
+            syncOrigin = SyncOrigin.NEW_LOCAL,
+            syncId = "new_generated_uuid_123",
+            isPendingSync = true,
+            updatedAt = System.currentTimeMillis()
+        )
+        assertTrue("Upgraded legacy record must be eligible for cloud upload",
+            isEligibleForCloudUpload(upgradedRecord.syncOrigin, upgradedRecord.syncId, upgradedRecord.isPendingSync))
+    }
+
+    @Test
     fun testPaymentMapper_BidirectionalConversion_PreservesParentSyncIds() {
         val payment = PaymentEntity(
             id = 20,

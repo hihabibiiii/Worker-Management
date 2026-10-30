@@ -147,7 +147,9 @@ object FirestoreRealtimeSyncManager {
                         if (localWorkerId == null || localSiteId == null) continue
 
                         if (existing == null) {
-                            db.attendanceDao().insertAttendance(AttendanceMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            if (!dto.isDeleted) {
+                                db.attendanceDao().insertAttendance(AttendanceMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            }
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.attendanceDao().updateAttendance(AttendanceMapper.toEntity(dto, localId = existing.id, localWorkerId = localWorkerId, localSiteId = localSiteId))
                         }
@@ -206,6 +208,100 @@ object FirestoreRealtimeSyncManager {
             }
         }
         activeRegistrations.add(expensesReg)
+
+        // 9. Client Payments Listener
+        val clientPaymentsReg = userRef.collection("clientPayments").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
+                scope.launch(Dispatchers.IO) {
+                    for (doc in snapshot.documents) {
+                        val dto = doc.toObject(ClientPaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                        val existing = db.clientPaymentDao().getClientPaymentBySyncId(dto.syncId)
+                        val localContractId = if (dto.contractSyncId.isNotBlank()) db.contractDao().getContractBySyncId(dto.contractSyncId)?.id else null
+                        if (localContractId == null) continue
+
+                        if (existing == null) {
+                            if (!dto.isDeleted) db.clientPaymentDao().insertPayment(ClientPaymentMapper.toEntity(dto, localContractId = localContractId))
+                        } else if (dto.updatedAt > existing.updatedAt) {
+                            db.clientPaymentDao().updatePayment(ClientPaymentMapper.toEntity(dto, localId = existing.id, localContractId = localContractId))
+                        }
+                    }
+                    SyncStatusManager.updateStatus(SyncStatusState.Synced)
+                }
+            }
+        }
+        activeRegistrations.add(clientPaymentsReg)
+
+        // 10. Site Expense Payments Listener
+        val expensePaymentsReg = userRef.collection("siteExpensePayments").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
+                scope.launch(Dispatchers.IO) {
+                    for (doc in snapshot.documents) {
+                        val dto = doc.toObject(SiteExpensePaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                        val existing = db.siteExpensePaymentDao().getPaymentBySyncId(dto.syncId)
+                        val localExpenseId = if (dto.expenseSyncId.isNotBlank()) db.siteExpenseDao().getExpenseBySyncId(dto.expenseSyncId)?.id else null
+                        if (localExpenseId == null) continue
+
+                        if (existing == null) {
+                            if (!dto.isDeleted) db.siteExpensePaymentDao().insertPayment(SiteExpensePaymentMapper.toEntity(dto, localExpenseId = localExpenseId))
+                        } else if (dto.updatedAt > existing.updatedAt) {
+                            db.siteExpensePaymentDao().updatePayment(SiteExpensePaymentMapper.toEntity(dto, localId = existing.id, localExpenseId = localExpenseId))
+                        }
+                    }
+                    SyncStatusManager.updateStatus(SyncStatusState.Synced)
+                }
+            }
+        }
+        activeRegistrations.add(expensePaymentsReg)
+
+        // 11. Material Transactions Listener
+        val matTxReg = userRef.collection("materialTransactions").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
+                scope.launch(Dispatchers.IO) {
+                    for (doc in snapshot.documents) {
+                        val dto = doc.toObject(MaterialTransactionDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                        val existing = db.materialTransactionDao().getTransactionBySyncId(dto.syncId)
+                        val localMaterialId = if (dto.materialSyncId.isNotBlank()) db.materialDao().getMaterialBySyncId(dto.materialSyncId)?.id else null
+                        val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
+                        if (localMaterialId == null || localSiteId == null) continue
+
+                        if (existing == null) {
+                            if (!dto.isDeleted) db.materialTransactionDao().insertTransaction(MaterialTransactionMapper.toEntity(dto, localMaterialId = localMaterialId, localSiteId = localSiteId))
+                        } else if (dto.updatedAt > existing.updatedAt) {
+                            db.materialTransactionDao().updateTransaction(MaterialTransactionMapper.toEntity(dto, localId = existing.id, localMaterialId = localMaterialId, localSiteId = localSiteId))
+                        }
+                    }
+                    SyncStatusManager.updateStatus(SyncStatusState.Synced)
+                }
+            }
+        }
+        activeRegistrations.add(matTxReg)
+
+        // 12. Contractor Material Transactions Listener
+        val cMatTxReg = userRef.collection("contractorMaterialTransactions").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
+                scope.launch(Dispatchers.IO) {
+                    for (doc in snapshot.documents) {
+                        val dto = doc.toObject(ContractorMaterialTransactionDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                        val existing = db.contractorMaterialTransactionDao().getTransactionBySyncId(dto.syncId)
+                        val localMaterialId = if (dto.materialSyncId.isNotBlank()) db.contractorMaterialDao().getMaterialBySyncId(dto.materialSyncId)?.id else null
+                        val localSiteId = if (!dto.siteSyncId.isNullOrBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId!!)?.id else null
+                        if (localMaterialId == null) continue
+
+                        if (existing == null) {
+                            if (!dto.isDeleted) db.contractorMaterialTransactionDao().insertTransaction(ContractorMaterialTransactionMapper.toEntity(dto, localMaterialId = localMaterialId, localSiteId = localSiteId))
+                        } else if (dto.updatedAt > existing.updatedAt) {
+                            db.contractorMaterialTransactionDao().updateTransaction(ContractorMaterialTransactionMapper.toEntity(dto, localId = existing.id, localMaterialId = localMaterialId, localSiteId = localSiteId))
+                        }
+                    }
+                    SyncStatusManager.updateStatus(SyncStatusState.Synced)
+                }
+            }
+        }
+        activeRegistrations.add(cMatTxReg)
 
         Log.d(TAG, "Real-time snapshot listeners attached successfully.")
     }

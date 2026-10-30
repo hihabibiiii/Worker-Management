@@ -30,16 +30,16 @@ interface ContractDao {
     @Delete
     suspend fun deleteContract(contract: ContractEntity)
 
-    @Query("UPDATE contracts SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE contracts SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun softDeleteContract(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE contracts SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = CASE WHEN syncOrigin != 0 THEN 1 ELSE 0 END WHERE id = :id")
+    @Query("UPDATE contracts SET isDeleted = 0, deletedAt = NULL, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun restoreContract(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("SELECT * FROM contracts WHERE isDeleted = 1 AND deletedAt > 0 ORDER BY deletedAt DESC")
     fun getDeletedContracts(): Flow<List<ContractEntity>>
 
-    @Query("UPDATE contracts SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id AND syncOrigin != 0")
+    @Query("UPDATE contracts SET deletedAt = -1, updatedAt = :updatedAt, isPendingSync = 1 WHERE id = :id")
     suspend fun markPendingPermanentDelete(id: Long, updatedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM contracts WHERE id = :id AND isDeleted = 1")

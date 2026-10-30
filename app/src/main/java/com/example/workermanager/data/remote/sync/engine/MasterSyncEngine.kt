@@ -14,6 +14,14 @@ object MasterSyncEngine {
             val uid = FirestoreProvider.requireAuthenticatedUid()
             Log.d(TAG, "Starting full Cloud Sync for user: $uid")
 
+            // Bootstrap legacy records (idempotent: only processes un-synced legacy records)
+            val bootstrapRes = LegacySyncBootstrapper.bootstrapLegacyRecords(database)
+            if (bootstrapRes.isFailure) {
+                val err = bootstrapRes.exceptionOrNull() ?: Exception("Legacy sync bootstrap failed")
+                Log.e(TAG, "Legacy sync bootstrap failed, aborting full sync: ${err.message}", err)
+                return@withContext Result.failure(err)
+            }
+
             // Level 1: Independent Parent Entities
             val res1 = SiteSyncEngine.syncUserSites(database.siteDao())
             if (res1.isFailure) return@withContext Result.failure(res1.exceptionOrNull() ?: Exception("Sites sync failed"))

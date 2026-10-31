@@ -226,7 +226,19 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate(Screen.Dashboard.route) {
                                             popUpTo(Screen.Login.route) { inclusive = true }
                                         }
-                                    }
+                                    },
+                                    onNavigateToPrivacyPolicy = { navController.navigate(Screen.PrivacyPolicy.route) },
+                                    onNavigateToTermsAndConditions = { navController.navigate(Screen.TermsAndConditions.route) }
+                                )
+                            }
+                            composable(Screen.PrivacyPolicy.route) {
+                                com.example.workermanager.ui.screens.legal.PrivacyPolicyScreen(
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Screen.TermsAndConditions.route) {
+                                com.example.workermanager.ui.screens.legal.TermsAndConditionsScreen(
+                                    onBack = { navController.popBackStack() }
                                 )
                             }
                             composable(Screen.Profile.route) {
@@ -401,7 +413,9 @@ class MainActivity : ComponentActivity() {
                                     onBack = { navController.popBackStack() },
                                     onOpenRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
                                     onOpenProfile = { navController.navigate(Screen.Profile.route) },
-                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) }
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) },
+                                    onOpenPrivacyPolicy = { navController.navigate(Screen.PrivacyPolicy.route) },
+                                    onOpenTermsAndConditions = { navController.navigate(Screen.TermsAndConditions.route) }
                                 )
                             }
                             composable(Screen.Subscription.route) {

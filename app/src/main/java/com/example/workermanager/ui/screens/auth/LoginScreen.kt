@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -43,7 +44,9 @@ import com.google.android.gms.common.api.ApiException
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToTermsAndConditions: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val isLoading by authViewModel.isLoading.collectAsState()
@@ -325,6 +328,48 @@ fun LoginScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Legal Disclaimer & Clickable Links
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "By continuing, you agree to our",
+                                fontSize = 11.5.sp,
+                                color = textSecondary,
+                                textAlign = TextAlign.Center
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Privacy Policy",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryBlue,
+                                    modifier = Modifier.clickable { onNavigateToPrivacyPolicy() }
+                                )
+                                Text(
+                                    text = "  •  ",
+                                    fontSize = 11.5.sp,
+                                    color = textSecondary
+                                )
+                                Text(
+                                    text = "Terms & Conditions",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryBlue,
+                                    modifier = Modifier.clickable { onNavigateToTermsAndConditions() }
+                                )
                             }
                         }
 

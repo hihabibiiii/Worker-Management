@@ -20,9 +20,11 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.RestorePage
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -59,7 +61,9 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenRecycleBin: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
-    onOpenSubscription: () -> Unit = {}
+    onOpenSubscription: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTermsAndConditions: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as WorkerApplication
@@ -283,6 +287,54 @@ fun SettingsScreen(
                     ) 
                 },
                 modifier = Modifier.clickable { onOpenSubscription() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Privacy Policy", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        "View WorkCraft data privacy policy and practices",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    Icon(
+                        imageVector = Icons.Default.PrivacyTip, 
+                        contentDescription = "Privacy Policy", 
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                modifier = Modifier.clickable { onOpenPrivacyPolicy() },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            ListItem(
+                headlineContent = { 
+                    Text("Terms & Conditions", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                },
+                supportingContent = { 
+                    Text(
+                        "Read WorkCraft terms of service and usage conditions",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                leadingContent = { 
+                    Icon(
+                        imageVector = Icons.Default.Gavel, 
+                        contentDescription = "Terms & Conditions", 
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                modifier = Modifier.clickable { onOpenTermsAndConditions() },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
 

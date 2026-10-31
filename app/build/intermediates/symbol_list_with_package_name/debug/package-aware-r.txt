@@ -131,6 +131,7 @@ drawable ic_call_answer_video
 drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
+drawable ic_google_logo
 drawable ic_other_sign_in
 drawable ic_passkey
 drawable ic_password

@@ -1,6 +1,7 @@
 R_DEF: Internal format may change without notice
 local
 drawable headerlogo
+drawable ic_google_logo
 drawable logo
 drawable splash_logo2
 string default_web_client_id

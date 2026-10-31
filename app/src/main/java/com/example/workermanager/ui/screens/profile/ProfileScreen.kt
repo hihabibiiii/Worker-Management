@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,13 +23,13 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
@@ -37,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.workermanager.ui.components.WorkCraftTopHeader
@@ -71,7 +71,8 @@ fun ProfileScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            val savedLocalPath = saveImageToInternalStorage(context, uri)
+            val userId = userProfile?.userId ?: "default_user"
+            val savedLocalPath = saveImageToInternalStorage(context, userId, uri)
             if (savedLocalPath != null) {
                 currentPhotoUrl = savedLocalPath
                 authViewModel.updateProfile(
@@ -85,7 +86,7 @@ fun ProfileScreen(
                     }
                 )
             } else {
-                Toast.makeText(context, "Could not process selected image.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Could not save selected image.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -105,10 +106,10 @@ fun ProfileScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Main Profile Card
             Card(
@@ -129,30 +130,40 @@ fun ProfileScreen(
                     // Profile Photo Avatar with Edit Badge
                     Box(
                         modifier = Modifier
-                            .size(110.dp),
+                            .size(120.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(CircleShape),
+                                .clip(CircleShape)
+                                .clickable {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
                             shape = CircleShape,
                             color = Color(0xFFEBF3FF),
-                            border = BorderStroke(2.5.dp, primaryBlue.copy(alpha = 0.3f))
+                            border = BorderStroke(3.dp, primaryBlue)
                         ) {
-                            val photoPainter = rememberAsyncImagePainter(
-                                model = ImageRequest.Builder(context)
-                                    .data(currentPhotoUrl.ifBlank { null })
-                                    .crossfade(true)
-                                    .build()
-                            )
+                            var isImageError by remember(currentPhotoUrl) { mutableStateOf(false) }
 
-                            val painterState = photoPainter.state
-                            val isImageLoaded = currentPhotoUrl.isNotBlank() && painterState is AsyncImagePainter.State.Success
+                            if (currentPhotoUrl.isNotBlank() && !isImageError) {
+                                val imageModel: Any = if (currentPhotoUrl.startsWith("/")) {
+                                    File(currentPhotoUrl)
+                                } else {
+                                    currentPhotoUrl
+                                }
 
-                            if (isImageLoaded) {
                                 Image(
-                                    painter = photoPainter,
+                                    painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(context)
+                                            .data(imageModel)
+                                            .crossfade(true)
+                                            .build(),
+                                        onError = { isImageError = true },
+                                        onSuccess = { isImageError = false }
+                                    ),
                                     contentDescription = "Profile Photo",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
@@ -162,10 +173,12 @@ fun ProfileScreen(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    val initial = displayName.trim().take(1).uppercase().ifBlank { "U" }
+                                    val initial = displayName.trim().take(1).uppercase().ifBlank {
+                                        userProfile?.displayName?.trim()?.take(1)?.uppercase()?.ifBlank { "U" } ?: "U"
+                                    }
                                     Text(
                                         text = initial,
-                                        fontSize = 44.sp,
+                                        fontSize = 48.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = primaryBlue
                                     )
@@ -177,7 +190,7 @@ fun ProfileScreen(
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .size(36.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
                                 .clickable {
                                     photoPickerLauncher.launch(
@@ -186,15 +199,15 @@ fun ProfileScreen(
                                 },
                             shape = CircleShape,
                             color = primaryBlue,
-                            shadowElevation = 4.dp,
-                            border = BorderStroke(2.dp, Color.White)
+                            shadowElevation = 6.dp,
+                            border = BorderStroke(2.5.dp, Color.White)
                         ) {
                             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                 Icon(
                                     imageVector = Icons.Default.CameraAlt,
                                     contentDescription = "Edit Photo",
                                     tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }
@@ -204,7 +217,7 @@ fun ProfileScreen(
 
                     Text(
                         text = userProfile?.displayName?.ifBlank { "WorkCraft User" } ?: "WorkCraft User",
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = textPrimary,
                         textAlign = TextAlign.Center
@@ -214,11 +227,79 @@ fun ProfileScreen(
 
                     Text(
                         text = userProfile?.email?.ifBlank { "Logged in via Google" } ?: "Logged in via Google",
-                        fontSize = 13.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = textSecondary,
                         textAlign = TextAlign.Center
                     )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Subscription Status Badge
+                    val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+                    val proAccessLevelState by (app?.subscriptionRepository?.proAccessLevel ?: kotlinx.coroutines.flow.MutableStateFlow(com.example.workermanager.data.billing.ProAccessLevel.FREE)).collectAsState()
+                    val isPro = proAccessLevelState.isProUnlocked
+
+                    if (isPro) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color.Transparent,
+                            modifier = Modifier
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(
+                                            Color(0xFFFFB300), // Gold Amber
+                                            Color(0xFF8E24AA)  // Purple Accent
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "👑",
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "PRO MEMBER",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White,
+                                    letterSpacing = 0.8.sp
+                                )
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = textSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "FREE PLAN",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textSecondary,
+                                    letterSpacing = 0.6.sp
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(18.dp))
 
@@ -253,10 +334,11 @@ fun ProfileScreen(
 
                     // 2. Google Email (Read-Only Field)
                     OutlinedTextField(
-                        value = userProfile?.email ?: "Google Account Unlinked",
+                        value = userProfile?.email?.ifBlank { "Google Account Unlinked" } ?: "Google Account Unlinked",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Google Account Email") },
+                        supportingText = { Text("Managed by Google Account", fontSize = 11.sp, color = textSecondary) },
                         trailingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Lock,
@@ -296,8 +378,8 @@ fun ProfileScreen(
                         enabled = !isSaving,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(25.dp),
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = primaryBlue,
                             contentColor = Color.White
@@ -307,13 +389,13 @@ fun ProfileScreen(
                         Text(
                             text = if (isSaving) "Saving Changes..." else "Save Changes",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 15.5.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Information Notice Card
             Surface(
@@ -345,7 +427,7 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Logout Card
             Card(
@@ -369,7 +451,7 @@ fun ProfileScreen(
                             containerColor = Color(0xFFDC2626),
                             contentColor = Color.White
                         ),
-                        shape = RoundedCornerShape(23.dp),
+                        shape = RoundedCornerShape(24.dp),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -391,7 +473,8 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Bottom Navigation Bar Padding: 110.dp ensures the Logout button is completely visible and clickable above the floating bottom navbar
+            Spacer(modifier = Modifier.height(110.dp))
         }
 
         // LOGOUT CONFIRMATION DIALOG
@@ -435,14 +518,20 @@ fun ProfileScreen(
     }
 }
 
-private fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+private fun saveImageToInternalStorage(context: Context, userId: String, uri: Uri): String? {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-        val file = File(context.filesDir, "user_profile_photo.jpg")
-        file.outputStream().use { output ->
+        val sanitizedUid = userId.ifBlank { "default_user" }.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        
+        // Remove old profile photo files for this user to prevent storage bloat
+        val existingFiles = context.filesDir.listFiles { _, name -> name.startsWith("profile_photo_${sanitizedUid}_") }
+        existingFiles?.forEach { it.delete() }
+
+        val newFile = File(context.filesDir, "profile_photo_${sanitizedUid}_${System.currentTimeMillis()}.jpg")
+        newFile.outputStream().use { output ->
             inputStream.copyTo(output)
         }
-        Uri.fromFile(file).toString()
+        newFile.absolutePath
     } catch (e: Exception) {
         Log.e("ProfileScreen", "Failed to save profile image", e)
         null

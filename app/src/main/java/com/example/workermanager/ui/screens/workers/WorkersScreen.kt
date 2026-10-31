@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Construction
@@ -788,10 +789,11 @@ fun WorkerCard(
                     }
                 }
 
-                // Dynamic Action Button (Due vs Advance)
+                // Dynamic Action Button (Due vs Advance vs Paid)
                 val actionBtnLabel = when {
                     isPendingDue -> "Due"
-                    else -> "Advance"
+                    isAdvance -> "Advance"
+                    else -> "Paid"
                 }
                 val actionBtnColor = when {
                     isPendingDue -> if (isDark) Color(0xFFE53935) else Color(0xFFD90016)
@@ -799,7 +801,8 @@ fun WorkerCard(
                 }
                 val actionBtnIcon = when {
                     isPendingDue -> Icons.AutoMirrored.Filled.ReceiptLong
-                    else -> Icons.Default.Payments
+                    isAdvance -> Icons.Default.Payments
+                    else -> Icons.Default.CheckCircle
                 }
 
                 Surface(

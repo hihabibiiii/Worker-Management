@@ -4,6 +4,8 @@ import android.util.Log
 import com.example.workermanager.data.dao.ContractorMaterialDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.ContractorMaterialDTO
 import com.example.workermanager.data.remote.sync.mapper.ContractorMaterialMapper
 import com.google.firebase.firestore.SetOptions
@@ -16,16 +18,20 @@ object ContractorMaterialSyncEngine {
 
     suspend fun syncUserContractorMaterials(contractorMaterialDao: ContractorMaterialDao): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val cMatRef = FirestoreProvider.getUserDocumentRef().collection("contractorMaterials")
 
-            // 1. Down-sync (Pull Cloud -> Local)
-            val cloudSnapshot = cMatRef.get().await()
-            val cloudMaterials = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = cMatRef,
+                userId = uid,
+                collectionName = "contractorMaterials"
+            ) { doc ->
                 doc.toObject(ContractorMaterialDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudMaterials = pullResult.items
 
             val allLocalMaterials = contractorMaterialDao.getAllMaterialsRaw()
             val localMaterialsMap = allLocalMaterials.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -36,11 +42,11 @@ object ContractorMaterialSyncEngine {
 
                 if (existingLocal == null) {
                     if (cloudDto.isDeleted) continue
-                    val entity = ContractorMaterialMapper.toEntity(cloudDto)
+                    val entity = ContractorMaterialMapper.toEntity(cloudDto).copy(isPendingSync = false)
                     contractorMaterialDao.insertMaterial(entity)
                     Log.d(TAG, "Pulled new contractor material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
                 } else if (cloudDto.updatedAt > existingLocal.updatedAt) {
-                    val updatedEntity = ContractorMaterialMapper.toEntity(cloudDto, localId = existingLocal.id)
+                    val updatedEntity = ContractorMaterialMapper.toEntity(cloudDto, localId = existingLocal.id).copy(isPendingSync = false)
                     contractorMaterialDao.updateMaterial(updatedEntity)
                     Log.d(TAG, "Updated local contractor material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
                 }
@@ -56,7 +62,7 @@ object ContractorMaterialSyncEngine {
 
             for (localMaterial in eligibleMaterials) {
                 val cloudDto = cloudMaterialsMap[localMaterial.syncId]
-                if (cloudDto == null || localMaterial.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localMaterial.updatedAt >= cloudDto.updatedAt) {
                     val dto = ContractorMaterialMapper.toDTO(localMaterial)
                     cMatRef.document(localMaterial.syncId).set(dto, SetOptions.merge()).await()
                     if (localMaterial.deletedAt == -1L) {
@@ -68,6 +74,9 @@ object ContractorMaterialSyncEngine {
                     }
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "contractorMaterials", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

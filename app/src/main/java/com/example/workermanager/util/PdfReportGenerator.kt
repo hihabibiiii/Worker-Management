@@ -25,6 +25,11 @@ object PdfReportGenerator {
         paymentHistory: List<PaymentEntity>,
         sites: List<SiteEntity>
     ): File {
+        val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+        val isPro = app?.subscriptionRepository?.canAccessProFeatures() == true
+        if (!isPro) {
+            throw SecurityException("Generating PDF worker statement requires an active WorkCraft Pro subscription.")
+        }
         val pdfDocument = PdfDocument()
 
         val pageWidth = 595

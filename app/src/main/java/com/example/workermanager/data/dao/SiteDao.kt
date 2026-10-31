@@ -27,6 +27,21 @@ interface SiteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSite(site: SiteEntity): Long
 
+    /**
+     * Idempotently inserts or updates a site by its stable syncId.
+     * Prevents duplicate rows in Room when multiple sync paths or repeated syncs process the same record.
+     */
+    suspend fun upsertSiteBySyncId(site: SiteEntity): Long {
+        if (site.syncId.isNotBlank()) {
+            val existing = getSiteBySyncId(site.syncId)
+            if (existing != null) {
+                updateSite(site.copy(id = existing.id))
+                return existing.id
+            }
+        }
+        return insertSite(site)
+    }
+
     @Update
     suspend fun updateSite(site: SiteEntity)
 

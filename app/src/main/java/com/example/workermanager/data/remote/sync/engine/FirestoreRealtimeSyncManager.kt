@@ -3,13 +3,16 @@ package com.example.workermanager.data.remote.sync.engine
 import android.util.Log
 import com.example.workermanager.UserSession
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.SyncStatusManager
 import com.example.workermanager.data.remote.sync.SyncStatusState
 import com.example.workermanager.data.remote.sync.dto.*
 import com.example.workermanager.data.remote.sync.mapper.*
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 
 object FirestoreRealtimeSyncManager {
     private const val TAG = "RealtimeSyncManager"
@@ -36,13 +39,21 @@ object FirestoreRealtimeSyncManager {
             }
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(SiteDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.siteDao().getSiteBySyncId(dto.syncId)
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.siteDao().insertSite(SiteMapper.toEntity(dto))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.siteDao().updateSite(SiteMapper.toEntity(dto, localId = existing.id))
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = SiteMapper.fromSnapshot(doc) ?: continue
+                            val existing = db.siteDao().getSiteBySyncId(dto.syncId)
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.siteDao().upsertSiteBySyncId(SiteMapper.toEntity(dto))
+                            } else if (existing.isPendingSync) {
+                                // Shield pending local edits from realtime overwrite
+                                Log.d(TAG, "Realtime sync skipped for pending local site: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.siteDao().updateSite(SiteMapper.toEntity(dto, localId = existing.id))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "sites", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -56,13 +67,20 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(MaterialDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.materialDao().getMaterialBySyncId(dto.syncId)
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.materialDao().insertMaterial(MaterialMapper.toEntity(dto))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.materialDao().updateMaterial(MaterialMapper.toEntity(dto, localId = existing.id))
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = doc.toObject(MaterialDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                            val existing = db.materialDao().getMaterialBySyncId(dto.syncId)
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.materialDao().insertMaterial(MaterialMapper.toEntity(dto))
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local material: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.materialDao().updateMaterial(MaterialMapper.toEntity(dto, localId = existing.id))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "materials", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -76,13 +94,20 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(ContractorMaterialDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.contractorMaterialDao().getMaterialBySyncId(dto.syncId)
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.contractorMaterialDao().insertMaterial(ContractorMaterialMapper.toEntity(dto))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.contractorMaterialDao().updateMaterial(ContractorMaterialMapper.toEntity(dto, localId = existing.id))
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = doc.toObject(ContractorMaterialDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                            val existing = db.contractorMaterialDao().getMaterialBySyncId(dto.syncId)
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.contractorMaterialDao().insertMaterial(ContractorMaterialMapper.toEntity(dto))
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local contractor material: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.contractorMaterialDao().updateMaterial(ContractorMaterialMapper.toEntity(dto, localId = existing.id))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "contractorMaterials", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -96,14 +121,21 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(WorkerDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.workerDao().getWorkerBySyncId(dto.syncId)
-                        val localSiteId = if (!dto.siteSyncId.isNullOrBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId!!)?.id else null
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.workerDao().insertWorker(WorkerMapper.toEntity(dto, localSiteId = localSiteId))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.workerDao().updateWorker(WorkerMapper.toEntity(dto, localId = existing.id, localSiteId = localSiteId))
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = WorkerMapper.fromSnapshot(doc) ?: continue
+                            val existing = db.workerDao().getWorkerBySyncId(dto.syncId)
+                            val localSiteId = if (!dto.siteSyncId.isNullOrBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId!!)?.id else null
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.workerDao().upsertWorkerBySyncId(WorkerMapper.toEntity(dto, localSiteId = localSiteId))
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local worker: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.workerDao().updateWorker(WorkerMapper.toEntity(dto, localId = existing.id, localSiteId = localSiteId))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "workers", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -117,14 +149,21 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(ContractDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.contractDao().getContractBySyncId(dto.syncId)
-                        val localSiteId = if (!dto.siteSyncId.isNullOrBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId!!)?.id else null
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.contractDao().insertContract(ContractMapper.toEntity(dto, localSiteId = localSiteId))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.contractDao().updateContract(ContractMapper.toEntity(dto, localId = existing.id, localSiteId = localSiteId))
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = doc.toObject(ContractDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                            val existing = db.contractDao().getContractBySyncId(dto.syncId)
+                            val localSiteId = if (!dto.siteSyncId.isNullOrBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId!!)?.id else null
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.contractDao().upsertContractBySyncId(ContractMapper.toEntity(dto, localSiteId = localSiteId))
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local contract: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.contractDao().updateContract(ContractMapper.toEntity(dto, localId = existing.id, localSiteId = localSiteId))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "contracts", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -138,20 +177,27 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(AttendanceDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.attendanceDao().getAttendanceBySyncId(dto.syncId)
-                        val localWorkerId = if (dto.workerSyncId.isNotBlank()) db.workerDao().getWorkerBySyncId(dto.workerSyncId)?.id else null
-                        val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = doc.toObject(AttendanceDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                            val existing = db.attendanceDao().getAttendanceBySyncId(dto.syncId)
+                            val localWorkerId = if (dto.workerSyncId.isNotBlank()) db.workerDao().getWorkerBySyncId(dto.workerSyncId)?.id else null
+                            val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
 
-                        if (localWorkerId == null || localSiteId == null) continue
+                            if (localWorkerId == null || localSiteId == null) continue
 
-                        if (existing == null) {
-                            if (!dto.isDeleted) {
-                                db.attendanceDao().insertAttendance(AttendanceMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            if (existing == null) {
+                                if (!dto.isDeleted) {
+                                    db.attendanceDao().upsertAttendanceBySyncId(AttendanceMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                                }
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local attendance: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.attendanceDao().updateAttendance(AttendanceMapper.toEntity(dto, localId = existing.id, localWorkerId = localWorkerId, localSiteId = localSiteId))
                             }
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.attendanceDao().updateAttendance(AttendanceMapper.toEntity(dto, localId = existing.id, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            SyncCursorManager.updateCursorIfHigher(uid, "attendance", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -165,18 +211,25 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
-                        val dto = doc.toObject(PaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
-                        val existing = db.paymentDao().getPaymentBySyncId(dto.syncId)
-                        val localWorkerId = if (dto.workerSyncId.isNotBlank()) db.workerDao().getWorkerBySyncId(dto.workerSyncId)?.id else null
-                        val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
+                    MasterSyncEngine.syncMutex.withLock {
+                        for (change in snapshot.documentChanges) {
+                            if (change.type == DocumentChange.Type.REMOVED) continue
+                            val doc = change.document
+                            val dto = doc.toObject(PaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
+                            val existing = db.paymentDao().getPaymentBySyncId(dto.syncId)
+                            val localWorkerId = if (dto.workerSyncId.isNotBlank()) db.workerDao().getWorkerBySyncId(dto.workerSyncId)?.id else null
+                            val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
 
-                        if (localWorkerId == null || localSiteId == null) continue
+                            if (localWorkerId == null || localSiteId == null) continue
 
-                        if (existing == null) {
-                            if (!dto.isDeleted) db.paymentDao().insertPayment(PaymentMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
-                        } else if (dto.updatedAt > existing.updatedAt) {
-                            db.paymentDao().updatePayment(PaymentMapper.toEntity(dto, localId = existing.id, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            if (existing == null) {
+                                if (!dto.isDeleted) db.paymentDao().upsertPaymentBySyncId(PaymentMapper.toEntity(dto, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            } else if (existing.isPendingSync) {
+                                Log.d(TAG, "Realtime sync skipped for pending local payment: ${existing.syncId}")
+                            } else if (dto.updatedAt > existing.updatedAt) {
+                                db.paymentDao().updatePayment(PaymentMapper.toEntity(dto, localId = existing.id, localWorkerId = localWorkerId, localSiteId = localSiteId))
+                            }
+                            SyncCursorManager.updateCursorIfHigher(uid, "payments", dto.updatedAt)
                         }
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
@@ -184,13 +237,16 @@ object FirestoreRealtimeSyncManager {
             }
         }
         activeRegistrations.add(payReg)
+        activeRegistrations.add(payReg)
 
         // 8. Site Expenses Listener
         val expensesReg = userRef.collection("siteExpenses").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) continue
+                        val doc = change.document
                         val dto = doc.toObject(SiteExpenseDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
                         val existing = db.siteExpenseDao().getExpenseBySyncId(dto.syncId)
                         val localSiteId = if (dto.siteSyncId.isNotBlank()) db.siteDao().getSiteBySyncId(dto.siteSyncId)?.id else null
@@ -202,6 +258,7 @@ object FirestoreRealtimeSyncManager {
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.siteExpenseDao().updateExpense(SiteExpenseMapper.toEntity(dto, localId = existing.id, localSiteId = localSiteId))
                         }
+                        SyncCursorManager.updateCursorIfHigher(uid, "siteExpenses", dto.updatedAt)
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
                 }
@@ -214,7 +271,9 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) continue
+                        val doc = change.document
                         val dto = doc.toObject(ClientPaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
                         val existing = db.clientPaymentDao().getClientPaymentBySyncId(dto.syncId)
                         val localContractId = if (dto.contractSyncId.isNotBlank()) db.contractDao().getContractBySyncId(dto.contractSyncId)?.id else null
@@ -225,6 +284,7 @@ object FirestoreRealtimeSyncManager {
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.clientPaymentDao().updatePayment(ClientPaymentMapper.toEntity(dto, localId = existing.id, localContractId = localContractId))
                         }
+                        SyncCursorManager.updateCursorIfHigher(uid, "clientPayments", dto.updatedAt)
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
                 }
@@ -237,7 +297,9 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) continue
+                        val doc = change.document
                         val dto = doc.toObject(SiteExpensePaymentDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
                         val existing = db.siteExpensePaymentDao().getPaymentBySyncId(dto.syncId)
                         val localExpenseId = if (dto.expenseSyncId.isNotBlank()) db.siteExpenseDao().getExpenseBySyncId(dto.expenseSyncId)?.id else null
@@ -248,6 +310,7 @@ object FirestoreRealtimeSyncManager {
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.siteExpensePaymentDao().updatePayment(SiteExpensePaymentMapper.toEntity(dto, localId = existing.id, localExpenseId = localExpenseId))
                         }
+                        SyncCursorManager.updateCursorIfHigher(uid, "siteExpensePayments", dto.updatedAt)
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
                 }
@@ -260,7 +323,9 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) continue
+                        val doc = change.document
                         val dto = doc.toObject(MaterialTransactionDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
                         val existing = db.materialTransactionDao().getTransactionBySyncId(dto.syncId)
                         val localMaterialId = if (dto.materialSyncId.isNotBlank()) db.materialDao().getMaterialBySyncId(dto.materialSyncId)?.id else null
@@ -272,6 +337,7 @@ object FirestoreRealtimeSyncManager {
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.materialTransactionDao().updateTransaction(MaterialTransactionMapper.toEntity(dto, localId = existing.id, localMaterialId = localMaterialId, localSiteId = localSiteId))
                         }
+                        SyncCursorManager.updateCursorIfHigher(uid, "materialTransactions", dto.updatedAt)
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
                 }
@@ -284,7 +350,9 @@ object FirestoreRealtimeSyncManager {
             if (error != null) return@addSnapshotListener
             if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
                 scope.launch(Dispatchers.IO) {
-                    for (doc in snapshot.documents) {
+                    for (change in snapshot.documentChanges) {
+                        if (change.type == DocumentChange.Type.REMOVED) continue
+                        val doc = change.document
                         val dto = doc.toObject(ContractorMaterialTransactionDTO::class.java)?.apply { if (syncId.isBlank()) syncId = doc.id } ?: continue
                         val existing = db.contractorMaterialTransactionDao().getTransactionBySyncId(dto.syncId)
                         val localMaterialId = if (dto.materialSyncId.isNotBlank()) db.contractorMaterialDao().getMaterialBySyncId(dto.materialSyncId)?.id else null
@@ -296,6 +364,7 @@ object FirestoreRealtimeSyncManager {
                         } else if (dto.updatedAt > existing.updatedAt) {
                             db.contractorMaterialTransactionDao().updateTransaction(ContractorMaterialTransactionMapper.toEntity(dto, localId = existing.id, localMaterialId = localMaterialId, localSiteId = localSiteId))
                         }
+                        SyncCursorManager.updateCursorIfHigher(uid, "contractorMaterialTransactions", dto.updatedAt)
                     }
                     SyncStatusManager.updateStatus(SyncStatusState.Synced)
                 }

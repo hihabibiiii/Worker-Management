@@ -1734,6 +1734,12 @@ public final class AttendanceDao_Impl implements AttendanceDao {
     });
   }
 
+  @Override
+  public Object upsertAttendanceBySyncId(final AttendanceEntity attendance,
+      final Continuation<? super Unit> $completion) {
+    return AttendanceDao.DefaultImpls.upsertAttendanceBySyncId(AttendanceDao_Impl.this, attendance, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

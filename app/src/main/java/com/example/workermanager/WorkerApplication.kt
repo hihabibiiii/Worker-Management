@@ -64,8 +64,18 @@ class UserSessionManager(private val context: Application) {
             val session = UserSession(
                 userId = userId,
                 database = db,
-                siteRepository = SiteRepository(db.siteDao(), syncTrigger),
-                workerRepository = WorkerRepository(db.workerDao(), db.workerSiteHistoryDao(), db.siteDao(), syncTrigger),
+                siteRepository = SiteRepository(
+                    siteDao = db.siteDao(),
+                    onDataChanged = syncTrigger,
+                    proAccessLevelProvider = { (context as? WorkerApplication)?.subscriptionRepository?.getProAccessLevel() ?: com.example.workermanager.data.billing.ProAccessLevel.FREE }
+                ),
+                workerRepository = WorkerRepository(
+                    workerDao = db.workerDao(),
+                    historyDao = db.workerSiteHistoryDao(),
+                    siteDao = db.siteDao(),
+                    onDataChanged = syncTrigger,
+                    proAccessLevelProvider = { (context as? WorkerApplication)?.subscriptionRepository?.getProAccessLevel() ?: com.example.workermanager.data.billing.ProAccessLevel.FREE }
+                ),
                 attendanceRepository = AttendanceRepository(db.attendanceDao(), db.siteAttendanceDao(), syncTrigger),
                 paymentRepository = PaymentRepository(db.paymentDao(), syncTrigger),
                 contractRepository = ContractRepository(db.contractDao(), syncTrigger),
@@ -136,6 +146,9 @@ class WorkerApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize persistent synchronization cursor manager
+        com.example.workermanager.data.remote.sync.SyncCursorManager.init(this)
 
         // Safety Backup Verification of Legacy Database
         CoroutineScope(Dispatchers.IO).launch {

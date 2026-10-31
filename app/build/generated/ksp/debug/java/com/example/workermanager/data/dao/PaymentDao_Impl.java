@@ -1228,6 +1228,12 @@ public final class PaymentDao_Impl implements PaymentDao {
     });
   }
 
+  @Override
+  public Object upsertPaymentBySyncId(final PaymentEntity payment,
+      final Continuation<? super Unit> $completion) {
+    return PaymentDao.DefaultImpls.upsertPaymentBySyncId(PaymentDao_Impl.this, payment, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

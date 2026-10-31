@@ -2,11 +2,16 @@ package com.example.workermanager.data.remote.sync.engine
 
 import android.util.Log
 import com.example.workermanager.data.database.AppDatabase
+import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.entity.WorkerEntity
 import com.example.workermanager.data.remote.FirestoreProvider
 import com.example.workermanager.data.remote.sync.dto.*
+import com.example.workermanager.data.remote.sync.mapper.SiteMapper
+import com.example.workermanager.data.remote.sync.mapper.WorkerMapper
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -15,32 +20,104 @@ import java.util.UUID
 object LegacySyncBootstrapper {
     private const val TAG = "LegacySyncBootstrapper"
 
+    fun normalizeName(name: String?): String {
+        return name?.trim()?.replace("\\s+".toRegex(), " ")?.lowercase() ?: ""
+    }
+
     fun normalizePhone(phone: String): String {
         return phone.filter { it.isDigit() }
     }
 
     fun isWorkerMatch(worker: WorkerEntity, cloudDto: WorkerDTO): Boolean {
-        val nameMatch = cloudDto.name.trim().equals(worker.name.trim(), ignoreCase = true)
-        if (!nameMatch) return false
+        val localName = normalizeName(worker.name)
+        val cloudName = normalizeName(cloudDto.name)
+        if (localName.isBlank() || localName != cloudName) {
+            return false
+        }
 
         val localPhone = normalizePhone(worker.phone)
         val cloudPhone = normalizePhone(cloudDto.phone)
 
-        return if (localPhone.isNotBlank() && cloudPhone.isNotBlank()) {
-            // Both have phone numbers: phone numbers MUST match exactly
-            localPhone == cloudPhone
-        } else if (localPhone.isBlank() && cloudPhone.isBlank()) {
-            // Neither has a phone number: require exact workerType match
-            cloudDto.workerType.equals(worker.workerType.name, ignoreCase = true)
-        } else {
-            // One has phone, one does not: do not merge
-            false
+        // Conservative identity matching:
+        // - Phone must be non-blank and normalized.
+        // - Name must also match after normalization.
+        // - Worker type alone must never establish identity.
+        // - If phone number is missing in either record, do not guess.
+        if (localPhone.isBlank() || cloudPhone.isBlank()) {
+            return false
         }
+
+        return localPhone == cloudPhone
+    }
+
+    fun isSiteMatch(localSite: SiteEntity, cloudDto: SiteDTO): Boolean {
+        val localName = normalizeName(localSite.name)
+        val cloudName = normalizeName(cloudDto.name)
+        if (localName.isBlank() || localName != cloudName) {
+            return false
+        }
+
+        val localAddress = normalizeName(localSite.address)
+        val cloudAddress = normalizeName(cloudDto.address)
+
+        val localManager = normalizeName(localSite.manager)
+        val cloudManager = normalizeName(cloudDto.manager)
+
+        val localStartDate = localSite.startDate.toString().trim()
+        val cloudStartDate = cloudDto.startDate.trim()
+
+        // Any explicit conflict in attributes immediately invalidates the match
+        if (localAddress.isNotBlank() && cloudAddress.isNotBlank() && localAddress != cloudAddress) {
+            return false
+        }
+        if (localManager.isNotBlank() && cloudManager.isNotBlank() && localManager != cloudManager) {
+            return false
+        }
+        if (localStartDate.isNotBlank() && cloudStartDate.isNotBlank() && localStartDate != cloudStartDate) {
+            return false
+        }
+
+        // Secondary matching attributes: at least one strong secondary attribute must match
+        val addressMatches = localAddress.isNotBlank() && localAddress == cloudAddress
+        val managerMatches = localManager.isNotBlank() && localManager == cloudManager
+        val startDateMatches = localStartDate.isNotBlank() && localStartDate == cloudStartDate
+
+        // Name-only matching must NOT automatically establish identity
+        return addressMatches || managerMatches || startDateMatches
+    }
+
+    suspend fun hasAnyLegacyRecords(database: AppDatabase): Boolean {
+        if (database.siteDao().getAllSitesRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.workerDao().getAllWorkersRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.materialDao().getAllMaterialsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.contractorMaterialDao().getAllMaterialsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.contractDao().getAllContractsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.attendanceDao().getAllAttendanceRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.paymentDao().getAllPaymentsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.clientPaymentDao().getAllClientPaymentsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.siteAttendanceDao().getAllSiteAttendance().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.siteExpenseDao().getAllExpensesRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.siteExpensePaymentDao().getAllPaymentsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.materialTransactionDao().getAllTransactionsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.contractorMaterialTransactionDao().getAllTransactionsRaw().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        if (database.workerSiteHistoryDao().getAllHistory().any { it.syncOrigin == SyncOrigin.LEGACY || it.syncId.isBlank() }) return true
+        return false
     }
 
     suspend fun bootstrapLegacyRecords(database: AppDatabase): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val uid = FirestoreProvider.requireAuthenticatedUid()
+            if (com.example.workermanager.data.remote.sync.SyncCursorManager.hasBootstrappedLegacy(uid)) {
+                Log.d(TAG, "Legacy records already bootstrapped for user: $uid. Skipping.")
+                return@withContext Result.success(0)
+            }
+
+            if (!hasAnyLegacyRecords(database)) {
+                Log.d(TAG, "No legacy records found in local database for user: $uid. Marking bootstrap complete.")
+                com.example.workermanager.data.remote.sync.SyncCursorManager.setBootstrappedLegacy(uid, true)
+                return@withContext Result.success(0)
+            }
+
             Log.d(TAG, "Starting Legacy Sync Bootstrap for user: $uid")
             var totalBootstrapped = 0
 
@@ -49,35 +126,33 @@ object LegacySyncBootstrapper {
 
             // 1. Sites
             val sitesCol = userRef.collection("sites")
-            val cloudSites = fetchCloudCollection(sitesCol) { it.toObject(SiteDTO::class.java)?.apply { if (syncId.isBlank()) syncId = it.id } }
+            val cloudSites = fetchCloudCollection(sitesCol) { SiteMapper.fromSnapshot(it) }
             val localSites = database.siteDao().getAllSitesRaw()
             for (site in localSites) {
                 if (site.syncOrigin == SyncOrigin.LEGACY || site.syncId.isBlank()) {
                     val matchingCandidates = cloudSites.filter { 
                         it.syncId !in matchedCloudSyncIds &&
-                        it.name.trim().equals(site.name.trim(), ignoreCase = true) 
+                        isSiteMatch(site, it) 
                     }
-                    val updated = if (matchingCandidates.size == 1) {
+                    if (matchingCandidates.size == 1) {
                         val cloudMatch = matchingCandidates.first()
                         matchedCloudSyncIds.add(cloudMatch.syncId)
-                        site.copy(
+                        val updated = site.copy(
                             syncId = cloudMatch.syncId,
                             syncOrigin = SyncOrigin.CLOUD_SYNCED,
                             isPendingSync = false
                         )
+                        database.siteDao().updateSite(updated)
+                        totalBootstrapped++
                     } else {
+                        // Unresolved Site identity remains pending.
+                        // Never create a duplicate cloud Site as a fallback.
                         if (matchingCandidates.size > 1) {
-                            Log.w(TAG, "Ambiguous site match for '${site.name}' (${matchingCandidates.size} candidates). Treating as separate record.")
+                            Log.w(TAG, "Ambiguous site match for '${site.name}' (${matchingCandidates.size} candidates). Preserving local record as pending.")
+                        } else {
+                            Log.w(TAG, "Cannot establish stable cloud identity for legacy site '${site.name}'. Preserving local record as pending.")
                         }
-                        site.copy(
-                            syncId = if (site.syncId.isNotBlank()) site.syncId else UUID.randomUUID().toString(),
-                            syncOrigin = SyncOrigin.NEW_LOCAL,
-                            isPendingSync = true,
-                            updatedAt = if (site.updatedAt <= 0) System.currentTimeMillis() else site.updatedAt
-                        )
                     }
-                    database.siteDao().updateSite(updated)
-                    totalBootstrapped++
                 }
             }
 
@@ -152,34 +227,32 @@ object LegacySyncBootstrapper {
 
             // 4. Workers
             val workersCol = userRef.collection("workers")
-            val cloudWorkers = fetchCloudCollection(workersCol) { it.toObject(WorkerDTO::class.java)?.apply { if (syncId.isBlank()) syncId = it.id } }
+            val cloudWorkers = fetchCloudCollection(workersCol) { WorkerMapper.fromSnapshot(it) }
             val localWorkers = database.workerDao().getAllWorkersRaw()
             for (worker in localWorkers) {
                 if (worker.syncOrigin == SyncOrigin.LEGACY || worker.syncId.isBlank()) {
                     val matchingCandidates = cloudWorkers.filter {
                         it.syncId !in matchedCloudSyncIds && isWorkerMatch(worker, it)
                     }
-                    val updated = if (matchingCandidates.size == 1) {
+                    if (matchingCandidates.size == 1) {
                         val cloudMatch = matchingCandidates.first()
                         matchedCloudSyncIds.add(cloudMatch.syncId)
-                        worker.copy(
+                        val updated = worker.copy(
                             syncId = cloudMatch.syncId,
                             syncOrigin = SyncOrigin.CLOUD_SYNCED,
                             isPendingSync = false
                         )
+                        database.workerDao().updateWorker(updated)
+                        totalBootstrapped++
                     } else {
+                        // If phone number is missing or multiple candidates match, do not guess.
+                        // Preserve the local record and isPendingSync = true.
                         if (matchingCandidates.size > 1) {
-                            Log.w(TAG, "Ambiguous worker match for '${worker.name}' (${matchingCandidates.size} candidates). Treating as separate record.")
+                            Log.w(TAG, "Ambiguous worker match for '${worker.name}' (${matchingCandidates.size} candidates). Preserving local record as pending.")
+                        } else {
+                            Log.w(TAG, "Cannot establish stable cloud identity for legacy worker '${worker.name}'. Preserving local record as pending.")
                         }
-                        worker.copy(
-                            syncId = if (worker.syncId.isNotBlank()) worker.syncId else UUID.randomUUID().toString(),
-                            syncOrigin = SyncOrigin.NEW_LOCAL,
-                            isPendingSync = true,
-                            updatedAt = if (worker.updatedAt <= 0) System.currentTimeMillis() else worker.updatedAt
-                        )
                     }
-                    database.workerDao().updateWorker(updated)
-                    totalBootstrapped++
                 }
             }
 
@@ -578,6 +651,7 @@ object LegacySyncBootstrapper {
             }
 
             Log.d(TAG, "Legacy Sync Bootstrap finished. Total records upgraded for sync: $totalBootstrapped")
+            com.example.workermanager.data.remote.sync.SyncCursorManager.setBootstrappedLegacy(uid, true)
             Result.success(totalBootstrapped)
         } catch (e: Exception) {
             Log.e(TAG, "Error in LegacySyncBootstrapper, aborting bootstrap without mutating unprocessed records", e)
@@ -585,11 +659,33 @@ object LegacySyncBootstrapper {
         }
     }
 
-    private suspend fun <T> fetchCloudCollection(
+    internal suspend fun <T> fetchCloudCollection(
         collection: CollectionReference,
-        transform: (com.google.firebase.firestore.DocumentSnapshot) -> T?
+        pageSize: Long = 100L,
+        transform: (DocumentSnapshot) -> T?
     ): List<T> {
-        val snapshot = collection.get().await()
-        return snapshot.documents.mapNotNull(transform)
+        val results = mutableListOf<T>()
+        var lastSnapshot: DocumentSnapshot? = null
+        while (true) {
+            var query: Query = collection.limit(pageSize)
+            if (lastSnapshot != null) {
+                query = query.startAfter(lastSnapshot)
+            }
+            val pageSnapshot = query.get().await()
+            if (pageSnapshot.isEmpty) {
+                break
+            }
+            for (doc in pageSnapshot.documents) {
+                val item = transform(doc)
+                if (item != null) {
+                    results.add(item)
+                }
+            }
+            if (pageSnapshot.size() < pageSize) {
+                break
+            }
+            lastSnapshot = pageSnapshot.documents.last()
+        }
+        return results
     }
 }

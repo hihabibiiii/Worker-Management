@@ -1008,6 +1008,12 @@ public final class SiteDao_Impl implements SiteDao {
     });
   }
 
+  @Override
+  public Object upsertSiteBySyncId(final SiteEntity site,
+      final Continuation<? super Long> $completion) {
+    return SiteDao.DefaultImpls.upsertSiteBySyncId(SiteDao_Impl.this, site, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

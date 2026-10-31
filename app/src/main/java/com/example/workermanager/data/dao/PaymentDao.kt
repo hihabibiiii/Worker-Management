@@ -28,6 +28,20 @@ interface PaymentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayment(payment: PaymentEntity)
 
+    /**
+     * Idempotently inserts or updates a payment by its stable syncId.
+     */
+    suspend fun upsertPaymentBySyncId(payment: PaymentEntity) {
+        if (payment.syncId.isNotBlank()) {
+            val existing = getPaymentBySyncId(payment.syncId)
+            if (existing != null) {
+                updatePayment(payment.copy(id = existing.id))
+                return
+            }
+        }
+        insertPayment(payment)
+    }
+
     @Update
     suspend fun updatePayment(payment: PaymentEntity)
 

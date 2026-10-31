@@ -24,8 +24,16 @@ object ExcelExporter {
         workers: List<WorkerEntity>,
         attendance: List<AttendanceEntity>,
         payments: List<PaymentEntity>,
-        outputStream: OutputStream
+        outputStream: OutputStream,
+        context: android.content.Context? = null
     ) {
+        if (context != null) {
+            val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+            val isPro = app?.subscriptionRepository?.canAccessProFeatures() == true
+            if (!isPro) {
+                throw SecurityException("Export to Excel requires an active WorkCraft Pro subscription.")
+            }
+        }
         Log.d(TAG, "Starting export. Workers: ${workers.size}, Attendance: ${attendance.size}, Payments: ${payments.size}")
         
         try {
@@ -183,8 +191,16 @@ object ExcelExporter {
         inventory: List<com.example.workermanager.viewmodel.ContractorMaterialStockModel>,
         siteStocks: List<com.example.workermanager.viewmodel.SiteMaterialStockModel>,
         transactions: List<com.example.workermanager.viewmodel.ContractorMaterialTxUiModel>,
-        outputStream: OutputStream
+        outputStream: OutputStream,
+        context: android.content.Context? = null
     ) {
+        if (context != null) {
+            val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+            val isPro = app?.subscriptionRepository?.canAccessProFeatures() == true
+            if (!isPro) {
+                throw SecurityException("Contractor Material Excel export requires an active WorkCraft Pro subscription.")
+            }
+        }
         try {
             XSSFWorkbook().use { workbook ->
                 val headerStyle = workbook.createCellStyle().apply {

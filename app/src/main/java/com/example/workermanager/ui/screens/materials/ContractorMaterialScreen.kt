@@ -48,6 +48,10 @@ import com.example.workermanager.viewmodel.SiteViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import com.example.workermanager.WorkerApplication
+import com.example.workermanager.ui.components.ProBadge
+import com.example.workermanager.ui.components.ProUpgradeDialog
 import java.time.LocalDate
 
 enum class ContractorMaterialTab(val title: String) {
@@ -69,9 +73,14 @@ val SubtitleText = Color(0xFF64748B)
 fun ContractorMaterialScreen(
     viewModel: ContractorMaterialViewModel,
     siteViewModel: SiteViewModel,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(com.example.workermanager.data.billing.ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
+    var showProExportDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val sites by siteViewModel.allSites.collectAsState(initial = emptyList())
     val materials by viewModel.allMaterials.collectAsState(initial = emptyList())
@@ -99,11 +108,15 @@ fun ContractorMaterialScreen(
     val excelExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
+        if (!isProUnlocked) {
+            showProExportDialog = true
+            return@rememberLauncherForActivityResult
+        }
         uri?.let { targetUri ->
             scope.launch(Dispatchers.IO) {
                 try {
                     context.contentResolver.openOutputStream(targetUri)?.use { stream ->
-                        ExcelExporter.exportContractorMaterials(stockModels, siteStockModels, transactions, stream)
+                        ExcelExporter.exportContractorMaterials(stockModels, siteStockModels, transactions, stream, context)
                     }
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Material Report exported successfully!", Toast.LENGTH_SHORT).show()
@@ -507,7 +520,11 @@ fun ContractorMaterialScreen(
                         darkText = darkText,
                         subtitleText = subtitleText,
                         onExportExcel = {
-                            excelExportLauncher.launch(ExcelExporter.generateContractorMaterialFileName())
+                            if (!isProUnlocked) {
+                                showProExportDialog = true
+                            } else {
+                                excelExportLauncher.launch(ExcelExporter.generateContractorMaterialFileName())
+                            }
                         }
                     )
                 }
@@ -597,6 +614,18 @@ fun ContractorMaterialScreen(
                     viewModel.deleteMaterial(targetId) {
                         Toast.makeText(context, "Stock item deleted successfully!", Toast.LENGTH_SHORT).show()
                     }
+                }
+            )
+        }
+
+        if (showProExportDialog) {
+            ProUpgradeDialog(
+                title = "Material Excel Export is a Pro Feature",
+                description = "Upgrade to WorkCraft Pro to export contractor material inventories, transactions, and site consumption directly to Microsoft Excel (.xlsx).",
+                onDismissRequest = { showProExportDialog = false },
+                onUpgradeClick = {
+                    showProExportDialog = false
+                    onOpenSubscription()
                 }
             )
         }
@@ -799,7 +828,7 @@ fun MaterialInventoryCard(
                         border = BorderStroke(1.dp, (if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32)).copy(alpha = 0.3f))
                     ) {
                         Text(
-                            text = "✓ ${String.format("%.0f", item.availableQuantity)} ${item.material.unit.displayName} Avail.",
+                            text = "âœ“ ${String.format("%.0f", item.availableQuantity)} ${item.material.unit.displayName} Avail.",
                             color = if (isDark) Color(0xFF2ECC71) else Color(0xFF2E7D32),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
@@ -1449,6 +1478,8 @@ fun SiteWiseReportTab(
                     Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Export Excel", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    ProBadge()
                 }
             }
         }

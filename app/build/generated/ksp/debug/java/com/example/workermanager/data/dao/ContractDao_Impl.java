@@ -1003,6 +1003,12 @@ public final class ContractDao_Impl implements ContractDao {
     });
   }
 
+  @Override
+  public Object upsertContractBySyncId(final ContractEntity contract,
+      final Continuation<? super Long> $completion) {
+    return ContractDao.DefaultImpls.upsertContractBySyncId(ContractDao_Impl.this, contract, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

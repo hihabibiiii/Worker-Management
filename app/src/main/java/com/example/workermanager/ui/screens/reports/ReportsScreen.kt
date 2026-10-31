@@ -36,14 +36,32 @@ import java.time.Year
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
+import com.example.workermanager.WorkerApplication
+import com.example.workermanager.ui.components.LockedProFeatureScreen
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
     viewModel: ReportViewModel,
     siteViewModel: SiteViewModel,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onUpgradeClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(com.example.workermanager.data.billing.ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
+
+    if (!isProUnlocked) {
+        LockedProFeatureScreen(
+            title = "Reports & Analytics are Pro Features",
+            subtitle = "Upgrade to WorkCraft Pro to unlock weekly, monthly, and yearly worker performance reports, attendance analytics, expense breakdowns, and automated data exports.",
+            onUpgradeClick = onUpgradeClick,
+            onBack = onBack
+        )
+        return
+    }
     val selectedReportType by viewModel.selectedReportType.collectAsState()
     val selectedWeekStartDate by viewModel.selectedWeekStartDate.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
@@ -549,6 +567,8 @@ fun ReportStatRow(label: String, value: String, isBold: Boolean = false, valueCo
 @Composable
 fun ReportItem(report: WorkerMonthlyReport) {
     val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val isProUnlocked = app?.subscriptionRepository?.canAccessProFeatures() == true
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -567,7 +587,13 @@ fun ReportItem(report: WorkerMonthlyReport) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(
-                    onClick = { ShareUtils.shareWorkerReportToWhatsApp(context, report) },
+                    onClick = {
+                        if (isProUnlocked) {
+                            ShareUtils.shareWorkerReportToWhatsApp(context, report)
+                        } else {
+                            android.widget.Toast.makeText(context, "Exporting reports is a WorkCraft Pro feature.", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(

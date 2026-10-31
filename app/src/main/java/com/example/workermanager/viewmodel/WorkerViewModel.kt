@@ -1,8 +1,9 @@
-package com.example.workermanager.viewmodel
+﻿package com.example.workermanager.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.workermanager.data.billing.QuotaExceededException
 import com.example.workermanager.data.entity.*
 import com.example.workermanager.data.repository.AttendanceRepository
 import com.example.workermanager.data.repository.PaymentRepository
@@ -47,6 +48,13 @@ class WorkerViewModel(
         _selectedSiteFilterId.value = siteId
     }
 
+    val totalActiveWorkerCount: StateFlow<Int> = repository.allWorkers
+        .map { list -> list.count { !it.isDeleted } }
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    private val _quotaExceededEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val quotaExceededEvent: SharedFlow<Unit> = _quotaExceededEvent.asSharedFlow()
+
     fun addWorker(
         name: String,
         phone: String,
@@ -55,10 +63,13 @@ class WorkerViewModel(
         overtimeRate: Double,
         joiningDate: LocalDate,
         siteId: Long?,
-        notes: String
+        notes: String,
+        onCreated: ((Long) -> Unit)? = null,
+        onQuotaExceeded: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
-            repository.insertWorker(
+            try {
+                val id = repository.insertWorker(
                 WorkerEntity(
                     name = name,
                     phone = phone,
@@ -70,7 +81,12 @@ class WorkerViewModel(
                 ),
                 siteId
             )
+            onCreated?.invoke(id)
+        } catch (e: QuotaExceededException) {
+            _quotaExceededEvent.tryEmit(Unit)
+            onQuotaExceeded?.invoke()
         }
+    }
     }
 
     fun updateWorker(worker: WorkerEntity) {

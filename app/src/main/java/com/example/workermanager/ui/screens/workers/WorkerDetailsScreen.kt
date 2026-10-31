@@ -50,6 +50,10 @@ import com.example.workermanager.data.entity.*
 import com.example.workermanager.util.PdfReportGenerator
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.*
+import com.example.workermanager.WorkerApplication
+import com.example.workermanager.ui.components.ProBadge
+import com.example.workermanager.ui.components.ProUpgradeDialog
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,9 +75,15 @@ fun WorkerDetailsScreen(
     attendanceViewModel: AttendanceViewModel,
     paymentViewModel: PaymentViewModel,
     siteViewModel: SiteViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenSubscription: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(com.example.workermanager.data.billing.ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
+    var showProPdfDialog by remember { mutableStateOf(false) }
+
     val worker by viewModel.getWorkerById(workerId).collectAsState(initial = null)
     val stats by viewModel.getWorkerStats(workerId).collectAsState(initial = WorkerStats(0, 0, 0, 0.0, 0.0, 0.0, 0.0))
     val attendanceHistory by attendanceViewModel.getAttendanceByWorker(workerId).collectAsState(initial = emptyList())
@@ -201,7 +211,13 @@ fun WorkerDetailsScreen(
                     QuickActionButtonsRow(
                         onAdvanceClick = { paymentDialogType = PaymentType.ADVANCE },
                         onPaymentClick = { paymentDialogType = PaymentType.PAYMENT },
-                        onWhatsAppClick = { showShareReportDialog = true }
+                        onWhatsAppClick = {
+                            if (!isProUnlocked) {
+                                showProPdfDialog = true
+                            } else {
+                                showShareReportDialog = true
+                            }
+                        }
                     )
                 }
 
@@ -386,6 +402,18 @@ fun WorkerDetailsScreen(
                 paymentHistory = paymentHistory,
                 sites = sites,
                 onDismiss = { showShareReportDialog = false }
+            )
+        }
+
+        if (showProPdfDialog) {
+            ProUpgradeDialog(
+                title = "Worker PDF Reports are Pro Features",
+                description = "Upgrade to WorkCraft Pro to generate and share complete worker attendance statements, payment history, and financial balance PDF reports.",
+                onDismissRequest = { showProPdfDialog = false },
+                onUpgradeClick = {
+                    showProPdfDialog = false
+                    onOpenSubscription()
+                }
             )
         }
 
@@ -1117,11 +1145,12 @@ fun QuickActionButtonsRow(
         )
 
         QuickActionButton(
-            label = "WHATSAPP",
+            label = "STATEMENT",
             icon = Icons.Default.Share,
             bgColor = Color(0xFF514B63),
             onClick = onWhatsAppClick,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1.1f),
+            isProBadge = true
         )
     }
 }
@@ -1132,7 +1161,8 @@ fun QuickActionButton(
     icon: ImageVector,
     bgColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isProBadge: Boolean = false
 ) {
     Button(
         onClick = onClick,
@@ -1150,17 +1180,21 @@ fun QuickActionButton(
                 imageVector = icon,
                 contentDescription = label,
                 tint = Color.White,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = label,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (isProBadge) {
+                Spacer(modifier = Modifier.width(3.dp))
+                ProBadge()
+            }
         }
     }
 }
@@ -1360,9 +1394,9 @@ fun SiteHistoryCard(
             }
 
             val dateText = if (history.endDate == null) {
-                "${Utils.formatDate(history.startDate)} → Present"
+                "${Utils.formatDate(history.startDate)} â†’ Present"
             } else {
-                "${Utils.formatDate(history.startDate)} → ${Utils.formatDate(history.endDate)}"
+                "${Utils.formatDate(history.startDate)} â†’ ${Utils.formatDate(history.endDate)}"
             }
 
             Row(
@@ -1429,7 +1463,7 @@ fun PaymentHistoryCard(
                         color = primaryText
                     )
                     Text(
-                        text = "${payment.paymentType.name} · $siteName",
+                        text = "${payment.paymentType.name} Â· $siteName",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = secondaryText
@@ -1861,6 +1895,8 @@ fun ShareWorkerReportDialog(
                             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Send on WhatsApp", fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            ProBadge()
                         }
                     }
 
@@ -1888,6 +1924,8 @@ fun ShareWorkerReportDialog(
                             Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Share PDF Report", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            ProBadge()
                         }
                     }
 
@@ -1914,6 +1952,11 @@ fun shareWorkerReport(
     sites: List<SiteEntity>,
     targetWhatsApp: Boolean
 ) {
+    val isPro = (context.applicationContext as? WorkerApplication)?.subscriptionRepository?.canAccessProFeatures() == true
+    if (!isPro) {
+        Toast.makeText(context, "Worker PDF reports are a WorkCraft Pro feature. Please upgrade to Pro.", Toast.LENGTH_LONG).show()
+        return
+    }
     try {
         val pdfFile = PdfReportGenerator.generateWorkerReportPdf(
             context = context,

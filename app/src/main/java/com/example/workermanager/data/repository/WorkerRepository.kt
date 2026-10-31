@@ -1,10 +1,14 @@
 package com.example.workermanager.data.repository
 
+import com.example.workermanager.data.billing.CreationQuotaPolicy
+import com.example.workermanager.data.billing.ProAccessLevel
 import com.example.workermanager.data.dao.WorkerDao
 import com.example.workermanager.data.dao.WorkerSiteHistoryDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.entity.WorkerEntity
 import com.example.workermanager.data.entity.WorkerSiteHistoryEntity
+import com.example.workermanager.data.remote.sync.MonotonicClock
+import com.example.workermanager.data.remote.sync.RecordRevisionManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -13,7 +17,8 @@ class WorkerRepository(
     private val workerDao: WorkerDao,
     private val historyDao: WorkerSiteHistoryDao,
     private val siteDao: com.example.workermanager.data.dao.SiteDao? = null,
-    private val onDataChanged: (() -> Unit)? = null
+    private val onDataChanged: (() -> Unit)? = null,
+    private val proAccessLevelProvider: (() -> ProAccessLevel)? = null
 ) {
     val allWorkers: Flow<List<WorkerEntity>> = workerDao.getAllWorkers()
     val activeWorkers: Flow<List<WorkerEntity>> = workerDao.getActiveWorkers()
@@ -22,7 +27,16 @@ class WorkerRepository(
     fun getWorkersBySite(siteId: Long): Flow<List<WorkerEntity>> = workerDao.getWorkersBySite(siteId)
     fun searchWorkers(query: String): Flow<List<WorkerEntity>> = workerDao.searchWorkers(query)
 
+    suspend fun canCreateWorker(): Boolean {
+        val level = proAccessLevelProvider?.invoke() ?: ProAccessLevel.FREE
+        val activeCount = workerDao.getAllWorkersRaw().count { !it.isDeleted }
+        return CreationQuotaPolicy.canCreateWorker(activeCount, level)
+    }
+
     suspend fun insertWorker(worker: WorkerEntity, siteId: Long?): Long {
+        val level = proAccessLevelProvider?.invoke() ?: ProAccessLevel.FREE
+        val activeCount = workerDao.getAllWorkersRaw().count { !it.isDeleted }
+        CreationQuotaPolicy.validateWorkerCreation(activeCount, level)
         val workerId = workerDao.insertWorker(worker)
         if (siteId != null) {
             val history = WorkerSiteHistoryEntity(
@@ -39,21 +53,29 @@ class WorkerRepository(
 
     suspend fun updateWorker(worker: WorkerEntity) {
         val updated = worker.copy(
-            updatedAt = System.currentTimeMillis(),
+            updatedAt = MonotonicClock.currentTimeMillis(),
             isPendingSync = true,
             syncOrigin = if (worker.syncOrigin == SyncOrigin.LEGACY) SyncOrigin.NEW_LOCAL else worker.syncOrigin,
             syncId = if (worker.syncId.isBlank()) java.util.UUID.randomUUID().toString() else worker.syncId
         )
+        RecordRevisionManager.recordLocalEdit(updated.syncId)
         workerDao.updateWorker(updated)
         onDataChanged?.invoke()
     }
 
     suspend fun deleteWorker(worker: WorkerEntity) {
+        if (worker.syncId.isNotBlank()) {
+            RecordRevisionManager.recordLocalEdit(worker.syncId)
+        }
         workerDao.softDeleteWorker(worker.id)
         onDataChanged?.invoke()
     }
 
     suspend fun restoreWorker(id: Long) {
+        val worker = workerDao.getAllWorkersRaw().find { it.id == id }
+        if (worker != null && worker.syncId.isNotBlank()) {
+            RecordRevisionManager.recordLocalEdit(worker.syncId)
+        }
         workerDao.restoreWorker(id)
         onDataChanged?.invoke()
     }
@@ -63,6 +85,7 @@ class WorkerRepository(
     suspend fun permanentlyDeleteWorker(id: Long) {
         val worker = workerDao.getAllWorkersRaw().find { it.id == id }
         if (worker != null && worker.syncId.isNotBlank()) {
+            RecordRevisionManager.recordLocalEdit(worker.syncId)
             workerDao.markPendingPermanentDelete(id)
         } else {
             workerDao.permanentlyDeleteWorker(id)

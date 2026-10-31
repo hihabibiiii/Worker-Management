@@ -686,5 +686,105 @@ describe("WorkCraft Subscription Backend Behavioral & Security Test Suite", () =
 
     assert.equal(res.isPro, true);
   });
+
+  // Test 18: Exported callable functions verification (Canonical name and backward-compatibility alias)
+  test("18. Cloud Functions index exports verifySubscriptionPurchase and verifyGooglePlaySubscription alias", () => {
+    const index = require("../index");
+    assert.equal(typeof index.verifySubscriptionPurchase, "function");
+    assert.equal(typeof index.verifyGooglePlaySubscription, "function");
+    assert.equal(index.verifyGooglePlaySubscription, index.verifySubscriptionPurchase);
+  });
+
+  // Test 19: Full purchase verification updates Firestore entitlement correctly with all required fields
+  test("19. Full purchase verification updates Firestore entitlement correctly with all fields", async () => {
+    const mockDb = createMockFirestore();
+    const token = "token_full_entitlement_update_12345";
+    const testUid = "user_entitlement_verified";
+
+    const mockPublisher = {
+      purchases: {
+        subscriptionsv2: {
+          get: async () => ({
+            data: {
+              subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+              acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+              externalAccountIdentifiers: {
+                obfuscatedExternalAccountId: getObfuscatedAccountId(testUid),
+              },
+              lineItems: [{productId: "workcraft_pro_yearly", expiryTime: yearlyExpiry}],
+            },
+          }),
+        },
+        subscriptions: {acknowledge: async () => ({})},
+      },
+    };
+
+    const res = await processSubscriptionVerification({
+      uid: testUid,
+      purchaseToken: token,
+      productId: "workcraft_pro_yearly",
+      packageName: "com.habibullahsalmani.workcraft",
+      db: mockDb,
+      androidPublisher: mockPublisher,
+    });
+
+    assert.equal(res.success, true);
+    assert.equal(res.isPro, true);
+    assert.equal(res.productId, "workcraft_pro_yearly");
+    assert.equal(res.subscriptionState, "SUBSCRIPTION_STATE_ACTIVE");
+
+    // Inspect Firestore stored entitlement document
+    const entDoc = mockDb._store.get(`subscriptionEntitlements/${testUid}`);
+    assert.ok(entDoc, "Entitlement document must exist in Firestore");
+    assert.equal(entDoc.uid, testUid);
+    assert.equal(entDoc.isPro, true);
+    assert.equal(entDoc.productId, "workcraft_pro_yearly");
+    assert.equal(entDoc.subscriptionState, "SUBSCRIPTION_STATE_ACTIVE");
+    assert.equal(entDoc.expiryTime, yearlyExpiry);
+    assert.equal(entDoc.acknowledged, true);
+    assert.equal(entDoc.source, "google_play");
+    assert.equal(entDoc.activeTokenHash, hashToken(token));
+  });
+
+  // Test 20: Invalid purchase token format and unsupported product validation
+  test("20. Invalid purchase token format and unsupported products are rejected with invalid-argument", async () => {
+    const mockDb = createMockFirestore();
+    const mockPublisher = {
+      purchases: {
+        subscriptionsv2: {get: async () => ({})},
+        subscriptions: {acknowledge: async () => ({})},
+      },
+    };
+
+    // Short token (< 10 chars)
+    await assert.rejects(
+        async () => {
+          await processSubscriptionVerification({
+            uid: "user_invalid_token",
+            purchaseToken: "short",
+            productId: "workcraft_pro_monthly",
+            packageName: "com.habibullahsalmani.workcraft",
+            db: mockDb,
+            androidPublisher: mockPublisher,
+          });
+        },
+        (err) => err.code === "invalid-argument",
+    );
+
+    // Unsupported product ID
+    await assert.rejects(
+        async () => {
+          await processSubscriptionVerification({
+            uid: "user_invalid_token",
+            purchaseToken: "valid_length_token_12345",
+            productId: "unsupported_fake_tier",
+            packageName: "com.habibullahsalmani.workcraft",
+            db: mockDb,
+            androidPublisher: mockPublisher,
+          });
+        },
+        (err) => err.code === "invalid-argument",
+    );
+  });
 });
 

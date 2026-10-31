@@ -12,6 +12,12 @@ import java.time.LocalDate
 
 object ShareUtils {
     fun shareWorkerReportToWhatsApp(context: Context, report: WorkerMonthlyReport) {
+        val app = context.applicationContext as? com.example.workermanager.WorkerApplication
+        val isPro = app?.subscriptionRepository?.canAccessProFeatures() == true
+        if (!isPro) {
+            Toast.makeText(context, "Exporting reports is a WorkCraft Pro feature. Please upgrade to Pro.", Toast.LENGTH_LONG).show()
+            return
+        }
         try {
             // 1. Create a reports directory in the cache directory
             val reportsDir = File(context.cacheDir, "reports")

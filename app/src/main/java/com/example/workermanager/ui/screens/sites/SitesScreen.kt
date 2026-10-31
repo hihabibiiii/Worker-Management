@@ -22,17 +22,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workermanager.data.entity.SiteEntity
 import com.example.workermanager.data.entity.SiteStatus
+import com.example.workermanager.WorkerApplication
+import com.example.workermanager.data.billing.ProAccessLevel
+import com.example.workermanager.ui.components.ProUpgradeDialog
 import com.example.workermanager.viewmodel.SiteViewModel
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SitesScreen(
     viewModel: SiteViewModel,
     onBack: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {},
     onSiteClick: (Long) -> Unit
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
     val sites by viewModel.allSites.collectAsState()
+    val totalActiveSiteCount by viewModel.totalActiveSiteCount.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var showQuotaDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.quotaExceededEvent.collect {
+            showQuotaDialog = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -44,7 +62,13 @@ fun SitesScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = {
+                    if (!isProUnlocked && totalActiveSiteCount >= ProAccessLevel.FREE_SITE_LIMIT) {
+                        showQuotaDialog = true
+                    } else {
+                        showAddDialog = true
+                    }
+                },
                 containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
@@ -78,8 +102,29 @@ fun SitesScreen(
                 sites = sites,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { name, address, manager ->
-                    viewModel.addSite(name, address, manager)
+                    if (!isProUnlocked && totalActiveSiteCount >= ProAccessLevel.FREE_SITE_LIMIT) {
+                        showQuotaDialog = true
+                    } else {
+                        viewModel.addSite(
+                            name = name, 
+                            address = address, 
+                            manager = manager,
+                            onQuotaExceeded = { showQuotaDialog = true }
+                        )
+                    }
                     showAddDialog = false
+                }
+            )
+        }
+
+        if (showQuotaDialog) {
+            ProUpgradeDialog(
+                title = "Site Quota Reached",
+                description = "Free accounts can manage up to ${ProAccessLevel.FREE_SITE_LIMIT} active ${if (ProAccessLevel.FREE_SITE_LIMIT == 1) "site" else "sites"}. Upgrade to WorkCraft Pro for unlimited sites, advanced analytics, and performance reports.",
+                onDismissRequest = { showQuotaDialog = false },
+                onUpgradeClick = {
+                    showQuotaDialog = false
+                    onOpenSubscription()
                 }
             )
         }

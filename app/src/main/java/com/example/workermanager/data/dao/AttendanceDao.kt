@@ -40,6 +40,20 @@ interface AttendanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAttendance(attendance: AttendanceEntity)
 
+    /**
+     * Idempotently inserts or updates an attendance record by its stable syncId.
+     */
+    suspend fun upsertAttendanceBySyncId(attendance: AttendanceEntity) {
+        if (attendance.syncId.isNotBlank()) {
+            val existing = getAttendanceBySyncId(attendance.syncId)
+            if (existing != null) {
+                updateAttendance(attendance.copy(id = existing.id))
+                return
+            }
+        }
+        insertAttendance(attendance)
+    }
+
     @Update
     suspend fun updateAttendance(attendance: AttendanceEntity)
 

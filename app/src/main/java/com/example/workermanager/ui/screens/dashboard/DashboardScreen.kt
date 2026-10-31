@@ -49,13 +49,19 @@ fun DashboardScreen(
     onNavigateToRecycleBin: () -> Unit = {},
     onNavigateToReports: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onSiteClick: (Long) -> Unit
+    onSiteClick: (Long) -> Unit,
+    onOpenSubscription: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val app = context.applicationContext as com.example.workermanager.WorkerApplication
     val scope = rememberCoroutineScope()
     val stats by viewModel.stats.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
+    val workers by workerViewModel.workers.collectAsState()
+    val totalActiveWorkerCount by workerViewModel.totalActiveWorkerCount.collectAsState()
+    val totalActiveSiteCount by siteViewModel.totalActiveSiteCount.collectAsState()
+    val proAccessLevel by app.subscriptionRepository.proAccessLevel.collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
     val selectedSiteId by viewModel.selectedSiteId.collectAsState()
     val totalSiteWorkingDays by viewModel.totalSiteWorkingDays.collectAsState()
 
@@ -67,6 +73,19 @@ fun DashboardScreen(
 
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
+    var showSiteQuotaDialog by remember { mutableStateOf(false) }
+    var showWorkerQuotaDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(siteViewModel) {
+        siteViewModel.quotaExceededEvent.collect {
+            showSiteQuotaDialog = true
+        }
+    }
+    LaunchedEffect(workerViewModel) {
+        workerViewModel.quotaExceededEvent.collect {
+            showWorkerQuotaDialog = true
+        }
+    }
     var showAddContractDialog by remember { mutableStateOf(false) }
     var showAddExpenseDialog by remember { mutableStateOf(false) }
     var showAddMaterialDialog by remember { mutableStateOf(false) }
@@ -462,7 +481,13 @@ fun DashboardScreen(
                         cardBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFE2EEFF),
                         iconColor = if (isDark) Color(0xFF4285F4) else Color(0xFF0866E8),
                         darkText = darkText,
-                        onClick = { showAddWorkerDialog = true },
+                        onClick = {
+                            if (!isProUnlocked && totalActiveWorkerCount >= com.example.workermanager.data.billing.ProAccessLevel.FREE_WORKER_LIMIT) {
+                                showWorkerQuotaDialog = true
+                            } else {
+                                showAddWorkerDialog = true
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     QuickActionGridCard(
@@ -480,7 +505,13 @@ fun DashboardScreen(
                         cardBg = if (isDark) Color(0xFF2B1F47) else Color(0xFFF0E9FF),
                         iconColor = if (isDark) Color(0xFFB388FF) else Color(0xFF6938E8),
                         darkText = darkText,
-                        onClick = { showAddSiteDialog = true },
+                        onClick = {
+                            if (!isProUnlocked && totalActiveSiteCount >= com.example.workermanager.data.billing.ProAccessLevel.FREE_SITE_LIMIT) {
+                                showSiteQuotaDialog = true
+                            } else {
+                                showAddSiteDialog = true
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -533,13 +564,32 @@ fun DashboardScreen(
                 siteViewModel = siteViewModel,
                 onDismiss = { showAddWorkerDialog = false },
                 onAddNewSite = { siteName, siteAddress, siteManager, onCreated ->
-                    siteViewModel.addSite(name = siteName, address = siteAddress, manager = siteManager) { newId ->
-                        onCreated(newId)
+                    if (!isProUnlocked && totalActiveSiteCount >= com.example.workermanager.data.billing.ProAccessLevel.FREE_SITE_LIMIT) {
+                        showSiteQuotaDialog = true
+                    } else {
+                        siteViewModel.addSite(
+                            name = siteName,
+                            address = siteAddress,
+                            manager = siteManager,
+                            onCreated = { newId -> onCreated(newId) },
+                            onQuotaExceeded = { showSiteQuotaDialog = true }
+                        )
                     }
                 },
                 onConfirm = { name, phone, type, dailyRate, otRate, date, siteId, notes, active ->
-                    workerViewModel.addWorker(name, phone, type, dailyRate, otRate, date, siteId, notes)
-                    showAddWorkerDialog = false
+                    if (!isProUnlocked && totalActiveWorkerCount >= com.example.workermanager.data.billing.ProAccessLevel.FREE_WORKER_LIMIT) {
+                        showWorkerQuotaDialog = true
+                        showAddWorkerDialog = false
+                    } else {
+                        workerViewModel.addWorker(
+                            name, phone, type, dailyRate, otRate, date, siteId, notes,
+                            onCreated = { showAddWorkerDialog = false },
+                            onQuotaExceeded = {
+                                showWorkerQuotaDialog = true
+                                showAddWorkerDialog = false
+                            }
+                        )
+                    }
                 }
             )
         }
@@ -549,8 +599,43 @@ fun DashboardScreen(
                 sites = sites,
                 onDismiss = { showAddSiteDialog = false },
                 onConfirm = { name, address, manager ->
-                    siteViewModel.addSite(name, address, manager)
-                    showAddSiteDialog = false
+                    if (!isProUnlocked && totalActiveSiteCount >= com.example.workermanager.data.billing.ProAccessLevel.FREE_SITE_LIMIT) {
+                        showSiteQuotaDialog = true
+                        showAddSiteDialog = false
+                    } else {
+                        siteViewModel.addSite(
+                            name, address, manager,
+                            onCreated = { showAddSiteDialog = false },
+                            onQuotaExceeded = {
+                                showSiteQuotaDialog = true
+                                showAddSiteDialog = false
+                            }
+                        )
+                    }
+                }
+            )
+        }
+
+        if (showSiteQuotaDialog) {
+            com.example.workermanager.ui.components.ProUpgradeDialog(
+                title = "Site Quota Reached",
+                description = "Free accounts can manage up to ${com.example.workermanager.data.billing.ProAccessLevel.FREE_SITE_LIMIT} active ${if (com.example.workermanager.data.billing.ProAccessLevel.FREE_SITE_LIMIT == 1) "site" else "sites"}. Upgrade to WorkCraft Pro for unlimited sites, advanced analytics, and performance reports.",
+                onDismissRequest = { showSiteQuotaDialog = false },
+                onUpgradeClick = {
+                    showSiteQuotaDialog = false
+                    onOpenSubscription()
+                }
+            )
+        }
+
+        if (showWorkerQuotaDialog) {
+            com.example.workermanager.ui.components.ProUpgradeDialog(
+                title = "Worker Quota Reached",
+                description = "Free accounts can manage up to ${com.example.workermanager.data.billing.ProAccessLevel.FREE_WORKER_LIMIT} active workers. Upgrade to WorkCraft Pro for unlimited workers, advanced performance reports, and PDF statements.",
+                onDismissRequest = { showWorkerQuotaDialog = false },
+                onUpgradeClick = {
+                    showWorkerQuotaDialog = false
+                    onOpenSubscription()
                 }
             )
         }

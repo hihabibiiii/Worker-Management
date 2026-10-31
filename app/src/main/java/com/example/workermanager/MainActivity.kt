@@ -101,8 +101,16 @@ class MainActivity : ComponentActivity() {
                 } else null
 
                 val dummyDb = app.legacyDatabase
-                val activeSiteRepo = userSession?.siteRepository ?: SiteRepository(dummyDb.siteDao())
-                val activeWorkerRepo = userSession?.workerRepository ?: WorkerRepository(dummyDb.workerDao(), dummyDb.workerSiteHistoryDao(), dummyDb.siteDao())
+                val activeSiteRepo = userSession?.siteRepository ?: SiteRepository(
+                    siteDao = dummyDb.siteDao(),
+                    proAccessLevelProvider = { app.subscriptionRepository.getProAccessLevel() }
+                )
+                val activeWorkerRepo = userSession?.workerRepository ?: WorkerRepository(
+                    workerDao = dummyDb.workerDao(),
+                    historyDao = dummyDb.workerSiteHistoryDao(),
+                    siteDao = dummyDb.siteDao(),
+                    proAccessLevelProvider = { app.subscriptionRepository.getProAccessLevel() }
+                )
                 val activeAttendanceRepo = userSession?.attendanceRepository ?: AttendanceRepository(dummyDb.attendanceDao(), dummyDb.siteAttendanceDao())
                 val activePaymentRepo = userSession?.paymentRepository ?: PaymentRepository(dummyDb.paymentDao())
                 val activeContractRepo = userSession?.contractRepository ?: ContractRepository(dummyDb.contractDao())
@@ -244,6 +252,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToRecycleBin = { navController.navigate(Screen.RecycleBin.route) },
                                     onNavigateToReports = { navigateToTab(Screen.Reports.route) },
                                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) },
                                     onSiteClick = { siteId ->
                                         navController.navigate(Screen.SiteDetails.createRoute(siteId))
                                     }
@@ -253,6 +262,7 @@ class MainActivity : ComponentActivity() {
                                 SitesScreen(
                                     viewModel = siteViewModel,
                                     onBack = { navController.popBackStack() },
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) },
                                     onSiteClick = { siteId ->
                                         navController.navigate(Screen.SiteDetails.createRoute(siteId))
                                     }
@@ -279,6 +289,7 @@ class MainActivity : ComponentActivity() {
                                 WorkersScreen(
                                     viewModel = workerViewModel,
                                     siteViewModel = siteViewModel,
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) },
                                     onWorkerClick = { workerId ->
                                         navController.navigate(Screen.WorkerDetails.createRoute(workerId))
                                     }
@@ -295,7 +306,8 @@ class MainActivity : ComponentActivity() {
                                     attendanceViewModel = attendanceViewModel,
                                     paymentViewModel = paymentViewModel,
                                     siteViewModel = siteViewModel,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) }
                                 )
                             }
                             composable(Screen.Attendance.route) {
@@ -336,7 +348,8 @@ class MainActivity : ComponentActivity() {
                                 com.example.workermanager.ui.screens.materials.ContractorMaterialScreen(
                                     viewModel = contractorMaterialViewModel,
                                     siteViewModel = siteViewModel,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onOpenSubscription = { navController.navigate(Screen.Subscription.route) }
                                 )
                             }
                             composable(
@@ -358,7 +371,8 @@ class MainActivity : ComponentActivity() {
                                 ReportsScreen(
                                     viewModel = reportViewModel,
                                     siteViewModel = siteViewModel,
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onUpgradeClick = { navController.navigate(Screen.Subscription.route) }
                                 )
                             }
                             composable(Screen.RecycleBin.route) {

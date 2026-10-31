@@ -135,4 +135,14 @@ class SubscriptionSecurityUtilsTest {
         assertEquals("yearly-plan-v2", com.example.workermanager.data.billing.BillingManager.BASE_PLAN_YEARLY)
         assertEquals("yearly-free-trial", com.example.workermanager.data.billing.BillingManager.OFFER_YEARLY_TRIAL)
     }
+
+    // =========================================================================
+    // Backend Callable Function Integration Contract Tests
+    // =========================================================================
+
+    @Test
+    fun testVerifySubscriptionPurchaseCallableFunctionName() {
+        // Must match exact export name in functions/index.js
+        assertEquals("verifySubscriptionPurchase", SubscriptionRepository.FUNCTION_VERIFY_SUBSCRIPTION)
+    }
 }

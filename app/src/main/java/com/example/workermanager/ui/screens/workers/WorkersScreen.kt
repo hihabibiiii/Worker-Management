@@ -68,6 +68,10 @@ import com.example.workermanager.data.entity.WorkerType
 import com.example.workermanager.util.Utils
 import com.example.workermanager.viewmodel.SiteViewModel
 import com.example.workermanager.viewmodel.WorkerViewModel
+import com.example.workermanager.WorkerApplication
+import com.example.workermanager.data.billing.ProAccessLevel
+import com.example.workermanager.ui.components.ProUpgradeDialog
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.time.LocalDate
 
@@ -79,10 +83,31 @@ private const val SELF_WORK_VIRTUAL_ID = -999L
 fun WorkersScreen(
     viewModel: WorkerViewModel,
     siteViewModel: SiteViewModel,
+    onOpenSubscription: () -> Unit = {},
     onWorkerClick: (Long) -> Unit
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
+    var showQuotaDialog by remember { mutableStateOf(false) }
+    var showSiteQuotaDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.quotaExceededEvent.collect {
+            showQuotaDialog = true
+        }
+    }
+    LaunchedEffect(siteViewModel) {
+        siteViewModel.quotaExceededEvent.collect {
+            showSiteQuotaDialog = true
+        }
+    }
+
     val workers by viewModel.workers.collectAsState()
+    val totalActiveWorkerCount by viewModel.totalActiveWorkerCount.collectAsState()
     val sites by siteViewModel.allSites.collectAsState()
+    val totalActiveSiteCount by siteViewModel.totalActiveSiteCount.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedSiteFilterId by viewModel.selectedSiteFilterId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -104,7 +129,13 @@ fun WorkersScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = {
+                    if (!isProUnlocked && totalActiveWorkerCount >= ProAccessLevel.FREE_WORKER_LIMIT) {
+                        showQuotaDialog = true
+                    } else {
+                        showAddDialog = true
+                    }
+                },
                 containerColor = Color(0xFF1677F8),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
@@ -266,13 +297,29 @@ fun WorkersScreen(
                     workerToEdit = null
                 },
                 onAddNewSite = { siteName, siteAddress, siteManager, onCreated ->
-                    siteViewModel.addSite(name = siteName, address = siteAddress, manager = siteManager) { newId ->
-                        onCreated(newId)
+                    if (!isProUnlocked && totalActiveSiteCount >= ProAccessLevel.FREE_SITE_LIMIT) {
+                        showSiteQuotaDialog = true
+                    } else {
+                        siteViewModel.addSite(
+                            name = siteName,
+                            address = siteAddress,
+                            manager = siteManager,
+                            onCreated = { newId -> onCreated(newId) },
+                            onQuotaExceeded = { showSiteQuotaDialog = true }
+                        )
                     }
+
                 },
                 onConfirm = { name, phone, type, dailyRate, otRate, date, siteId, notes, active ->
                     if (workerToEdit == null) {
-                        viewModel.addWorker(name, phone, type, dailyRate, otRate, date, siteId, notes)
+                        if (!isProUnlocked && totalActiveWorkerCount >= ProAccessLevel.FREE_WORKER_LIMIT) {
+                            showQuotaDialog = true
+                        } else {
+                            viewModel.addWorker(
+                                name, phone, type, dailyRate, otRate, date, siteId, notes,
+                                onQuotaExceeded = { showQuotaDialog = true }
+                            )
+                        }
                     } else {
                         viewModel.updateWorker(
                             workerToEdit!!.copy(
@@ -312,6 +359,30 @@ fun WorkersScreen(
                     TextButton(onClick = { workerToDelete = null }) {
                         Text("Cancel", color = textPrimary, fontWeight = FontWeight.Medium)
                     }
+                }
+            )
+        }
+
+        if (showSiteQuotaDialog) {
+            ProUpgradeDialog(
+                title = "Site Quota Reached",
+                description = "Free accounts can manage up to ${ProAccessLevel.FREE_SITE_LIMIT} active ${if (ProAccessLevel.FREE_SITE_LIMIT == 1) "site" else "sites"}. Upgrade to WorkCraft Pro for unlimited sites, advanced analytics, and performance reports.",
+                onDismissRequest = { showSiteQuotaDialog = false },
+                onUpgradeClick = {
+                    showSiteQuotaDialog = false
+                    onOpenSubscription()
+                }
+            )
+        }
+
+        if (showQuotaDialog) {
+            ProUpgradeDialog(
+                title = "Worker Quota Reached",
+                description = "Free accounts can manage up to ${ProAccessLevel.FREE_WORKER_LIMIT} active workers. Upgrade to WorkCraft Pro for unlimited workers, advanced performance reports, and PDF statements.",
+                onDismissRequest = { showQuotaDialog = false },
+                onUpgradeClick = {
+                    showQuotaDialog = false
+                    onOpenSubscription()
                 }
             )
         }
@@ -670,7 +741,7 @@ fun WorkerCard(
             val balDisplayAmount = when {
                 isPendingDue -> Utils.formatCurrency(pendingBalance)
                 isAdvance -> Utils.formatCurrency(-pendingBalance)
-                else -> "₹0.00"
+                else -> Utils.formatCurrency(0.0)
             }
 
             Row(
@@ -816,8 +887,12 @@ fun WorkerDialog(
         mutableStateOf(worker?.joiningDate ?: LocalDate.now())
     }
 
+    val activeSites = remember(sites) {
+        sites.filter { !it.isDeleted && !it.name.equals("Self Work", ignoreCase = true) }
+    }
+
     val existingSelfWorkSite = remember(sites) {
-        sites.find { it.name.equals("Self Work", ignoreCase = true) }
+        sites.find { !it.isDeleted && it.name.equals("Self Work", ignoreCase = true) }
     }
 
     val virtualSelfWorkSite = remember {
@@ -829,8 +904,23 @@ fun WorkerDialog(
         )
     }
 
-    var siteId by remember(worker) {
-        mutableStateOf(worker?.currentSiteId)
+    val displaySites = remember(activeSites, existingSelfWorkSite) {
+        if (activeSites.isEmpty()) {
+            val selfWorkEntry = existingSelfWorkSite ?: virtualSelfWorkSite
+            listOf(selfWorkEntry)
+        } else {
+            activeSites
+        }
+    }
+
+    var siteId by remember(worker, displaySites) {
+        mutableStateOf(
+            worker?.currentSiteId ?: if (activeSites.isEmpty()) {
+                existingSelfWorkSite?.id ?: SELF_WORK_VIRTUAL_ID
+            } else {
+                displaySites.firstOrNull()?.id
+            }
+        )
     }
 
     var notes by remember(worker) {
@@ -853,8 +943,13 @@ fun WorkerDialog(
     var newSiteAddress by remember { mutableStateOf("") }
     var newSiteManager by remember { mutableStateOf("") }
     var newSiteError by remember { mutableStateOf<String?>(null) }
+    var showSiteQuotaDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    val app = context.applicationContext as? WorkerApplication
+    val proAccessLevel by (app?.subscriptionRepository?.proAccessLevel ?: MutableStateFlow(ProAccessLevel.FREE)).collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
 
     // Theme colors
     val isDark =
@@ -928,13 +1023,6 @@ fun WorkerDialog(
                 }
             }
         }
-
-    // Preserve Self Work ordering & display virtual Self Work option if none exists in DB
-    val displaySites = remember(sites, existingSelfWorkSite) {
-        val others = sites.filter { !it.name.equals("Self Work", ignoreCase = true) }
-        val selfWorkEntry = existingSelfWorkSite ?: virtualSelfWorkSite
-        listOf(selfWorkEntry) + others
-    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1312,11 +1400,15 @@ fun WorkerDialog(
 
                                 onClick = {
                                     siteExpanded = false
-                                    newSiteName = ""
+                                    if (!isProUnlocked && sites.size >= ProAccessLevel.FREE_SITE_LIMIT) {
+                                        showSiteQuotaDialog = true
+                                    } else {
+                                        newSiteName = ""
                                     newSiteAddress = ""
                                     newSiteManager = ""
                                     newSiteError = null
-                                    showAddSiteDialog = true
+                                        showAddSiteDialog = true
+                                    }
                                 }
                             )
                         }
@@ -1423,6 +1515,11 @@ fun WorkerDialog(
                                     notes.trim(),
                                     isActive
                                 )
+                            }
+
+                            if (siteId == null) {
+                                siteError = "Please select a site"
+                                return@Button
                             }
 
                             if (siteId == SELF_WORK_VIRTUAL_ID) {
@@ -1607,6 +1704,17 @@ fun WorkerDialog(
                 ) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    if (showSiteQuotaDialog) {
+        ProUpgradeDialog(
+            title = "Site Quota Reached",
+            description = "Free accounts can manage up to ${ProAccessLevel.FREE_SITE_LIMIT} active ${if (ProAccessLevel.FREE_SITE_LIMIT == 1) "site" else "sites"}. Upgrade to WorkCraft Pro for unlimited sites, advanced analytics, and performance reports.",
+            onDismissRequest = { showSiteQuotaDialog = false },
+            onUpgradeClick = {
+                showSiteQuotaDialog = false
             }
         )
     }

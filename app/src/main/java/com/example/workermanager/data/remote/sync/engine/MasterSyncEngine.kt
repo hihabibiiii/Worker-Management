@@ -3,16 +3,26 @@ package com.example.workermanager.data.remote.sync.engine
 import android.util.Log
 import com.example.workermanager.data.database.AppDatabase
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.SyncStatusManager
+import com.example.workermanager.data.remote.sync.SyncStatusState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 
 object MasterSyncEngine {
     private const val TAG = "MasterSyncEngine"
+    internal val syncMutex = Mutex()
 
     suspend fun performFullSync(database: AppDatabase): Result<Unit> = withContext(Dispatchers.IO) {
+        if (!syncMutex.tryLock()) {
+            Log.d(TAG, "Sync is already in progress. Skipping duplicate concurrent request.")
+            return@withContext Result.success(Unit)
+        }
+
         try {
             val uid = FirestoreProvider.requireAuthenticatedUid()
             Log.d(TAG, "Starting full Cloud Sync for user: $uid")
+            SyncStatusManager.updateStatus(SyncStatusState.Syncing)
 
             // Bootstrap legacy records (idempotent: only processes un-synced legacy records)
             val bootstrapRes = LegacySyncBootstrapper.bootstrapLegacyRecords(database)
@@ -68,10 +78,14 @@ object MasterSyncEngine {
             if (res14.isFailure) return@withContext Result.failure(res14.exceptionOrNull() ?: Exception("Contractor Material Transactions sync failed"))
 
             Log.d(TAG, "Full Cloud Sync completed successfully for all 14 entities for user: $uid")
+            SyncStatusManager.updateStatus(SyncStatusState.Synced)
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "MasterSyncEngine failed", e)
+            SyncStatusManager.updateStatus(SyncStatusState.Error(e.message ?: "Sync failed"))
             Result.failure(e)
+        } finally {
+            syncMutex.unlock()
         }
     }
 }

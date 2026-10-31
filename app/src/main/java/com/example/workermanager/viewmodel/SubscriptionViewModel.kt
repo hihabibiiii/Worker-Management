@@ -33,7 +33,10 @@ class SubscriptionViewModel(
     val productQueryState: StateFlow<ProductQueryState> = billingManager.productQueryState
     val purchaseEvents: SharedFlow<PurchaseResultEvent> = billingManager.purchaseEvents
     val entitlement: StateFlow<SubscriptionEntitlement> = subscriptionRepository.entitlement
+    val proAccessLevel: StateFlow<com.example.workermanager.data.billing.ProAccessLevel> = subscriptionRepository.proAccessLevel
     val isRefreshing: StateFlow<Boolean> = subscriptionRepository.isRefreshing
+
+    fun canAccessProFeatures(): Boolean = subscriptionRepository.canAccessProFeatures()
 
     private val _isRestoring = MutableStateFlow(false)
     val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
@@ -122,7 +125,7 @@ class SubscriptionViewModel(
     }
 
     /**
-     * Verifies purchase with backend verifyGooglePlaySubscription callable function.
+     * Verifies purchase with backend verifySubscriptionPurchase callable function.
      */
     fun verifyPurchaseWithBackend(purchaseToken: String, productId: String) {
         viewModelScope.launch {

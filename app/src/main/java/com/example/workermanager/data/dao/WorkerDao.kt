@@ -24,6 +24,21 @@ interface WorkerDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWorker(worker: WorkerEntity): Long
 
+    /**
+     * Idempotently inserts or updates a worker by its stable syncId.
+     * Prevents duplicate rows in Room when multiple sync paths or repeated syncs process the same record.
+     */
+    suspend fun upsertWorkerBySyncId(worker: WorkerEntity): Long {
+        if (worker.syncId.isNotBlank()) {
+            val existing = getWorkerBySyncId(worker.syncId)
+            if (existing != null) {
+                updateWorker(worker.copy(id = existing.id))
+                return existing.id
+            }
+        }
+        return insertWorker(worker)
+    }
+
     @Update
     suspend fun updateWorker(worker: WorkerEntity)
 

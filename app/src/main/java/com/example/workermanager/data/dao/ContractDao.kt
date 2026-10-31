@@ -24,6 +24,20 @@ interface ContractDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContract(contract: ContractEntity): Long
 
+    /**
+     * Idempotently inserts or updates a contract by its stable syncId.
+     */
+    suspend fun upsertContractBySyncId(contract: ContractEntity): Long {
+        if (contract.syncId.isNotBlank()) {
+            val existing = getContractBySyncId(contract.syncId)
+            if (existing != null) {
+                updateContract(contract.copy(id = existing.id))
+                return existing.id
+            }
+        }
+        return insertContract(contract)
+    }
+
     @Update
     suspend fun updateContract(contract: ContractEntity)
 

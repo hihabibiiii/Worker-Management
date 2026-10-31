@@ -4,6 +4,8 @@ import android.util.Log
 import com.example.workermanager.data.dao.MaterialDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.MaterialDTO
 import com.example.workermanager.data.remote.sync.mapper.MaterialMapper
 import com.google.firebase.firestore.SetOptions
@@ -16,16 +18,20 @@ object MaterialSyncEngine {
 
     suspend fun syncUserMaterials(materialDao: MaterialDao): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val materialsRef = FirestoreProvider.getUserDocumentRef().collection("materials")
 
-            // 1. Down-sync (Pull Cloud -> Local)
-            val cloudSnapshot = materialsRef.get().await()
-            val cloudMaterials = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = materialsRef,
+                userId = uid,
+                collectionName = "materials"
+            ) { doc ->
                 doc.toObject(MaterialDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudMaterials = pullResult.items
 
             val allLocalMaterials = materialDao.getAllMaterialsRaw()
             val localMaterialsMap = allLocalMaterials.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -36,11 +42,11 @@ object MaterialSyncEngine {
 
                 if (existingLocal == null) {
                     if (cloudDto.isDeleted) continue
-                    val entity = MaterialMapper.toEntity(cloudDto)
+                    val entity = MaterialMapper.toEntity(cloudDto).copy(isPendingSync = false)
                     materialDao.insertMaterial(entity)
                     Log.d(TAG, "Pulled new material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
                 } else if (cloudDto.updatedAt > existingLocal.updatedAt) {
-                    val updatedEntity = MaterialMapper.toEntity(cloudDto, localId = existingLocal.id)
+                    val updatedEntity = MaterialMapper.toEntity(cloudDto, localId = existingLocal.id).copy(isPendingSync = false)
                     materialDao.updateMaterial(updatedEntity)
                     Log.d(TAG, "Updated local material from cloud: ${cloudDto.name} (${cloudDto.syncId})")
                 }
@@ -56,7 +62,7 @@ object MaterialSyncEngine {
 
             for (localMaterial in eligibleMaterials) {
                 val cloudDto = cloudMaterialsMap[localMaterial.syncId]
-                if (cloudDto == null || localMaterial.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localMaterial.updatedAt >= cloudDto.updatedAt) {
                     val dto = MaterialMapper.toDTO(localMaterial)
                     materialsRef.document(localMaterial.syncId).set(dto, SetOptions.merge()).await()
                     if (localMaterial.deletedAt == -1L) {
@@ -68,6 +74,9 @@ object MaterialSyncEngine {
                     }
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "materials", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

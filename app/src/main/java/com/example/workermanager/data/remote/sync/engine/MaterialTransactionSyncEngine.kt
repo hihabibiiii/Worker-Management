@@ -6,6 +6,8 @@ import com.example.workermanager.data.dao.MaterialTransactionDao
 import com.example.workermanager.data.dao.SiteDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.MaterialTransactionDTO
 import com.example.workermanager.data.remote.sync.mapper.MaterialTransactionMapper
 import com.google.firebase.firestore.SetOptions
@@ -22,15 +24,20 @@ object MaterialTransactionSyncEngine {
         siteDao: SiteDao
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val matTxRef = FirestoreProvider.getUserDocumentRef().collection("materialTransactions")
 
-            val cloudSnapshot = matTxRef.get().await()
-            val cloudTx = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = matTxRef,
+                userId = uid,
+                collectionName = "materialTransactions"
+            ) { doc ->
                 doc.toObject(MaterialTransactionDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudTx = pullResult.items
 
             val allLocal = transactionDao.getAllTransactionsRaw()
             val localMap = allLocal.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -69,6 +76,7 @@ object MaterialTransactionSyncEngine {
                 }
             }
 
+            // 2. Outbound Push (Local -> Cloud)
             val eligible = transactionDao.getAllTransactionsRaw().filter { tx ->
                 (tx.syncOrigin == SyncOrigin.NEW_LOCAL || tx.syncOrigin == SyncOrigin.CLOUD_SYNCED) &&
                 tx.syncId.isNotBlank() && tx.isPendingSync
@@ -78,7 +86,7 @@ object MaterialTransactionSyncEngine {
 
             for (localItem in eligible) {
                 val cloudDto = cloudMap[localItem.syncId]
-                if (cloudDto == null || localItem.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localItem.updatedAt >= cloudDto.updatedAt) {
                     val matSyncId = materialDao.getAllMaterialsRaw().find { it.id == localItem.materialId }?.syncId ?: ""
                     val siteSyncId = siteDao.getAllSitesRaw().find { it.id == localItem.siteId }?.syncId ?: ""
                     val targetSiteSyncId = if (localItem.targetSiteId != null) siteDao.getAllSitesRaw().find { it.id == localItem.targetSiteId }?.syncId else null
@@ -101,6 +109,9 @@ object MaterialTransactionSyncEngine {
                     }
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "materialTransactions", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

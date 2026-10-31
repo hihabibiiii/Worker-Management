@@ -5,6 +5,8 @@ import com.example.workermanager.data.dao.ClientPaymentDao
 import com.example.workermanager.data.dao.ContractDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.ClientPaymentDTO
 import com.example.workermanager.data.remote.sync.mapper.ClientPaymentMapper
 import com.google.firebase.firestore.SetOptions
@@ -17,15 +19,20 @@ object ClientPaymentSyncEngine {
 
     suspend fun syncUserClientPayments(clientPaymentDao: ClientPaymentDao, contractDao: ContractDao): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val cPayRef = FirestoreProvider.getUserDocumentRef().collection("clientPayments")
 
-            val cloudSnapshot = cPayRef.get().await()
-            val cloudPayments = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = cPayRef,
+                userId = uid,
+                collectionName = "clientPayments"
+            ) { doc ->
                 doc.toObject(ClientPaymentDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudPayments = pullResult.items
 
             val allLocal = clientPaymentDao.getAllClientPaymentsRaw()
             val localMap = allLocal.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -52,6 +59,7 @@ object ClientPaymentSyncEngine {
                 }
             }
 
+            // 2. Outbound Push (Local -> Cloud)
             val eligible = clientPaymentDao.getAllClientPaymentsRaw().filter { p ->
                 (p.syncOrigin == SyncOrigin.NEW_LOCAL || p.syncOrigin == SyncOrigin.CLOUD_SYNCED) &&
                 p.syncId.isNotBlank() && p.isPendingSync
@@ -61,7 +69,7 @@ object ClientPaymentSyncEngine {
 
             for (localItem in eligible) {
                 val cloudDto = cloudMap[localItem.syncId]
-                if (cloudDto == null || localItem.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localItem.updatedAt >= cloudDto.updatedAt) {
                     val contractSyncId = contractDao.getAllContractsRaw().find { it.id == localItem.contractId }?.syncId ?: ""
                     if (contractSyncId.isBlank()) continue
 
@@ -76,6 +84,9 @@ object ClientPaymentSyncEngine {
                     }
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "clientPayments", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

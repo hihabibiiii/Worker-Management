@@ -1335,6 +1335,12 @@ public final class WorkerDao_Impl implements WorkerDao {
     });
   }
 
+  @Override
+  public Object upsertWorkerBySyncId(final WorkerEntity worker,
+      final Continuation<? super Long> $completion) {
+    return WorkerDao.DefaultImpls.upsertWorkerBySyncId(WorkerDao_Impl.this, worker, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

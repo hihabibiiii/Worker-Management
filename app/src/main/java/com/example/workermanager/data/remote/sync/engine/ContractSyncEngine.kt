@@ -5,6 +5,8 @@ import com.example.workermanager.data.dao.ContractDao
 import com.example.workermanager.data.dao.SiteDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.ContractDTO
 import com.example.workermanager.data.remote.sync.mapper.ContractMapper
 import com.google.firebase.firestore.SetOptions
@@ -17,16 +19,20 @@ object ContractSyncEngine {
 
     suspend fun syncUserContracts(contractDao: ContractDao, siteDao: SiteDao): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val contractsRef = FirestoreProvider.getUserDocumentRef().collection("contracts")
 
-            // 1. Down-sync (Pull Cloud -> Local)
-            val cloudSnapshot = contractsRef.get().await()
-            val cloudContracts = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = contractsRef,
+                userId = uid,
+                collectionName = "contracts"
+            ) { doc ->
                 doc.toObject(ContractDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudContracts = pullResult.items
 
             val allLocal = contractDao.getAllContractsRaw()
             val localMap = allLocal.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -61,7 +67,7 @@ object ContractSyncEngine {
 
             for (localItem in eligible) {
                 val cloudDto = cloudMap[localItem.syncId]
-                if (cloudDto == null || localItem.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localItem.updatedAt >= cloudDto.updatedAt) {
                     val siteSyncId = if (localItem.siteId != null) {
                         siteDao.getAllSitesRaw().find { it.id == localItem.siteId }?.syncId
                     } else null
@@ -77,6 +83,9 @@ object ContractSyncEngine {
                     }
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "contracts", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

@@ -6,6 +6,8 @@ import com.example.workermanager.data.dao.WorkerDao
 import com.example.workermanager.data.dao.WorkerSiteHistoryDao
 import com.example.workermanager.data.entity.SyncOrigin
 import com.example.workermanager.data.remote.FirestoreProvider
+import com.example.workermanager.data.remote.sync.FirestoreSyncHelper
+import com.example.workermanager.data.remote.sync.SyncCursorManager
 import com.example.workermanager.data.remote.sync.dto.WorkerSiteHistoryDTO
 import com.example.workermanager.data.remote.sync.mapper.WorkerSiteHistoryMapper
 import com.google.firebase.firestore.SetOptions
@@ -22,15 +24,20 @@ object WorkerSiteHistorySyncEngine {
         siteDao: SiteDao
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            FirestoreProvider.requireAuthenticatedUid()
+            val uid = FirestoreProvider.requireAuthenticatedUid()
             val historyRef = FirestoreProvider.getUserDocumentRef().collection("workerSiteHistory")
 
-            val cloudSnapshot = historyRef.get().await()
-            val cloudHistory = cloudSnapshot.documents.mapNotNull { doc ->
+            // 1. Paginated Incremental Pull (Cloud -> Local)
+            val pullResult = FirestoreSyncHelper.pullIncremental(
+                collectionRef = historyRef,
+                userId = uid,
+                collectionName = "workerSiteHistory"
+            ) { doc ->
                 doc.toObject(WorkerSiteHistoryDTO::class.java)?.apply {
                     if (syncId.isBlank()) syncId = doc.id
                 }
             }
+            val cloudHistory = pullResult.items
 
             val allLocal = historyDao.getAllHistory()
             val localMap = allLocal.filter { it.syncId.isNotBlank() }.associateBy { it.syncId }
@@ -64,6 +71,7 @@ object WorkerSiteHistorySyncEngine {
                 }
             }
 
+            // 2. Outbound Push (Local -> Cloud)
             val eligible = historyDao.getAllHistory().filter { h ->
                 (h.syncOrigin == SyncOrigin.NEW_LOCAL || h.syncOrigin == SyncOrigin.CLOUD_SYNCED) &&
                 h.syncId.isNotBlank() && h.isPendingSync
@@ -73,7 +81,7 @@ object WorkerSiteHistorySyncEngine {
 
             for (localItem in eligible) {
                 val cloudDto = cloudMap[localItem.syncId]
-                if (cloudDto == null || localItem.updatedAt > cloudDto.updatedAt) {
+                if (cloudDto == null || localItem.updatedAt >= cloudDto.updatedAt) {
                     val workerSyncId = workerDao.getAllWorkersRaw().find { it.id == localItem.workerId }?.syncId ?: ""
                     val siteSyncId = siteDao.getAllSitesRaw().find { it.id == localItem.siteId }?.syncId ?: ""
                     if (workerSyncId.isBlank() || siteSyncId.isBlank()) continue
@@ -84,6 +92,9 @@ object WorkerSiteHistorySyncEngine {
                     Log.d(TAG, "Pushed worker site history: (${localItem.syncId})")
                 }
             }
+
+            // 3. Save sync cursor high-water mark
+            SyncCursorManager.setLastSyncTimestamp(uid, "workerSiteHistory", pullResult.highestUpdatedAt)
 
             Result.success(Unit)
         } catch (e: Exception) {

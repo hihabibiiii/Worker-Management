@@ -41,6 +41,13 @@ class SubscriptionRepository(
     private val _entitlement = MutableStateFlow(loadCachedEntitlement())
     val entitlement: StateFlow<SubscriptionEntitlement> = _entitlement.asStateFlow()
 
+    private val _proAccessLevel = MutableStateFlow(com.example.workermanager.data.billing.ProAccessLevel.fromEntitlement(_entitlement.value))
+    val proAccessLevel: StateFlow<com.example.workermanager.data.billing.ProAccessLevel> = _proAccessLevel.asStateFlow()
+
+    fun getProAccessLevel(): com.example.workermanager.data.billing.ProAccessLevel = _proAccessLevel.value
+
+    fun canAccessProFeatures(): Boolean = _proAccessLevel.value.isProUnlocked
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
@@ -51,6 +58,7 @@ class SubscriptionRepository(
             if (user != null && user.uid.isNotBlank()) {
                 val cached = loadCachedEntitlement(user.uid)
                 _entitlement.value = cached
+                _proAccessLevel.value = com.example.workermanager.data.billing.ProAccessLevel.fromEntitlement(cached)
                 scope.launch {
                     refreshSubscriptionStatus(user.uid)
                 }
@@ -120,6 +128,7 @@ class SubscriptionRepository(
             .remove(KEY_ACK_PENDING)
             .apply()
         _entitlement.value = SubscriptionEntitlement(isPro = false)
+        _proAccessLevel.value = com.example.workermanager.data.billing.ProAccessLevel.FREE
     }
 
     /**
@@ -130,6 +139,7 @@ class SubscriptionRepository(
         if (uid.isNullOrBlank()) {
             val empty = SubscriptionEntitlement(isPro = false)
             _entitlement.value = empty
+            _proAccessLevel.value = com.example.workermanager.data.billing.ProAccessLevel.FREE
             return@withContext Result.success(empty)
         }
 
@@ -159,6 +169,7 @@ class SubscriptionRepository(
             )
             saveEntitlement(uid, updated)
             _entitlement.value = updated
+            _proAccessLevel.value = com.example.workermanager.data.billing.ProAccessLevel.fromEntitlement(updated)
             Result.success(updated)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to refresh getMySubscription", e)
@@ -172,7 +183,7 @@ class SubscriptionRepository(
     }
 
     /**
-     * Verifies purchase token and product ID with backend verifyGooglePlaySubscription callable function.
+     * Verifies purchase token and product ID with backend verifySubscriptionPurchase callable function.
      */
     suspend fun verifyPurchase(
         purchaseToken: String,
@@ -188,11 +199,13 @@ class SubscriptionRepository(
         _entitlement.value = _entitlement.value.copy(isVerifying = true, errorMessage = null)
 
         try {
+            val obfuscatedAccountId = com.example.workermanager.data.billing.SubscriptionSecurityUtils.getObfuscatedAccountId(user.uid)
             val payload = mapOf(
                 "purchaseToken" to purchaseToken,
-                "productId" to productId
+                "productId" to productId,
+                "obfuscatedAccountId" to obfuscatedAccountId
             )
-            val callable = functions.getHttpsCallable("verifyGooglePlaySubscription")
+            val callable = functions.getHttpsCallable(FUNCTION_VERIFY_SUBSCRIPTION)
             val result = callable.call(payload).await()
             val data = result.data as? Map<*, *>
 
@@ -217,9 +230,10 @@ class SubscriptionRepository(
             )
             saveEntitlement(user.uid, updated)
             _entitlement.value = updated
+            _proAccessLevel.value = com.example.workermanager.data.billing.ProAccessLevel.fromEntitlement(updated)
             Result.success(updated)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed in verifyGooglePlaySubscription", e)
+            Log.e(TAG, "Failed in $FUNCTION_VERIFY_SUBSCRIPTION", e)
             val friendlyError = mapFunctionsException(e)
             _entitlement.value = _entitlement.value.copy(
                 isVerifying = false,
@@ -250,6 +264,7 @@ class SubscriptionRepository(
 
     companion object {
         private const val TAG = "SubscriptionRepository"
+        const val FUNCTION_VERIFY_SUBSCRIPTION = "verifySubscriptionPurchase"
         private const val PREFS_NAME = "workcraft_subscription_prefs"
         private const val KEY_CACHED_UID = "sub_cached_uid"
         private const val KEY_IS_PRO = "sub_is_pro"

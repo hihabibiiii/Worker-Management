@@ -3,18 +3,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User-isolated collection structure:
-    // Only the authenticated user matching {uid} can read or write their own data.
+    // Entitlement Document: User can read for real-time sync; write denied to clients
+    match /subscriptionEntitlements/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Admin audit logs: Direct client access denied completely (written only by Admin SDK)
+    match /adminAuditLogs/{logId} {
+      allow read, write: if false;
+    }
+
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
 
-      // All 14 subcollections scoped under /users/{uid}/
-      match /{allSubcollections=**} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+      // 1. Quota Tracking & Allocations: Read-only for authenticated owner; writes denied to clients
+      match /quota/{docId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
       }
+
+      match /quotaAllocations/{allocationId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+
+      // 2. Sites: Creation & Hard Delete blocked for direct client calls (must use Cloud Functions).
+      // Non-quota field updates permitted; soft-delete/restore cannot bypass backend quota logic.
+      match /sites/{siteId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create, delete: if false;
+        allow update: if request.auth != null && request.auth.uid == uid &&
+          request.resource.data.isDeleted == resource.data.isDeleted &&
+          request.resource.data.syncId == resource.data.syncId;
+      }
+
+      // 3. Workers: Creation & Hard Delete blocked for direct client calls (must use Cloud Functions).
+      // Non-quota field updates permitted; soft-delete/restore cannot bypass backend quota logic.
+      match /workers/{workerId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create, delete: if false;
+        allow update: if request.auth != null && request.auth.uid == uid &&
+          request.resource.data.isDeleted == resource.data.isDeleted &&
+          request.resource.data.syncId == resource.data.syncId;
+      }
+
+      // 4. Preserved existing permissions for all other subcollections
+      match /attendance/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /payments/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /contracts/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /clientPayments/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /siteAttendance/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /workerSiteHistory/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /siteExpenses/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /siteExpensePayments/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /materials/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /materialTransactions/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /contractorMaterials/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+      match /contractorMaterialTransactions/{docId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
     }
 
-    // Deny all other production reads/writes by default
+    // Default deny for all other paths
     match /{document=**} {
       allow read, write: if false;
     }

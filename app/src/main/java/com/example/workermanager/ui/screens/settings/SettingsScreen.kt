@@ -42,6 +42,8 @@ import com.example.workermanager.util.BackupManager
 import com.example.workermanager.util.BackupPayload
 import com.example.workermanager.util.OwnershipValidationResult
 import com.example.workermanager.util.ExcelExporter
+import com.example.workermanager.ui.components.ProBadge
+import com.example.workermanager.ui.components.ProUpgradeDialog
 import com.example.workermanager.viewmodel.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,6 +75,9 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var exportedUri by remember { mutableStateOf<Uri?>(null) }
+    val proAccessLevel by app.subscriptionRepository.proAccessLevel.collectAsState()
+    val isProUnlocked = proAccessLevel.isProUnlocked
+    var showProExportDialog by remember { mutableStateOf(false) }
     val themeMode by viewModel.themeMode.collectAsState()
 
     var isBackingUp by remember { mutableStateOf(false) }
@@ -149,6 +154,10 @@ fun SettingsScreen(
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
+        if (!isProUnlocked) {
+            showProExportDialog = true
+            return@rememberLauncherForActivityResult
+        }
         uri?.let {
             scope.launch {
                 isExporting = true
@@ -156,7 +165,7 @@ fun SettingsScreen(
                     val (workers, attendance, payments) = viewModel.getAllData()
                     withContext(Dispatchers.IO) {
                         context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                            ExcelExporter.export(workers, attendance, payments, outputStream)
+                            ExcelExporter.export(workers, attendance, payments, outputStream, context)
                         }
                     }
                     exportedUri = it
@@ -356,7 +365,13 @@ fun SettingsScreen(
 
             ListItem(
                 headlineContent = { 
-                    Text("Export to Excel", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Export to Excel", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        ProBadge()
+                    }
                 },
                 supportingContent = { 
                     Text("Generate a spreadsheet with all data", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium) 
@@ -369,12 +384,16 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isExporting) {
-                    createDocumentLauncher.launch(ExcelExporter.generateFileName())
+                    if (!isProUnlocked) {
+                        showProExportDialog = true
+                    } else {
+                        createDocumentLauncher.launch(ExcelExporter.generateFileName())
+                    }
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent)
             )
 
-            if (exportedUri != null) {
+            if (exportedUri != null && isProUnlocked) {
                 ListItem(
                     headlineContent = { 
                         Text("Share Last Export", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) 
@@ -697,6 +716,18 @@ fun SettingsScreen(
                     ) {
                         Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                     }
+                }
+            )
+        }
+
+        if (showProExportDialog) {
+            ProUpgradeDialog(
+                title = "Excel Export is a Pro Feature",
+                description = "Upgrade to WorkCraft Pro to export complete site data, worker attendance, payments, and expense logs directly to Microsoft Excel (.xlsx).",
+                onDismissRequest = { showProExportDialog = false },
+                onUpgradeClick = {
+                    showProExportDialog = false
+                    onOpenSubscription()
                 }
             )
         }

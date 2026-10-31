@@ -69,7 +69,6 @@ fun DashboardScreen(
     val dashBg = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFF7F9FE)
     val dashPrimary = MaterialTheme.colorScheme.primary
     val darkText = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF0F172A)
-    val subtitleText = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF64748B)
 
     var showAddWorkerDialog by remember { mutableStateOf(false) }
     var showAddSiteDialog by remember { mutableStateOf(false) }
@@ -90,32 +89,6 @@ fun DashboardScreen(
     var showAddExpenseDialog by remember { mutableStateOf(false) }
     var showAddMaterialDialog by remember { mutableStateOf(false) }
     var existingAutoBackup by remember { mutableStateOf<com.example.workermanager.util.BackupPayload?>(null) }
-
-    val selectBackupFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                try {
-                    val payload = context.contentResolver.openInputStream(it)?.use { stream ->
-                        com.example.workermanager.util.BackupManager.validateAndParseBackup(stream)
-                    }
-                    if (payload != null) {
-                        val validation = com.example.workermanager.util.BackupManager.validateBackupOwnership(payload)
-                        if (validation is com.example.workermanager.util.OwnershipValidationResult.Invalid) {
-                            android.widget.Toast.makeText(context, validation.userFacingErrorMessage, android.widget.Toast.LENGTH_LONG).show()
-                        } else {
-                            existingAutoBackup = payload
-                        }
-                    } else {
-                        android.widget.Toast.makeText(context, "Invalid backup file format.", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    android.widget.Toast.makeText(context, "Backup error: ${e.localizedMessage ?: "Invalid file"}", android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
 
     LaunchedEffect(Unit) {
         val prefManager = com.example.workermanager.data.preference.AutoBackupPreferenceManager(context)
@@ -398,43 +371,6 @@ fun DashboardScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Find Existing Backup Prompt (Visible when database is empty)
-            if (sites.isEmpty() && stats.totalContracts == 0 && existingAutoBackup == null) {
-                Surface(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = if (isDark) MaterialTheme.colorScheme.surface else Color.White,
-                    border = BorderStroke(1.dp, dashPrimary.copy(alpha = 0.2f)),
-                    shadowElevation = 2.dp
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Backup, contentDescription = null, tint = dashPrimary)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Find Existing Backup", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = darkText)
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            "If you backed up your WorkCraft data on this device previously, locate your backup file in Documents/WorkCraftBackups to restore your records.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = subtitleText
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedButton(
-                            onClick = { selectBackupFileLauncher.launch(arrayOf("application/json", "*/*")) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Locate Backup File", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(18.dp))
-            }
 
             // SECTION 4: QUICK ACTIONS SECTION (3x2 GRID)
             val quickActionsHeaderBg = if (isDark) Color(0xFF1E2A3A) else Color(0xFFEBF2FD)
